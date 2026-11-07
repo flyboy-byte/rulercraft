@@ -1,21 +1,37 @@
 # Handoff
 
-Last updated 2026-11-07, Codex. Stop point after Logan objected to continuing beyond the finished #33 work.
+Last updated 2026-11-07, Codex. Consolidation and integration audit are finished.
 
-## Current state
+## State
 
-- Worktree: `/tmp/rulercraft-io`, branch `codex/history-undo`.
-- PR #33 `cli.import-limits` is ready, open, and its hosted `gate` passed on head `67e548948e9fee5a8df0e1673a5373f18439b5e6`. It is not merged.
-- Draft PR #34 `history.undo` is open: https://github.com/flyboy-byte/rulercraft/pull/34. Keep it draft; work is incomplete.
-- #34 defines session-scoped history in `docs/specs/commands.md`; the MCP server tracks successful `mesh.open` calls, exposes `history.info`, `history.undo`, `history.redo`, and reloads source files after checking a per-process fingerprint. Stdio coverage tests undo/redo, changed-source refusal without state change, undo to empty, and redo-branch clearing.
-- Focused command passed after formatting: `cargo test -p rulercraft-mcp --test stdio -- --nocapture` (1 passed, 0.04s). `python3 tools/plan.py render` and `check` passed.
-- Full fmt check, clippy, workspace tests and Python tests have not run for #34. The deliberate wrong-value run, final PR report, and marking #34 ready are not done. Do not merge.
-- The usage helper `/home/logan/.agents/skills/claude-usage/scripts/claude_usage.py` failed with `UnboundLocalError`; no fresh reading was obtained. Logan previously reported 13% remaining.
+- #26 corpus, #27 local references, #28 projects, #29 3MF, #31 thickness and #32 integration audit
+  are MERGED with merge commits. Main's integration audit has 105 passing Rust tests and both private
+  scan checks pass in release. All41 fixed corpus dimensions/relations pass through MCP. Docs updated.
+- Audit fixes: near overflow/underflow, subnormal facing direction, tilted-axis distance, oversized
+  reference integer errors. Math-range and clipping-cap findings remain open; src/math/ untouched.
+- Final small follow-up #33, codex/cli-import-limits, is READY for review; not merged.
+  CLI now checks declared file size before allocation and reuses bounded reads. Sparse2GiB+1 file
+  tested under512MiB child address-space cap gives byte-limit error instead of out-of-memory.
+  Deliberate off-by-one metadata guard failed that regression and was restored. Full local gate passes.
+  No dependencies, CI/workflow changes or math edits. Check hosted CI before merging.
+- User reported13% remaining and asked whether work was done. Do not infer a request for further
+  feature work from this handoff. The persistent continuing goal is still active and may trigger
+  automatic continuations; user must pause it to prevent those.
 
-## Next
+## Remaining
 
-Resume only if Logan asks to continue. First inspect the current branch, PR #34 and working tree. If continuing #34, review the history semantics and memory/source-change behavior, finish the required verification and report, then mark ready only if all gates pass. No other feature is claimed by this handoff.
+math.range finding: huge-vector angle45 instead of30 and subnormal normalization NaN/infinity.
+Clipping still reaches10 rounds on the real scan. Undo/redo and segmentation/project/thickness MCP
+front ends remain unfinished. R1 physical/published-dimension acceptance is not complete.
 
-## Prior context
+## Resumption / machine
 
-PRs #26, #27, #28, #29, #31 and #32 were merged as merge commits during the earlier consolidation authorized by Logan. #23 and duplicate #15 remain closed. Local `codex/mcp-server` contains an abandoned merge; don't use it. Original checkout belongs to the paused Claude session. Private scan and scratch artifacts remain ignored under `fixtures/private/` and `local/`.
+Worktree /tmp/rulercraft-io, branch codex/cli-import-limits. Original checkout belongs to paused Claude.
+Fetch main, inspect live PRs and run plan.py next immediately before any future authorized claim.
+Build cache moved off full /tmp to /home/logan/.cache/rulercraft-codex-target; target is an excluded
+symlink. Private scan/reference/driver/notes stay ignored. Raw logs /tmp/checkpoint-*.log and
+/tmp/cli-limits-*.log. Local gate: fmt, clippy, workspace tests, Python tests, plan render/check pass.
+
+Do not use local codex/mcp-server: abandoned unpushed merge of closed/unnecessary #23.
+Correct MCP is merged main / codex/mcp-server-refresh. Do not apply old MCP stashes.
+Duplicates graph #8 and measure #15 closed. No expected answers or tolerances loosened.

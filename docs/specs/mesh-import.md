@@ -97,3 +97,10 @@ PLY description: https://sites.cc.gatech.edu/projects/large_models/ply.html (for
   escapes or cross-part components. The existing dispatcher and `info`/`fit` accept `.3mf`.
 
 Format description: https://github.com/3MFConsortium/spec_core/blob/master/3MF%20Core%20Specification.md
+
+## CLI file loading (2026-11-07)
+
+CLI info/fit check a regular file's declared byte size before allocating its contents, then read at
+most the default byte cap plus one (also catching files that grow after the metadata check). An
+oversized file reports its path and byte limit, not a late allocation error. The same bounded-read
+helper is used by project commands. Existing engine byte limits still validate the supplied bytes.
