@@ -7,6 +7,7 @@ pub mod fit;
 pub mod graph;
 pub mod io;
 pub mod math;
+pub mod measure;
 pub mod mesh;
 pub mod select;
 pub mod stl;

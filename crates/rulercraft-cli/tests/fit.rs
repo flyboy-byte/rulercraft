@@ -150,7 +150,7 @@ fn refusals_exit_2_with_a_message_and_no_stdout() {
         (vec!["fit", "cone", p], "unknown fit kind"),
         (
             vec!["fit", "plane", p, "--known-diameter", "5"],
-            "only applies to a sphere",
+            "only applies to a sphere or cylinder",
         ),
         (
             vec![
@@ -169,4 +169,32 @@ fn refusals_exit_2_with_a_message_and_no_stdout() {
         assert!(out.is_empty(), "{args:?}");
         assert!(err.contains(needle), "{args:?}: {err}");
     }
+}
+
+#[test]
+fn cylinder_on_a_tube_gives_its_diameter() {
+    let (r, mut t) = (4.0f64, vec![]);
+    let at = |ring: usize, i: usize| {
+        let a = std::f64::consts::TAU * i as f64 / 32.0;
+        [10.0 + r * a.cos(), -5.0 + r * a.sin(), ring as f64 * 5.0]
+    };
+    for ring in 0..4 {
+        for i in 0..32 {
+            let (p, q, s, u) = (
+                at(ring, i),
+                at(ring, i + 1),
+                at(ring + 1, i + 1),
+                at(ring + 1, i),
+            );
+            t.push([p, q, s]);
+            t.push([p, s, u]);
+        }
+    }
+    let path = scratch("tube.stl", &stl(&t));
+    let (code, out, err) = run(&["fit", "cylinder", path.to_str().unwrap(), "--sigma", "0"]);
+    assert_eq!(code, Some(0), "{err}");
+    let f = &json(&out)["fit"];
+    assert!((f["diameter"].as_f64().unwrap() - 8.0).abs() < 1e-4, "{f}");
+    assert!(f["axis"][2].as_f64().unwrap().abs() > 1.0 - 1e-9);
+    assert!((f["length"].as_f64().unwrap() - 20.0).abs() < 1e-4, "{f}");
 }
