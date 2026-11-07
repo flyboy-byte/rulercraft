@@ -4,7 +4,7 @@ Rules for every model (Claude, Codex, others) and every contributor. This file o
 other doc here; if another doc disagrees, this one wins and the other gets fixed.
 
 Read first, in order: CONTEXT.md (what this is), this file, PROCESS.md (how work gets done),
-docs/architecture.md (where code goes), STATUS.md (where things stand), HANDOFF.md (what the last
+docs/architecture.md (where code goes), docs/implementation-plan.md (build order), STATUS.md (where things stand), HANDOFF.md (what the last
 session left). Then the feature file in `plan/features/` and its spec in `docs/specs/`.
 
 There is no original to copy: behaviour comes from `docs/specs/`. When a spec does not settle a
