@@ -96,11 +96,11 @@ enum Kind {
     Inner(usize, usize),
 }
 
-struct Tree<'a> {
+/// A reference mesh indexed for closest-point queries.
+pub struct Reference {
     tris: Vec<[Vec3; 3]>,
     order: Vec<usize>,
     nodes: Vec<Node>,
-    _mesh: &'a Mesh,
 }
 
 fn box_dist2(p: Vec3, lo: Vec3, hi: Vec3) -> f64 {
@@ -112,18 +112,24 @@ fn box_dist2(p: Vec3, lo: Vec3, hi: Vec3) -> f64 {
         .sum()
 }
 
-impl<'a> Tree<'a> {
-    fn build(mesh: &'a Mesh) -> Self {
+impl Reference {
+    /// Indexes `mesh`. Fails when it has no triangles.
+    pub fn new(mesh: &Mesh) -> Result<Self, DeviationError> {
+        if mesh.triangles.is_empty() {
+            return Err(DeviationError("the reference mesh has no triangles".into()));
+        }
+        Ok(Self::build(mesh))
+    }
+    fn build(mesh: &Mesh) -> Self {
         let tris: Vec<[Vec3; 3]> = mesh
             .triangles
             .iter()
             .map(|t| t.map(|i| v3(mesh.positions[i as usize])))
             .collect();
-        let mut t = Tree {
+        let mut t = Reference {
             order: (0..tris.len()).collect(),
             tris,
             nodes: vec![],
-            _mesh: mesh,
         };
         let n = t.order.len();
         t.node(0, n);
@@ -159,8 +165,13 @@ impl<'a> Tree<'a> {
         }
         id
     }
-    /// Closest point and the index of its triangle.
-    fn closest(&self, p: Vec3) -> (Vec3, usize) {
+    /// The closest point on the surface to `p`, and the (not unit) face normal of its triangle.
+    pub fn closest(&self, p: Vec3) -> (Vec3, Vec3) {
+        let (q, t) = self.closest_index(p);
+        let [a, b, c] = self.tris[t];
+        (q, cross(sub(b, a), sub(c, a)))
+    }
+    fn closest_index(&self, p: Vec3) -> (Vec3, usize) {
         let (mut best, mut best_d2, mut best_t) = ([0.0; 3], f64::MAX, 0);
         let mut stack = vec![0usize];
         while let Some(n) = stack.pop() {
@@ -214,15 +225,13 @@ pub fn deviation(
             "tolerance must be a finite number, 0 or more".into(),
         ));
     }
-    let tree = Tree::build(reference);
+    let tree = Reference::build(reference);
     let distances: Vec<f64> = mesh
         .positions
         .iter()
         .map(|&p| {
             let p = v3(p);
-            let (q, t) = tree.closest(p);
-            let [a, b, c] = tree.tris[t];
-            let n = cross(sub(b, a), sub(c, a));
+            let (q, n) = tree.closest(p);
             let d = sub(p, q);
             let side = if dot(d, n) < 0.0 { -1.0 } else { 1.0 };
             side * length(d)
