@@ -34,7 +34,7 @@ cargo run -p rulercraft-cli -- info part.stl
 | [ROADMAP.md](ROADMAP.md) | Milestones R1-R6 and what each one lets you do |
 | [PROCESS.md](PROCESS.md) | How a feature gets done and proven |
 | [AGENTS.md](AGENTS.md) | Rules for AI agents and contributors |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | For people who want to help |
+| [CONTRIBUTING.md](CONTRIBUTING.md) | For people who want to help, including with their own AI agent |
 | [DECISIONS.md](DECISIONS.md) | Why things are the way they are |
 
 ## Licence
