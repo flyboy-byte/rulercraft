@@ -1,0 +1,12 @@
+{
+  "id": "mcp.datum",
+  "milestone": "R3",
+  "title": "Build a datum frame from three selected planes over MCP",
+  "spec": "alignment",
+  "status": "in-progress",
+  "depends_on": ["align.icp", "mcp.server"],
+  "owner": "Codex",
+  "pr": null,
+  "verified_by": [],
+  "left": "Expose the existing three-plane datum frame over MCP and verify it through stdio."
+}
