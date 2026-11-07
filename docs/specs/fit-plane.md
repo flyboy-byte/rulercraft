@@ -37,4 +37,14 @@ the agreeing vertex ids. Refuses: a threshold that is not positive and finite, 0
 fewer than 3 points, bad indices, and a selection with no three points making a plane that at least
 3 points agree with. Check: 300 points on z = 5 plus 100 far one-sided outliers tilt the ordinary fit
 off 1 in normal z, while the robust fit keeps normal z within 1e-4 and keeps no outlier.
-Not done: robust sphere and cylinder seeding, and CLI/MCP exposure.
+Spheres and cylinders: see below. Not done: CLI exposure (the MCP `fit` takes `robust` for planes).
+
+`fit_sphere_robust` and `fit_cylinder_robust` work the same way with random subsets in place of
+three-point planes: a trial sphere is fitted to 6 random selected points, a trial cylinder to 12; points
+within `threshold` of the trial surface agree; the best agreeing set is fitted without clipping. A trial
+that cannot be fitted is skipped. Each cylinder trial is a full fit, so keep `iterations` modest (60
+is plenty for a few hundred points). A scattered point can fall inside the threshold band by chance, so a
+few strays among the agreeing points are expected on a large surface. Checks: a spherical cap with 60
+scattered points, which pulls the plain fit more than 0.5 mm off in radius, is recovered within 0.02;
+a tilted cylinder with 80 scattered points is recovered in radius and axis; refusals as for planes.
+Two wrong-value runs (fit all points; a 300x loose threshold) each failed their test.

@@ -3,13 +3,16 @@
   "milestone": "R3",
   "title": "Robust fits on noisy scans (RANSAC seeding, noise estimation)",
   "spec": "fit-plane",
-  "status": "implemented",
+  "status": "verified",
   "depends_on": [
     "fit.plane",
     "fit.cylinder"
   ],
   "owner": "claude",
-  "pr": null,
-  "verified_by": [],
-  "left": "Plane only so far. Still owed: robust sphere and cylinder seeding, and CLI/MCP exposure."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/55",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "CLI exposure, and MCP robust for spheres and cylinders."
 }
