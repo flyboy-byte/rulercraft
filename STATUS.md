@@ -6,16 +6,16 @@ Overall roadmap progress: **29%** (details in ROADMAP-PROGRESS.md).
 
 | Status | Features |
 | --- | ---: |
-| planned | 10 |
+| planned | 9 |
 | specced | 0 |
-| in-progress | 0 |
+| in-progress | 1 |
 | implemented | 3 |
 | verified | 20 |
 | done | 0 |
 
 ## In progress
 
-- none
+- `history.undo` (Codex, https://github.com/flyboy-byte/rulercraft/pull/34): Work in progress on #34: MCP session undo/redo for mesh.open, history.info and stdio tests. Focused stdio test passes after implementation; full gates, deliberate wrong-value run, final PR report and ready-for-review status remain.
 
 ## Ready to claim
 
@@ -23,5 +23,4 @@ Overall roadmap progress: **29%** (details in ROADMAP-PROGRESS.md).
 - `compare.deviation` (R3): Mesh-to-mesh deviation map and statistics
 - `engine.library` (R5): Stable library API, docs, crates.io, Wasm build
 - `fit.robust` (R3): Robust fits on noisy scans (RANSAC seeding, noise estimation)
-- `history.undo` (R1): Undo and redo for every command
 - `math.range` (R1): Stable public math helpers for extreme finite directions

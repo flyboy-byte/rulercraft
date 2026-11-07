@@ -148,6 +148,9 @@ fn stdio_tools_schemas_geometry_and_failure_state() {
         "select",
         "fit",
         "measure",
+        "history.info",
+        "history.undo",
+        "history.redo",
         "guide",
     ] {
         let t = tools.iter().find(|t| t["name"] == name).unwrap();
@@ -244,5 +247,47 @@ fn stdio_tools_schemas_geometry_and_failure_state() {
     let s = c.data("fit", json!({"kind":"cylinder","sigma":0}));
     assert!((s["fit"]["radius"].as_f64().unwrap() - 10.).abs() < 1e-5);
     assert!((s["fit"]["length"].as_f64().unwrap() - 40.).abs() < 1e-5);
+
+    let a = dir.join("history-a.ply");
+    let b = dir.join("history-b.ply");
+    let bytes_a = cube().into_bytes();
+    let bytes_b = bytes_a.clone();
+    std::fs::write(&a, &bytes_a).unwrap();
+    std::fs::write(&b, &bytes_b).unwrap();
+    c = Client::new();
+    c.data("mesh.open", json!({"path":a}));
+    c.data("mesh.open", json!({"path":b}));
+    let history = c.data("history.info", json!({}));
+    assert_eq!(history["position"], 2);
+    assert_eq!(history["steps"], 2);
+    assert_eq!(history["can_undo"], true);
+    assert_eq!(history["can_redo"], false);
+
+    // A changed source refuses a replay without moving the current mesh or cursor.
+    std::fs::write(&a, b"changed source").unwrap();
+    assert_eq!(c.call("history.undo", json!({}))["isError"], true);
+    assert_eq!(
+        c.data("mesh.info", json!({}))["path"],
+        b.to_string_lossy().as_ref()
+    );
+    assert_eq!(c.data("history.info", json!({}))["position"], 2);
+    std::fs::write(&a, &bytes_a).unwrap();
+
+    let undone = c.data("history.undo", json!({}));
+    assert_eq!(undone["mesh"]["path"], a.to_string_lossy().as_ref());
+    assert_eq!(c.data("history.info", json!({}))["position"], 1);
+    let undone = c.data("history.undo", json!({}));
+    assert_eq!(undone["open"], false);
+    assert_eq!(c.call("mesh.info", json!({}))["isError"], true);
+    let redone = c.data("history.redo", json!({}));
+    assert_eq!(redone["mesh"]["path"], a.to_string_lossy().as_ref());
+    let redone = c.data("history.redo", json!({}));
+    assert_eq!(redone["mesh"]["path"], b.to_string_lossy().as_ref());
+
+    c.data("history.undo", json!({}));
+    c.data("mesh.open", json!({"path":a}));
+    let history = c.data("history.info", json!({}));
+    assert_eq!(history["can_redo"], false);
+    assert_eq!(history["steps"], 2);
     std::fs::remove_dir_all(dir).unwrap();
 }
