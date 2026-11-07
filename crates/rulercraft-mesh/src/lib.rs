@@ -2,7 +2,9 @@
 //! RulerCraft's mesh engine: reading meshes, and (to come) fitting and measuring their features.
 //! Behaviour is specified in `docs/specs/`.
 
+pub mod fit;
 pub mod io;
+pub mod math;
 pub mod mesh;
 pub mod stl;
 
