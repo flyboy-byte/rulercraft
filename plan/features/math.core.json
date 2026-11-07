@@ -3,12 +3,15 @@
   "milestone": "R1",
   "title": "Small linear algebra: vectors, 3x3 eigen, covariance, least squares",
   "spec": "math",
-  "status": "in-progress",
+  "status": "verified",
   "depends_on": [
     "repo.skeleton"
   ],
   "owner": "Claude",
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/1",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Nothing for R1; grows when a fit needs more."
 }
