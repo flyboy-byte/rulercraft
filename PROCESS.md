@@ -71,8 +71,11 @@ fmt / clippy / test / plan check: pass (times).
   checked before they are acted on.
 - Logan merges, always with a merge commit (no squash, no rebase of pushed branches). Merge `main` into a
   branch to update it.
-- After a merge, retarget any stacked PR to `main` and regenerate plan files if they conflict (run
-  `tools/plan.py render`, never hand-merge them).
+- After a merge, retarget any stacked PR to `main`. STATUS.md and ROADMAP-PROGRESS.md go stale whenever
+  two PRs merge close together; that is expected. Whoever merges runs `python3 tools/plan.py render`
+  and commits the result with the next change (never hand-merge them).
+- Review weight: CI green, licence headers, no new dependencies or outside names, a skim for anything
+  risky. Then merge. A line-by-line read is not required (Logan, 2026-11-07).
 
 ## Ending a session
 
