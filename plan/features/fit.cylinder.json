@@ -5,7 +5,8 @@
   "spec": "fit-cylinder",
   "status": "specced",
   "depends_on": [
-    "select.region"
+    "math.core",
+    "mesh.graph"
   ],
   "owner": null,
   "pr": null,

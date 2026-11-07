@@ -4,8 +4,12 @@ Rules for every model (Claude, Codex, others) and every contributor. This file o
 other doc here; if another doc disagrees, this one wins and the other gets fixed.
 
 Read first, in order: CONTEXT.md (what this is), this file, PROCESS.md (how work gets done),
-STATUS.md (where things stand), HANDOFF.md (what the last session left). Then the feature file
-in `plan/features/` and its spec in `docs/specs/`.
+docs/architecture.md (where code goes), STATUS.md (where things stand), HANDOFF.md (what the last
+session left). Then the feature file in `plan/features/` and its spec in `docs/specs/`.
+
+There is no original to copy: behaviour comes from `docs/specs/`. When a spec does not settle a
+question, pick the simplest reasonable behaviour, write it into the spec in the same PR, and say so in
+the PR report. Ask Logan only when the choice changes what a user sees in a way he would care about.
 
 ## Independence (DECISIONS.md D-001, D-004)
 

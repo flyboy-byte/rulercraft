@@ -5,7 +5,7 @@
   "spec": "mesh-import",
   "status": "specced",
   "depends_on": [
-    "mesh.graph"
+    "io.stl"
   ],
   "owner": null,
   "pr": null,

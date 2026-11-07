@@ -5,7 +5,8 @@
   "spec": "project-file",
   "status": "planned",
   "depends_on": [
-    "fit.plane"
+    "fit.plane",
+    "select.region"
   ],
   "owner": null,
   "pr": null,

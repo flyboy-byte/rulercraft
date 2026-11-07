@@ -4,15 +4,21 @@ Rewritten (not appended) at the end of every session that leaves work open. Last
 
 ## State
 
-- Repository set up 2026-11-06: docs, plan, plan tool, Rust workspace, fast CI.
-  Setup only: no feature work is claimed or started beyond the STL reader.
-- `rulercraft-mesh` reads ASCII and binary STL (`io.stl`: math and wrong-value checks done;
-  known-design check waits on `corpus.known`).
-- `rulercraft info <file.stl>` prints the summary.
+- Set up 2026-11-06: docs, plan, plan tool, architecture, Rust workspace, fast CI (about 1 minute).
+  Nothing is claimed; no feature work is in progress.
+- Done: `io.stl` (ASCII and binary STL, math and wrong-value checks) and `rulercraft info <file.stl>`.
 
-## Next (when Logan starts work)
+## Starting a session
 
-1. `mesh.graph`, then `select.region` and `fit.plane`.
-2. `corpus.known`: our own designed test parts with known dimensions (committed), plus downloaded models
-   with published dimensions kept in `fixtures/private/`.
-3. `reference.local`: optional local reference numbers (see `local/` on Logan's machine).
+1. Read AGENTS.md, PROCESS.md, docs/architecture.md, then this file.
+2. `gh pr list` and `python3 tools/plan.py next`.
+3. Claim one ready feature with a draft PR, read its spec, write the checks, build it, report.
+
+Ready now, independent of each other: `math.core`, `mesh.graph`, `io.ply`, `io.obj`, `io.3mf`,
+`corpus.known`, `reference.local`. After `math.core`: `fit.plane`, `fit.sphere`. After `mesh.graph`:
+`select.region`, `fit.cylinder` (also needs `math.core`).
+
+## Local only
+
+`local/NOTES.md` (gitignored) on Logan's machine says where local reference tools and the private test
+scan are.

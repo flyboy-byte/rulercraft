@@ -5,10 +5,10 @@
   "spec": "mesh-import",
   "status": "specced",
   "depends_on": [
-    "mesh.graph"
+    "io.stl"
   ],
   "owner": null,
   "pr": null,
   "verified_by": [],
-  "left": "Everything; needs a zip/deflate dependency decision."
+  "left": "Everything; zip/deflate reader is pre-approved (D-006)."
 }

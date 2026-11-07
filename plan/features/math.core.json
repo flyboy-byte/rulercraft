@@ -1,0 +1,14 @@
+{
+  "id": "math.core",
+  "milestone": "R1",
+  "title": "Small linear algebra: vectors, 3x3 eigen, covariance, least squares",
+  "spec": "math",
+  "status": "specced",
+  "depends_on": [
+    "repo.skeleton"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

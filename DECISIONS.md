@@ -56,3 +56,12 @@ model licences out of our distribution.
 
 **Decision.** The repository is flyboy-byte/rulercraft, public from the start. Moving it to tangency-labs
 later is the maintainers' and Logan's call; nothing here depends on it.
+
+## D-006 Default dependencies (2026-11-06)
+
+**Decision.** No dependency by default. Pre-approved when a feature needs them: `serde`/`serde_json`, a
+zip/deflate reader (3MF), the official Rust MCP SDK. Each still needs an MIT/Apache/BSD-style licence,
+checked and stated in the PR. Linear algebra stays in our own small `math/` module for R1.
+
+**Why.** Fresh sessions should not stall asking about obvious choices, and a light dependency tree keeps
+builds and CI fast.

@@ -8,27 +8,28 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 
 | Milestone | Progress | % | Weight | Exit condition |
 | --- | --- | ---: | ---: | --- |
-| R1 Clean meshes: open, fit, measure, over CLI and MCP | `██░░░░░░░░` | 18% | 30 | Logan downloads an STL from a model-sharing site, asks Claude over MCP for its hole diameters and face distances, and they match the design dimensions. |
+| R1 Clean meshes: open, fit, measure, over CLI and MCP | `██░░░░░░░░` | 17% | 30 | Logan downloads an STL from a model-sharing site, asks Claude over MCP for its hole diameters and face distances, and they match the design dimensions. |
 | R2 Mesh to editable CAD through SolidCraft | `░░░░░░░░░░` | 0% | 20 | A simple prismatic downloaded part is rebuilt as a SolidCraft model whose deviation from the STL is under 0.05 mm. |
 | R3 Noisy scans: robust fits, deviation, alignment, thickness | `░░░░░░░░░░` | 0% | 20 | A real scan (a public sample scan or a phone scan) gives stable fits and a deviation report against its CAD. |
 | R4 Reverse-engineering workflows with AI | `░░░░░░░░░░` | 0% | 15 | Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft. |
 | R5 Reusable engine | `░░░░░░░░░░` | 0% | 10 | Another project depends on rulercraft-mesh from crates.io or git and builds in Wasm. |
 | R6 Photos to mesh (research) | `░░░░░░░░░░` | 0% | 5 | A written go/no-go with a prototype on photos of one object. |
 
-## R1: Clean meshes: open, fit, measure, over CLI and MCP (18%)
+## R1: Clean meshes: open, fit, measure, over CLI and MCP (17%)
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
-| `cli.commands` rulercraft CLI: info, fit, measure, save, open | in-progress | - | Claude | `info` (STL) exists; fit, measure, save, open to come with their features. |
+| `cli.commands` rulercraft CLI: info, fit, measure, save, open | specced | - | unclaimed | `info` (STL) exists; fit, measure, save, open to come with their features. |
 | `corpus.known` Test meshes with known design dimensions (our designs committed, downloads local) | planned | - | unclaimed | Design 3-5 test parts with stated dimensions in SolidCraft; export STL; record known answers. |
 | `fit.cylinder` Fit a cylinder to marked vertices | specced | - | unclaimed | Everything. |
 | `fit.plane` Fit a plane to marked vertices (TLS + outlier clipping) | specced | - | unclaimed | Everything. |
 | `fit.sphere` Fit a sphere to marked vertices | specced | - | unclaimed | Everything. |
 | `history.undo` Undo and redo for every command | planned | - | unclaimed | Everything. |
-| `io.3mf` Read 3MF (zip + model XML) | specced | - | unclaimed | Everything; needs a zip/deflate dependency decision. |
+| `io.3mf` Read 3MF (zip + model XML) | specced | - | unclaimed | Everything; zip/deflate reader is pre-approved (D-006). |
 | `io.obj` Read OBJ (geometry only; materials later) | specced | - | unclaimed | Everything. |
 | `io.ply` Read PLY (ASCII, binary LE/BE) | specced | - | unclaimed | Everything. |
 | `io.stl` Read ASCII and binary STL | implemented | math, wrong-value | Claude | Known-design check once corpus.known lands. |
+| `math.core` Small linear algebra: vectors, 3x3 eigen, covariance, least squares | specced | - | unclaimed | Everything. |
 | `mcp.server` MCP server exposing the same commands to Claude | planned | - | unclaimed | Everything. |
 | `measure.relations` Distances and angles between fitted elements | specced | - | unclaimed | Everything. |
 | `mesh.graph` Welded vertices, faces, normals, adjacency, components | specced | - | unclaimed | Everything. |

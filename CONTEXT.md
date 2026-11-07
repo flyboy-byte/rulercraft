@@ -46,6 +46,7 @@ workflows, R5 a reusable engine others can adopt, R6 photos to mesh. See ROADMAP
 | Rules for every model and contributor | AGENTS.md (outranks everything else) |
 | Why decisions were made | DECISIONS.md |
 | How a feature gets done, verification budget | PROCESS.md |
+| Where code goes, patterns, dependencies | docs/architecture.md |
 | Milestones and what is left | ROADMAP.md |
 | Current state | STATUS.md (generated), HANDOFF.md (last session's note) |
 | What each feature must do | docs/specs/ |

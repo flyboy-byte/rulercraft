@@ -5,7 +5,7 @@
   "spec": "fit-sphere",
   "status": "specced",
   "depends_on": [
-    "select.region"
+    "math.core"
   ],
   "owner": null,
   "pr": null,
