@@ -171,3 +171,82 @@ fn measured_values_are_matched_to_round_numbers_with_their_error() {
             && design_guesses(0.01, 0.05).is_empty()
     );
 }
+
+mod symmetry {
+    use rulercraft_mesh::Mesh;
+    use rulercraft_mesh::reverse::symmetry_planes;
+
+    /// A box face as an n x n grid; `u × v` outward.
+    fn face(m: &mut Mesh, o: [f64; 3], u: [f64; 3], v: [f64; 3], n: u32) {
+        let base = m.positions.len() as u32;
+        for i in 0..=n {
+            for j in 0..=n {
+                let (s, t) = (f64::from(i) / f64::from(n), f64::from(j) / f64::from(n));
+                m.positions
+                    .push([0, 1, 2].map(|k| (o[k] + s * u[k] + t * v[k]) as f32));
+            }
+        }
+        for i in 0..n {
+            for j in 0..n {
+                let a = base + i * (n + 1) + j;
+                m.triangles.push([a, a + n + 1, a + n + 2]);
+                m.triangles.push([a, a + n + 2, a + 1]);
+            }
+        }
+    }
+    fn boxy(m: &mut Mesh, lo: [f64; 3], s: [f64; 3], n: u32) {
+        let (x, y, z) = ([s[0], 0., 0.], [0., s[1], 0.], [0., 0., s[2]]);
+        let hi = [lo[0] + s[0], lo[1] + s[1], lo[2] + s[2]];
+        face(m, lo, y, x, n);
+        face(m, [lo[0], lo[1], hi[2]], x, y, n);
+        face(m, lo, z, y, n);
+        face(m, [hi[0], lo[1], lo[2]], y, z, n);
+        face(m, lo, x, z, n);
+        face(m, [lo[0], hi[1], lo[2]], z, x, n);
+    }
+
+    /// A 40 x 20 x 10 plate with a 10 mm cube on top at one end, centred across y.
+    fn part() -> Mesh {
+        let mut m = Mesh::default();
+        boxy(&mut m, [0., 0., 0.], [40., 20., 10.], 8);
+        boxy(&mut m, [0., 5., 10.], [10., 10., 10.], 4);
+        m
+    }
+
+    #[test]
+    fn the_mirror_plane_across_the_width_is_found_and_the_others_are_not() {
+        let r = symmetry_planes(&part(), 0.05).unwrap();
+        assert_eq!(r.len(), 3);
+        let sym: Vec<_> = r.iter().filter(|s| s.symmetric).collect();
+        assert_eq!(sym.len(), 1, "{r:?}");
+        assert!(sym[0].normal[1].abs() > 0.999, "{:?}", sym[0]);
+        assert!((sym[0].center[1] - 10.0).abs() < 1e-5);
+        assert!(
+            r.iter().filter(|s| !s.symmetric).all(|s| s.max > 1.0),
+            "{r:?}"
+        );
+    }
+
+    #[test]
+    fn moving_the_part_leaves_the_verdict_unchanged() {
+        let mut m = part();
+        let (s, c) = 0.6f64.sin_cos();
+        for p in &mut m.positions {
+            let q = p.map(f64::from);
+            *p = [
+                (q[0] * c - q[1] * s + 100.0) as f32,
+                (q[0] * s + q[1] * c - 50.0) as f32,
+                q[2] as f32,
+            ];
+        }
+        let r = symmetry_planes(&m, 0.05).unwrap();
+        assert_eq!(r.iter().filter(|s| s.symmetric).count(), 1, "{r:?}");
+    }
+
+    #[test]
+    fn bad_input_is_refused() {
+        assert!(symmetry_planes(&part(), 0.0).is_err());
+        assert!(symmetry_planes(&part(), f64::NAN).is_err());
+        assert!(symmetry_planes(&Mesh::default(), 0.1).is_err());
+    }
+}

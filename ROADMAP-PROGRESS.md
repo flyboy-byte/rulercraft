@@ -65,7 +65,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
-| `re.features` Reverse-engineering workflows: hole patterns, symmetry, design-intent guesses | implemented | - | claude | Symmetry planes, grid patterns, splitting partial patterns out of a group, and CLI/MCP exposure. |
+| `re.features` Reverse-engineering workflows: hole patterns, symmetry, design-intent guesses | implemented | - | claude | Grid patterns, splitting partial patterns out of a group, and CLI/MCP exposure. |
 
 ## R5: Reusable engine (0%)
 

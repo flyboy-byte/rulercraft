@@ -269,3 +269,68 @@ pub fn design_guesses(measured: f64, tolerance: f64) -> Vec<Guess> {
         })
         .collect()
 }
+
+/// How well a mesh mirrors across one candidate plane.
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize)]
+pub struct Symmetry {
+    /// A point on the plane (the vertex centroid).
+    pub center: Vec3,
+    /// Unit normal (a principal axis of the vertex cloud).
+    pub normal: Vec3,
+    /// RMS distance from the mirrored vertices to the surface, mm.
+    pub rms: f64,
+    /// Largest such distance, mm.
+    pub max: f64,
+    /// Whether the largest distance is within the tolerance.
+    pub symmetric: bool,
+}
+
+/// Tests mirror symmetry across the three planes through the vertex centroid whose normals are the
+/// principal axes of the vertex cloud. Each vertex is reflected through the plane and its distance to the
+/// mesh surface measured; the plane is called a symmetry plane when every one is within `tolerance`.
+/// Limits: only these three candidate planes are tried, and a part whose spreads are nearly equal along
+/// two axes (a cube, a round part) has no well-defined principal axes there, so a true symmetry plane can
+/// be missed. Vertices are sampled, not surface points. Refuses a mesh without triangles, fewer than 4
+/// vertices, and a tolerance that is not a finite number above 0.
+pub fn symmetry_planes(
+    mesh: &crate::Mesh,
+    tolerance: f64,
+) -> Result<Vec<Symmetry>, crate::deviation::DeviationError> {
+    use crate::deviation::{DeviationError, Reference};
+    if !tolerance.is_finite() || tolerance <= 0.0 {
+        return Err(DeviationError(
+            "tolerance must be a finite number above 0".into(),
+        ));
+    }
+    if mesh.positions.len() < 4 {
+        return Err(DeviationError("symmetry needs at least 4 vertices".into()));
+    }
+    let tree = Reference::new(mesh)?;
+    let pts: Vec<Vec3> = mesh.positions.iter().map(|p| p.map(f64::from)).collect();
+    let cov = crate::math::covariance(pts.iter().copied())
+        .ok_or_else(|| DeviationError("no vertices".into()))?;
+    let eig = crate::math::symmetric_eigen3(cov.matrix)
+        .ok_or_else(|| DeviationError("the vertex cloud has no principal axes".into()))?;
+    Ok(eig
+        .vectors
+        .iter()
+        .map(|&n| {
+            let (mut sum2, mut max) = (0.0, 0.0f64);
+            for &p in &pts {
+                let off = dot(sub(p, cov.centroid), n);
+                let mirrored = sub(p, scale(n, 2.0 * off));
+                let (q, _) = tree.closest(mirrored);
+                let d = length(sub(mirrored, q));
+                sum2 += d * d;
+                max = max.max(d);
+            }
+            Symmetry {
+                center: cov.centroid,
+                normal: n,
+                rms: (sum2 / pts.len() as f64).sqrt(),
+                max,
+                symmetric: max <= tolerance,
+            }
+        })
+        .collect())
+}
