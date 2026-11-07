@@ -380,3 +380,39 @@ fn compare_measures_distance_to_a_reference_file_and_reports_patches() {
     let a = c.data("compare", json!({"reference":reference,"align":true}));
     assert!(a["icp"]["rms_after"].as_f64().unwrap() < 1e-6, "{a}");
 }
+
+#[test]
+fn robust_plane_fit_ignores_far_outliers_the_plain_fit_follows() {
+    // A flat 4 x 4 grid at z = 0 (spacing 5) plus three vertices 30 mm above it.
+    let mut p: Vec<[f64; 3]> = (0..16)
+        .map(|i| [f64::from(i % 4) * 5.0, f64::from(i / 4) * 5.0, 0.0])
+        .collect();
+    p.extend([[1.0, 1.0, 30.0], [11.0, 6.0, 30.0], [6.0, 11.0, 30.0]]);
+    let mut t: Vec<[u32; 3]> = vec![];
+    for j in 0..3u32 {
+        for i in 0..3u32 {
+            let a = j * 4 + i;
+            t.extend([[a, a + 1, a + 5], [a, a + 5, a + 4]]);
+        }
+    }
+    t.extend([[16, 17, 18]]);
+    let dir = std::env::temp_dir().join(format!("rulercraft-mcp-rob-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("noisy.ply");
+    std::fs::write(&path, ply(&p, &t)).unwrap();
+    let mut c = Client::new();
+    c.data("mesh.open", json!({"path":path}));
+    let plain = c.data("fit", json!({"kind":"plane","sigma":0}));
+    assert!(plain["fit"]["center"][2].as_f64().unwrap() > 1.0, "{plain}");
+    let robust = c.data("fit", json!({"kind":"plane","robust":true}));
+    assert_eq!(robust["inliers"], 16, "{robust}");
+    assert!(robust["fit"]["center"][2].as_f64().unwrap().abs() < 1e-9);
+    assert_eq!(robust["fit"]["normal"], json!([0., 0., 1.]));
+    let bad = c.call("fit", json!({"kind":"sphere","robust":true}));
+    assert_eq!(bad["isError"], true);
+    let bad = c.call(
+        "fit",
+        json!({"kind":"plane","robust":true,"robust_threshold":0}),
+    );
+    assert_eq!(bad["isError"], true);
+}
