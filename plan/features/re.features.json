@@ -3,14 +3,14 @@
   "milestone": "R4",
   "title": "Reverse-engineering workflows: hole patterns, symmetry, design-intent guesses",
   "spec": "reverse-engineering",
-  "status": "planned",
+  "status": "implemented",
   "depends_on": [
     "cad.solidcraft",
     "segment.planes",
     "segment.cylinders"
   ],
-  "owner": null,
+  "owner": "claude",
   "pr": null,
   "verified_by": [],
-  "left": "Everything."
+  "left": "Symmetry planes, grid patterns, splitting partial patterns out of a group, and CLI/MCP exposure."
 }

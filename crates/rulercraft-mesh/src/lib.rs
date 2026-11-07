@@ -13,6 +13,7 @@ pub mod math;
 pub mod measure;
 pub mod mesh;
 pub mod project;
+pub mod reverse;
 pub mod segment;
 pub mod select;
 pub mod stl;
