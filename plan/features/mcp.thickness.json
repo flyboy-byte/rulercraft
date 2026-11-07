@@ -3,10 +3,17 @@
   "milestone": "R3",
   "title": "Directional wall thickness over MCP",
   "spec": "measure",
-  "status": "in-progress",
-  "depends_on": ["measure.thickness", "mcp.server"],
+  "status": "verified",
+  "depends_on": [
+    "measure.thickness",
+    "mcp.server"
+  ],
   "owner": "Codex",
-  "pr": null,
-  "verified_by": [],
-  "left": "Expose bounded directional wall-thickness samples through MCP."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/53",
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "CLI access and acceleration for dense meshes remain separate work."
 }

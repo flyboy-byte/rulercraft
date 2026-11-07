@@ -14,7 +14,10 @@ use rulercraft_mesh::{
     deviation::{deviation, patches},
     fit::{Clip, RobustOptions, fit_plane_robust},
     graph::MeshGraph,
-    measure::{Element, relate},
+    measure::{
+        Element, relate,
+        thickness::{ThicknessOptions, wall_thickness},
+    },
     read_mesh,
     reverse::{Hole, PatternOptions, design_guesses, hole_patterns, symmetry_planes},
     segment::{join_strips, segment_cylinders, segment_planes},
@@ -26,7 +29,7 @@ use std::{
     io::Read,
     sync::{Arc, Mutex},
 };
-const GUIDE: &str = "Open a local STL, PLY, OBJ or 3MF with mesh.open (file unit defaults to mm; 3MF model units win), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The reverse tool returns a CAD recipe, hole patterns and symmetry for the open mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
+const GUIDE: &str = "Open a local STL, PLY, OBJ or 3MF with mesh.open (file unit defaults to mm; 3MF model units win), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The reverse tool returns a CAD recipe, hole patterns and symmetry for the open mesh. The thickness tool measures inward normal rays on a consistently wound mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
 #[derive(Debug, Clone, Copy, Hash, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 enum FileUnit {
@@ -108,6 +111,18 @@ struct SelectArgs {
     offset: Option<usize>,
     /// Page size, default 256 and maximum 1024.
     limit: Option<usize>,
+}
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct ThicknessArgs {
+    /// Combined vertex filters; omitted means all vertices.
+    selection: Option<Filters>,
+    /// First selected vertex offset, default 0.
+    offset: Option<usize>,
+    /// Samples per page, default 256 and maximum 1024.
+    limit: Option<usize>,
+    /// Maximum ray distance in mm; may lower the default of 1,000,000.
+    max_distance: Option<f64>,
 }
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
@@ -539,6 +554,42 @@ impl MeshServer {
         self.with_mesh(|m|{let request=args.selection.as_ref().map(Filters::selection).unwrap_or_default();let ids=commands::select(&m.mesh,&m.graph,&request).map_err(|e|e.to_string())?;
             let limit=args.limit.unwrap_or(256);if limit>1024 {return Err("selection page limit must be at most 1024".into());}let offset=args.offset.unwrap_or(0);let page:Vec<_>=ids.iter().skip(offset).take(limit).copied().collect();
             Ok(json!({"total":ids.len(),"offset":offset,"returned":page.len(),"truncated":offset.saturating_add(page.len())<ids.len(),"indices":page}))})
+    }
+    #[tool(
+        description = "Measure directional wall thickness along inward vertex normals, returning a bounded page. Requires consistently outward mesh winding."
+    )]
+    fn thickness(&self, Parameters(args): Parameters<ThicknessArgs>) -> CallToolResult {
+        self.with_mesh(|m| {
+            let limit = args.limit.unwrap_or(256);
+            if limit > 1024 {
+                return Err("thickness page limit must be at most 1024".into());
+            }
+            let request = args
+                .selection
+                .as_ref()
+                .map(Filters::selection)
+                .unwrap_or_default();
+            let ids = commands::select(&m.mesh, &m.graph, &request).map_err(|e| e.to_string())?;
+            let offset = args.offset.unwrap_or(0);
+            let page: Vec<_> = ids.iter().skip(offset).take(limit).copied().collect();
+            let mut options = ThicknessOptions::default();
+            if let Some(max_distance) = args.max_distance {
+                if !max_distance.is_finite() || max_distance > options.max_distance {
+                    return Err("max_distance must be finite and at most 1000000 mm".into());
+                }
+                options.max_distance = max_distance;
+            }
+            let samples = wall_thickness(&m.mesh, &m.graph.vertex_normals, &page, options)
+                .map_err(|e| e.to_string())?;
+            let samples: Vec<_> = samples
+                .iter()
+                .map(|s| json!({"vertex":s.vertex,"distance":s.distance}))
+                .collect();
+            Ok(
+                json!({"total":ids.len(),"offset":offset,"returned":page.len(),
+                "truncated":offset.saturating_add(page.len())<ids.len(),"samples":samples}),
+            )
+        })
     }
     #[tool(
         description = "Fit a plane, sphere or cylinder to selected vertices, returning compact dimensions, pose and residual statistics in mm/degrees."

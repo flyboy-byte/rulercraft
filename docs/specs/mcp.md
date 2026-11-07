@@ -53,3 +53,12 @@ returns: `recipe` (the CAD build steps of mesh-to-cad.md, planes named `plane0..
 cylinder diameter, round numbers within 0.05 mm with the error), and `symmetry` (the three principal-axis
 mirror planes with RMS and largest distance, tolerance 0.05 mm; skipped above 200000 vertices). Everything
 is a guess with its evidence attached; the agent checks it before building. Nothing is stored.
+
+## Wall thickness (2026-11-07)
+
+`thickness` measures inward rays from selected vertices using the open mesh's outward vertex normals.
+It accepts the existing `selection` filters, `offset`, `limit` and an optional `max_distance` in mm.
+Pages default to 256 samples and allow at most 1024; the engine's triangle-test cap still applies.
+It reports total, offset, returned, truncated and samples with vertex ids and nullable distances.
+This is directional thickness and requires consistent outward winding; sharp corners can give oblique
+rays and open surfaces can have no opposite hit. It does not alter the open mesh.

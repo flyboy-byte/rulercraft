@@ -34,8 +34,12 @@ normal count, or invalid selected normal refuses with the vertex/triangle contex
 succeeds with no samples. Triangle barycentric coordinates allow 1e-12 edge roundoff; directions with
 normal cosine <=1e-12 are parallel or not outward-facing and are ignored.
 
-This feature adds the bounded engine API only. CLI/MCP thickness tools and acceleration for dense
-scans are later front-end/performance work. Large queries refuse rather than quietly subsampling.
+MCP `thickness` selects vertices with the existing filters and returns a page of directional samples.
+The selected indices are sorted; `offset` defaults to 0 and `limit` defaults to 256, maximum 1024.
+Results contain `total`, `offset`, `returned`, `truncated` and `samples` (vertex id and distance, or
+null when there is no hit). The page is checked against the engine's 5 million triangle-test limit.
+`max_distance` may lower the engine default of 1,000,000 mm; invalid limits and selections are refused.
+The mesh is unchanged. CLI exposure and acceleration for dense scans remain separate work.
 
 Axis-axis distances use the closest points on infinite lines, including small genuine tilts.
 For unit axes with cross-product magnitude <=1e-12, floating-point directional roundoff is treated
