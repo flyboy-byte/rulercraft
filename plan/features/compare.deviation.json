@@ -3,12 +3,15 @@
   "milestone": "R3",
   "title": "Mesh-to-mesh deviation map and statistics",
   "spec": "deviation",
-  "status": "planned",
+  "status": "verified",
   "depends_on": [
     "mesh.graph"
   ],
   "owner": "claude",
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/41",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Patches of connected out-of-tolerance vertices, and CLI/MCP exposure."
 }

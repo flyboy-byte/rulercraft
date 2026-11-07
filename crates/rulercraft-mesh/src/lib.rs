@@ -4,6 +4,7 @@
 
 pub mod cad;
 pub mod commands;
+pub mod deviation;
 pub mod fit;
 pub mod graph;
 pub mod io;
