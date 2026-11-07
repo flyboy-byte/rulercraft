@@ -44,3 +44,12 @@ unreadable reference is a tool error; the open mesh is untouched.
 0.1, must be above 0). The plane is then taken from the largest set of selected vertices agreeing with a
 random three-point plane (see fit-plane.md) and fitted without clipping; the result adds `robust: true`
 and `inliers`. Normal orientation uses the no-normals convention.
+
+## reverse (2026-11-07)
+
+`reverse()` runs the automatic plane and cylinder segmentation on the open mesh (largest 50 of each) and
+returns: `recipe` (the CAD build steps of mesh-to-cad.md, planes named `plane0..`, cylinders `cylinder0..`),
+`hole_patterns` (lines and bolt circles of equal parallel cylinders), `design_value_guesses` (for each
+cylinder diameter, round numbers within 0.05 mm with the error), and `symmetry` (the three principal-axis
+mirror planes with RMS and largest distance, tolerance 0.05 mm; skipped above 200000 vertices). Everything
+is a guess with its evidence attached; the agent checks it before building. Nothing is stored.
