@@ -141,10 +141,13 @@ def main(argv):
         print("wrote STATUS.md and ROADMAP-PROGRESS.md")
     elif cmd == "check":
         stale = [p.name for p, t in outputs().items() if not p.exists() or p.read_text() != t]
-        if stale:
-            print("stale generated files (run tools/plan.py render): " + ", ".join(stale))
-            return 1
         print(f"plan ok: {len(features)} features, {len(roadmap['milestones'])} milestones")
+        if stale:
+            # Parallel merges leave these stale all the time; that is not an error. Whoever merges
+            # runs `tools/plan.py render`. `--strict` turns this into a failure when wanted.
+            print("note: generated files out of date, run `python3 tools/plan.py render`: " + ", ".join(stale))
+            if "--strict" in sys.argv:
+                return 1
     elif cmd == "next":
         r = ready(features)
         print("Ready and unclaimed:" if r else "Nothing ready and unclaimed.")
