@@ -42,7 +42,10 @@ to each other directly. Everything they need to know is in the repo:
 
 - **Claims are draft PRs.** Before starting, `python3 tools/plan.py next`: it lists ready features and
   every claim, including open PRs whose title starts with a feature id (a claim lives on its branch
-  until it merges, so main's feature files alone cannot show it). Open the draft PR first, then code. Claim a
+  until it merges, so main's feature files alone cannot show it). Open the draft PR first, then code.
+  Run `next` again **immediately** before opening your claim, not earlier in the session: a claim
+  checked even a minute ago may be stale. If someone's lower-numbered PR claims the same feature, theirs
+  wins: stop and say so in your PR, even if you are further along. Claim a
   feature by opening a draft PR titled with its id (`fit.cylinder: ...`) and setting `owner` and
   `pr` in its `plan/features/<id>.json`. Lowest PR number wins a tie. One feature per PR.
 - **Hot files** (`.github/workflows/`, `Cargo.toml` at the root, `tools/plan.py`, `plan/roadmap.json`)
