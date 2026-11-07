@@ -3,12 +3,15 @@
   "milestone": "R1",
   "title": "Welded vertices, faces, normals, adjacency, components",
   "spec": "mesh-model",
-  "status": "specced",
+  "status": "verified",
   "depends_on": [
     "io.stl"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "owner": "Claude",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/7",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Nothing for R1."
 }

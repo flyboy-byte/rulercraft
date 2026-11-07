@@ -3,6 +3,7 @@
 //! Behaviour is specified in `docs/specs/`.
 
 pub mod fit;
+pub mod graph;
 pub mod io;
 pub mod math;
 pub mod mesh;
