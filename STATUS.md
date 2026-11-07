@@ -7,15 +7,15 @@ Overall roadmap progress: **12%** (details in ROADMAP-PROGRESS.md).
 | Status | Features |
 | --- | ---: |
 | planned | 15 |
-| specced | 5 |
-| in-progress | 0 |
+| specced | 4 |
+| in-progress | 1 |
 | implemented | 2 |
 | verified | 6 |
 | done | 0 |
 
 ## In progress
 
-- none
+- `select.region` (Claude): Everything.
 
 ## Ready to claim
 
@@ -26,4 +26,3 @@ Overall roadmap progress: **12%** (details in ROADMAP-PROGRESS.md).
 - `io.3mf` (R1): Read 3MF (zip + model XML)
 - `measure.thickness` (R3): Wall thickness
 - `reference.local` (R1): Optional local reference numbers from another program (gitignored)
-- `select.region` (R1): Pick vertices by box, near-point and facing direction
