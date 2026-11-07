@@ -1,8 +1,9 @@
 # Handoff
 
-Last updated 2026-11-07, Codex. Current main was `5166f05` when PR #42 was opened; #42 contains the
-segmentation CLI/MCP front end and is being readied for review. PRs #38 (`history.undo` verification),
-#39 (`math.range`) and #40 (`cad.solidcraft`) are merged.
+Last updated 2026-11-07, Codex. Main was `5166f05` when PR #42 was opened. Check #42's current
+GitHub state first; its verified segmentation CLI/MCP front end is the last item authorized in the
+current work order. PRs #38 (`history.undo` verification), #39 (`math.range`) and #40 (`cad.solidcraft`)
+are merged.
 
 - This session verified #34's owed history wrong-value run in #38. Changing the undo cursor decrement to
   a no-op made the stdio check fail; #38 records `history.undo` as verified.
@@ -18,4 +19,6 @@ segmentation CLI/MCP front end and is being readied for review. PRs #38 (`histor
   run changed CLI default to planes and the CLI test failed; the source was restored.
 - R1 still needs Logan's published-dimension exit run and a decision on clipping (`docs/findings/2026-11-07-clipping-on-real-scans.md`). The requested work for this session ends at segmentation front ends. Do not start the next roadmap feature without a new instruction.
 
-Current branch: `codex/segment-frontends`, PR #42. After merge, `python3 tools/plan.py next` will show the next available feature; stop there unless Logan authorizes more work.
+Work branch: `codex/segment-frontends`, PR #42. If #42 is still open, its checks/report are the next
+review step. Once merged, fetch main and run `python3 tools/plan.py next`; stop at that listing unless
+Logan authorizes more work.
