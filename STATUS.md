@@ -19,12 +19,12 @@ Overall roadmap progress: **19%** (details in ROADMAP-PROGRESS.md).
 
 ## Ready to claim
 
+- `cad.solidcraft` (R2): Rebuild fitted features as a SolidCraft model over its MCP
 - `compare.deviation` (R3): Mesh-to-mesh deviation map and statistics
 - `corpus.known` (R1): Test meshes with known design dimensions (our designs committed, downloads local)
 - `engine.library` (R5): Stable library API, docs, crates.io, Wasm build
 - `fit.robust` (R3): Robust fits on noisy scans (RANSAC seeding, noise estimation)
 - `io.3mf` (R1): Read 3MF (zip + model XML)
-- `mcp.server` (R1): MCP server exposing the same commands to Claude
 - `measure.thickness` (R3): Wall thickness
 - `project.file` (R1): Save and reopen a RulerCraft project (own JSON format)
 - `reference.local` (R1): Optional local reference numbers from another program (gitignored)

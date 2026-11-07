@@ -30,7 +30,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `io.ply` Read PLY (ASCII, binary LE/BE) | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/2 | Ready for Logan review. Known-design corpus check awaits corpus.known. |
 | `io.stl` Read ASCII and binary STL | implemented | math, wrong-value | Claude | Known-design check once corpus.known lands. |
 | `math.core` Small linear algebra: vectors, 3x3 eigen, covariance, least squares | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/1 | Nothing for R1; grows when a fit needs more. |
-| `mcp.server` MCP server exposing the same commands to Claude | planned | - | unclaimed | Everything. |
+| `mcp.server` MCP server exposing the same commands to Claude | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/18 | Ready for Logan review. Local stdio integration passes; real-client and real-scan runs remain for the checkpoint. |
 | `measure.relations` Distances and angles between fitted elements | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/16 | Exposed over MCP with mcp.server; known-design check with corpus.known. |
 | `mesh.graph` Welded vertices, faces, normals, adjacency, components | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/7 | Nothing for R1. |
 | `project.file` Save and reopen a RulerCraft project (own JSON format) | planned | - | unclaimed | Everything. |
