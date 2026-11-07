@@ -1,0 +1,77 @@
+{
+  "license": "MIT OR Apache-2.0",
+  "unit": "mm",
+  "tolerance_mm": 1e-05,
+  "tolerance_reason": "f32 coordinate quantization below 4e-6 mm plus solver roundoff; fixed before measurement",
+  "bounds": [
+    [
+      -10,
+      -10,
+      0
+    ],
+    [
+      10,
+      10,
+      20
+    ]
+  ],
+  "fits": [
+    {
+      "id": "lower",
+      "kind": "cylinder",
+      "box": [
+        [
+          -11,
+          -11,
+          1
+        ],
+        [
+          11,
+          11,
+          9
+        ]
+      ],
+      "near": null,
+      "expected": {
+        "radius": 10,
+        "diameter": 20,
+        "length": 6,
+        "axis_point.0": 0,
+        "axis_point.1": 0,
+        "axis_point.2": 5
+      }
+    },
+    {
+      "id": "upper",
+      "kind": "cylinder",
+      "box": [
+        [
+          -7,
+          -7,
+          11
+        ],
+        [
+          7,
+          7,
+          19
+        ]
+      ],
+      "near": null,
+      "expected": {
+        "radius": 6,
+        "diameter": 12,
+        "length": 6,
+        "axis_point.0": 0,
+        "axis_point.1": 0,
+        "axis_point.2": 15
+      }
+    }
+  ],
+  "relations": [
+    {
+      "first": "lower",
+      "second": "upper",
+      "distance": 0
+    }
+  ]
+}
