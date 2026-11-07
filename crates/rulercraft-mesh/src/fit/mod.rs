@@ -3,10 +3,12 @@
 
 pub mod cylinder;
 pub mod plane;
+pub mod robust;
 pub mod sphere;
 
 pub use cylinder::{CylinderFit, CylinderLimits, CylinderOptions, fit_cylinder};
 pub use plane::{Clip, FitError, PlaneFit, fit_plane};
+pub use robust::{RobustOptions, RobustPlane, fit_plane_robust};
 pub use sphere::{SphereFit, fit_sphere};
 
 use crate::math::Vec3;
