@@ -9,7 +9,7 @@ use rmcp::{
 use rulercraft_mesh::{
     ImportLimits, Mesh, Unit,
     align::{IcpOptions, Rigid, align_icp},
-    cad::recipe,
+    cad::{check, recipe},
     commands::{self, FitKind, FitRequest, Fitted, Selection},
     deviation::{deviation, patches},
     fit::{Clip, RobustOptions, fit_plane_robust},
@@ -301,6 +301,10 @@ impl Loaded {
             "planes_found": planes.regions.len(),
             "cylinders_found": cyls.regions.len(),
             "recipe": recipe(&named_planes, &named_cyls),
+            "recipe_check": match check(&self.mesh, &named_planes, &named_cyls, 0.1) {
+                Ok(c) => json!({"tolerance":0.1,"explained_fraction":c.explained_fraction,"rms":c.rms,"max":c.max,"unexplained_count":c.unexplained.len(),"first_unexplained":c.unexplained.iter().take(20).collect::<Vec<_>>(),"per_feature":c.per_feature}),
+                Err(e) => json!({"unavailable": e.to_string()}),
+            },
             "hole_patterns": hole_patterns(&holes, PatternOptions::default()),
             "design_value_guesses": guesses,
             "symmetry": symmetry,

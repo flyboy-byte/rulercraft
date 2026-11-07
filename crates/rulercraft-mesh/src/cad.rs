@@ -122,3 +122,105 @@ pub fn recipe(planes: &[Named<PlaneFit>], cylinders: &[Named<CylinderFit>]) -> R
     }
     Recipe { steps }
 }
+
+/// How well fitted planes and cylinders explain a mesh.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+pub struct CheckReport {
+    /// Vertices checked.
+    pub vertices: usize,
+    /// Vertices within the tolerance of some feature.
+    pub explained: usize,
+    /// `explained / vertices` (1 for an empty mesh).
+    pub explained_fraction: f64,
+    /// RMS distance of the explained vertices to their nearest feature, mm.
+    pub rms: f64,
+    /// Largest distance among the explained vertices, mm.
+    pub max: f64,
+    /// Ids of vertices no feature explains, ascending.
+    pub unexplained: Vec<u32>,
+    /// Explained vertices per feature (each counted for its nearest feature), in input order,
+    /// planes first.
+    pub per_feature: Vec<(String, usize)>,
+}
+
+/// Checks the recipe's features against the mesh: each vertex is matched to the nearest feature it lies on
+/// and the distance recorded. A plane covers vertices within a span of its centre across the plane; a
+/// cylinder covers vertices within its measured length (plus its display extensions) along its axis. A
+/// vertex further than `tolerance` from every feature is unexplained. This is a coverage check on the
+/// fitted primitives, not a comparison with a solid built in a CAD program (that is the SolidCore
+/// projection still to come). Refuses a tolerance that is not finite and above 0.
+pub fn check(
+    mesh: &crate::Mesh,
+    planes: &[Named<PlaneFit>],
+    cylinders: &[Named<CylinderFit>],
+    tolerance: f64,
+) -> Result<CheckReport, crate::deviation::DeviationError> {
+    use crate::math::{length, scale};
+    if !tolerance.is_finite() || tolerance <= 0.0 {
+        return Err(crate::deviation::DeviationError(
+            "tolerance must be a finite number above 0".into(),
+        ));
+    }
+    let mut per = vec![0usize; planes.len() + cylinders.len()];
+    let (mut sum2, mut max, mut explained) = (0.0, 0.0f64, 0usize);
+    let mut unexplained = vec![];
+    for (id, p) in mesh.positions.iter().enumerate() {
+        let p = p.map(f64::from);
+        let mut best: Option<(usize, f64)> = None;
+        for (k, (_, f)) in planes.iter().enumerate() {
+            let d = sub(p, f.center);
+            let (u, v) = (dot(d, f.basis_u).abs(), dot(d, f.basis_v).abs());
+            let off = dot(d, f.normal).abs();
+            if u <= f.span_u + tolerance
+                && v <= f.span_v + tolerance
+                && best.is_none_or(|b| off < b.1)
+            {
+                best = Some((k, off));
+            }
+        }
+        for (k, (_, c)) in cylinders.iter().enumerate() {
+            let d = sub(p, c.axis_point);
+            let along = dot(d, c.axis);
+            let reach = c.length / 2.0 + c.extend_before.max(c.extend_after) + tolerance;
+            if along.abs() > reach {
+                continue;
+            }
+            let off = (length(sub(d, scale(c.axis, along))) - c.radius).abs();
+            if best.is_none_or(|b| off < b.1) {
+                best = Some((planes.len() + k, off));
+            }
+        }
+        match best {
+            Some((k, off)) if off <= tolerance => {
+                explained += 1;
+                per[k] += 1;
+                sum2 += off * off;
+                max = max.max(off);
+            }
+            _ => unexplained.push(id as u32),
+        }
+    }
+    let n = mesh.positions.len();
+    Ok(CheckReport {
+        vertices: n,
+        explained,
+        explained_fraction: if n == 0 {
+            1.0
+        } else {
+            explained as f64 / n as f64
+        },
+        rms: if explained == 0 {
+            0.0
+        } else {
+            (sum2 / explained as f64).sqrt()
+        },
+        max,
+        unexplained,
+        per_feature: planes
+            .iter()
+            .map(|(n, _)| n.clone())
+            .chain(cylinders.iter().map(|(n, _)| n.clone()))
+            .zip(per)
+            .collect(),
+    })
+}

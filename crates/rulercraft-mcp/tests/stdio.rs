@@ -441,6 +441,9 @@ fn reverse_returns_a_recipe_guesses_and_symmetry_for_known_shapes() {
     );
     assert_eq!(steps.iter().filter(|s| s["step"] == "unplaced").count(), 4);
     assert_eq!(r["symmetry"].as_array().unwrap().len(), 3);
+    // Every cube vertex lies on three of the six faces the recipe was built from.
+    assert_eq!(r["recipe_check"]["explained_fraction"], 1.0, "{r}");
+    assert_eq!(r["recipe_check"]["unexplained_count"], 0);
     c.data("mesh.open", json!({"path":tube_path}));
     let r = c.data("reverse", json!({}));
     assert_eq!(r["cylinders_found"], 1, "{r}");
