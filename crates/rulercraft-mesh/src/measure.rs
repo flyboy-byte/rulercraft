@@ -2,6 +2,8 @@
 //! Distances and angles between fitted elements (docs/specs/measure.md). Lengths in mm, angles in
 //! degrees, every result saying which convention it used.
 
+pub mod thickness;
+
 use crate::fit::{CylinderFit, PlaneFit, SphereFit};
 use crate::math::{Vec3, angle_between, cross, dot, length, normalize, sub};
 
