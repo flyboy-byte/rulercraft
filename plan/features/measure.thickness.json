@@ -3,12 +3,16 @@
   "milestone": "R3",
   "title": "Wall thickness",
   "spec": "measure",
-  "status": "planned",
+  "status": "verified",
   "depends_on": [
     "mesh.graph"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/31",
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Engine normal-ray API complete; dense-query acceleration and CLI/MCP exposure remain later work."
 }
