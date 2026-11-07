@@ -19,6 +19,8 @@ persistent history.
 Engine: `rulercraft_mesh::commands` (`Selection`, `FitRequest`, `select`, `fit`), shared by the CLI and
 the MCP server. Selection filters (box, near, facing) all apply; none means the whole mesh.
 
-CLI (2026-11-07): `rulercraft info <mesh>` prints the import summary; `rulercraft fit <plane|sphere>
+CLI (2026-11-07): `rulercraft info <mesh>` prints the import summary; `rulercraft fit <plane|sphere|cylinder>
 <mesh> [--units] [--box] [--near] [--facing --within] [--sigma] [--known-diameter]` prints
-`{mesh, selected, fit}` as JSON. Errors go to stderr with exit code 2 and nothing on stdout.
+`{mesh, selected, fit}` as JSON. `rulercraft segment <mesh> [--kind planes|cylinders|strips] [--units]`
+prints compact segmentation summaries and defaults to cylinder regions for scan meshes. Errors go to
+stderr with exit code 2 and nothing on stdout.

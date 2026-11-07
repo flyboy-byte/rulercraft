@@ -26,5 +26,5 @@ built-in guide tells the agent the usual flow: open, inspect, segment or select,
   engine relation function. Returns both fitted summaries, distance/components/angle_deg and the
   engine's convention. No fit or selection is persisted; only mesh.open changes process state.
 - Tool execution failures are MCP tool errors with an actionable text message; invalid schemas or
-  unknown tools use SDK protocol errors. Errors do not terminate the server. Saving, history,
-  segmentation, arbitrary explicit vertex lists and network transports are outside this feature.
+  unknown tools use SDK protocol errors. Errors do not terminate the server. Saving, arbitrary explicit
+  vertex lists and network transports are outside this feature.

@@ -133,6 +133,28 @@ fn cube() -> String {
     }
     ply(&p, &t)
 }
+fn tube(sides: usize) -> String {
+    let mut positions = Vec::new();
+    for row in 0..=4 {
+        let y = 15.0 * row as f64 / 4.0;
+        for i in 0..sides {
+            let angle = std::f64::consts::TAU * i as f64 / sides as f64;
+            positions.push([3.0 + 6.0 * angle.cos(), y, -2.0 + 6.0 * angle.sin()]);
+        }
+    }
+    let mut faces = Vec::new();
+    for row in 0..4 {
+        for i in 0..sides {
+            let a = (row * sides + i) as u32;
+            let b = (row * sides + (i + 1) % sides) as u32;
+            let c = b + sides as u32;
+            let d = a + sides as u32;
+            faces.extend([[a, b, c], [a, c, d]]);
+        }
+    }
+    ply(&positions, &faces)
+}
+
 #[test]
 fn stdio_tools_schemas_geometry_and_failure_state() {
     let dir = std::env::temp_dir().join(format!("rulercraft-mcp-{}", std::process::id()));
@@ -148,6 +170,7 @@ fn stdio_tools_schemas_geometry_and_failure_state() {
         "select",
         "fit",
         "measure",
+        "segment",
         "history.info",
         "history.undo",
         "history.redo",
@@ -177,6 +200,18 @@ fn stdio_tools_schemas_geometry_and_failure_state() {
     let m=c.data("measure",json!({"first":{"kind":"plane","selection":bottom},"second":{"kind":"plane","selection":top}}));
     assert_eq!(m["relation"]["distance"], 20.);
     assert_eq!(m["relation"]["angle_deg"], 0.);
+    let segmented = c.data("segment", json!({}));
+    assert_eq!(segmented["kind"], "cylinders");
+    assert_eq!(segmented["regions"].as_array().unwrap().len(), 0);
+    assert_eq!(segmented["unassigned"], 12);
+    let segmented = c.data("segment", json!({"kind":"planes"}));
+    assert_eq!(segmented["regions"].as_array().unwrap().len(), 6);
+    let segmented = c.data("segment", json!({"kind":"strips"}));
+    assert_eq!(segmented["regions"].as_array().unwrap().len(), 0);
+    assert_eq!(
+        c.call("segment", json!({"kind":"unknown"}))["isError"],
+        true
+    );
     assert_eq!(
         c.call("mesh.open", json!({"path":dir.join("missing.stl")}))["isError"],
         true
@@ -248,6 +283,18 @@ fn stdio_tools_schemas_geometry_and_failure_state() {
     assert!((s["fit"]["radius"].as_f64().unwrap() - 10.).abs() < 1e-5);
     assert!((s["fit"]["length"].as_f64().unwrap() - 40.).abs() < 1e-5);
 
+    let fine_tube = dir.join("fine-tube.ply");
+    std::fs::write(&fine_tube, tube(32)).unwrap();
+    c.data("mesh.open", json!({"path":fine_tube}));
+    let segmented = c.data("segment", json!({}));
+    assert_eq!(segmented["regions"].as_array().unwrap().len(), 1);
+    assert!((segmented["regions"][0]["fit"]["radius"].as_f64().unwrap() - 6.0).abs() < 1e-4);
+    let coarse_tube = dir.join("coarse-tube.ply");
+    std::fs::write(&coarse_tube, tube(12)).unwrap();
+    c.data("mesh.open", json!({"path":coarse_tube}));
+    let segmented = c.data("segment", json!({"kind":"strips"}));
+    assert_eq!(segmented["regions"].as_array().unwrap().len(), 1);
+    assert_eq!(segmented["regions"][0]["strip_count"], 12);
     let a = dir.join("history-a.ply");
     let b = dir.join("history-b.ply");
     let bytes_a = cube().into_bytes();

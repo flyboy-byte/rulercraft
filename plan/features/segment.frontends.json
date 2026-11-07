@@ -1,0 +1,19 @@
+{
+  "id": "segment.frontends",
+  "milestone": "R1",
+  "title": "Expose mesh segmentation in the CLI and MCP",
+  "spec": "segmentation",
+  "status": "verified",
+  "depends_on": [
+    "segment.planes",
+    "segment.cylinders",
+    "segment.strips"
+  ],
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/42",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": ""
+}
