@@ -3,12 +3,16 @@
   "milestone": "R1",
   "title": "Test meshes with known design dimensions (our designs committed, downloads local)",
   "spec": "test-corpus",
-  "status": "planned",
+  "status": "verified",
   "depends_on": [
     "repo.skeleton"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Design 3-5 test parts with stated dimensions in SolidCraft; export STL; record known answers."
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/26",
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Four designed parts verified through imports, fits and relations. Printed/caliper and downloaded-part exit checks remain."
 }

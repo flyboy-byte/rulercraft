@@ -20,7 +20,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
 | `cli.commands` rulercraft CLI: info, fit, measure, save, open | implemented | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/14 | fit cylinder, measure, save/open join the command layer and CLI as those features land. |
-| `corpus.known` Test meshes with known design dimensions (our designs committed, downloads local) | planned | - | unclaimed | Design 3-5 test parts with stated dimensions in SolidCraft; export STL; record known answers. |
+| `corpus.known` Test meshes with known design dimensions (our designs committed, downloads local) | verified | math, known-design, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/26 | Four designed parts verified through imports, fits and relations. Printed/caliper and downloaded-part exit checks remain. |
 | `fit.cylinder` Fit a cylinder to marked vertices | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/10 | Ready for Logan review. Known-design corpus and large real meshes not yet checked. |
 | `fit.plane` Fit a plane to marked vertices (TLS + outlier clipping) | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/3 | Known-design check once corpus.known lands; CLI/MCP once cli.commands grows. |
 | `fit.sphere` Fit a sphere to marked vertices | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/4 | Known-design check once corpus.known lands; far-off strays need fit.robust (R3). |
