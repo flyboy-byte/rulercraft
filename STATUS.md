@@ -19,7 +19,6 @@ Overall roadmap progress: **47%** (details in ROADMAP-PROGRESS.md).
 
 ## Ready to claim
 
-- `align.icp` (R3): Align a scan to a reference (datums, ICP)
 - `cad.check` (R2): Deviation of the mesh from the rebuilt CAD (via SolidCore projection)
 - `engine.library` (R5): Stable library API, docs, crates.io, Wasm build
 - `re.features` (R4): Reverse-engineering workflows: hole patterns, symmetry, design-intent guesses

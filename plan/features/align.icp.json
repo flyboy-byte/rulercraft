@@ -7,7 +7,7 @@
   "depends_on": [
     "compare.deviation"
   ],
-  "owner": null,
+  "owner": "claude",
   "pr": null,
   "verified_by": [],
   "left": "Everything."
