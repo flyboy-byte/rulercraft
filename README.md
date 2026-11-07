@@ -32,6 +32,7 @@ cargo run -p rulercraft-cli -- info part.stl
 | --- | --- |
 | [CONTEXT.md](CONTEXT.md) | What this is and is not, direction |
 | [ROADMAP.md](ROADMAP.md) | Milestones R1-R6 and what each one lets you do |
+| [docs/implementation-plan.md](docs/implementation-plan.md) | Build order, parallel lanes, what each PR contains |
 | [PROCESS.md](PROCESS.md) | How a feature gets done and proven |
 | [AGENTS.md](AGENTS.md) | Rules for AI agents and contributors |
 | [CONTRIBUTING.md](CONTRIBUTING.md) | For people who want to help, including with their own AI agent |
