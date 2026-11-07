@@ -1,0 +1,271 @@
+// SPDX-License-Identifier: MIT OR Apache-2.0
+//! Reverse-engineering guesses (docs/specs/reverse-engineering.md): hole patterns and design values.
+//! Every guess carries the evidence for it so a person can accept or edit it. Lengths in mm.
+use crate::math::{
+    Vec3, add, angle_between, cross, dot, length, normalize, scale, solve_dense, sub,
+};
+
+/// A round hole or boss as the pattern finder sees it.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Hole {
+    /// Name of the fitted cylinder.
+    pub name: String,
+    /// A point on the axis.
+    pub point: Vec3,
+    /// Unit axis.
+    pub axis: Vec3,
+    /// Diameter.
+    pub diameter: f64,
+}
+
+/// Limits for [`hole_patterns`].
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct PatternOptions {
+    /// Diameters closer than this count as equal, mm.
+    pub diameter_tolerance: f64,
+    /// Axes closer than this count as parallel, degrees.
+    pub axis_tolerance_deg: f64,
+    /// A hole is on a line or circle when within this distance of it, mm.
+    pub position_tolerance: f64,
+    /// Spacings along a row closer than this count as equal, mm.
+    pub spacing_tolerance: f64,
+    /// Angular steps closer than this count as equal, degrees.
+    pub spacing_deg: f64,
+}
+impl Default for PatternOptions {
+    fn default() -> Self {
+        Self {
+            diameter_tolerance: 0.05,
+            axis_tolerance_deg: 2.0,
+            position_tolerance: 0.1,
+            spacing_tolerance: 0.1,
+            spacing_deg: 1.0,
+        }
+    }
+}
+
+/// A pattern of equal, parallel holes.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+#[serde(tag = "pattern", rename_all = "snake_case")]
+pub enum Pattern {
+    /// Holes in a row.
+    Line {
+        /// Member names in order along the row.
+        members: Vec<String>,
+        /// Common diameter (mean), mm.
+        diameter: f64,
+        /// Mean distance between neighbours, mm.
+        spacing: f64,
+        /// Whether every gap is within the spacing tolerance of the mean.
+        equal_spacing: bool,
+        /// Largest distance of any hole from the row, mm.
+        worst_offset: f64,
+    },
+    /// Holes on a circle.
+    Circle {
+        /// Member names in order around the circle.
+        members: Vec<String>,
+        /// Common diameter (mean), mm.
+        diameter: f64,
+        /// Circle centre.
+        center: Vec3,
+        /// Circle radius, mm.
+        radius: f64,
+        /// Smallest angle between neighbours, degrees.
+        step_deg: f64,
+        /// Largest distance of any hole from the circle, mm.
+        worst_offset: f64,
+    },
+}
+
+fn parallel(a: Vec3, b: Vec3, limit_deg: f64) -> bool {
+    let d = angle_between(a, b).unwrap_or(0.0).to_degrees();
+    d.min(180.0 - d) <= limit_deg
+}
+
+/// Finds lines and circles of equal parallel holes. A circle is reported only when every gap between
+/// neighbours (including the closing one) is a whole number of the smallest gap: a bolt circle, possibly
+/// with holes missing. Any three holes lie on some circle, so irregular ones are not called patterns. Holes are grouped by diameter and axis direction
+/// (each group needs 3 or more). A group is reported only when all of it lies on one line or one circle;
+/// a group that is partly a pattern is left alone rather than split by guesswork.
+pub fn hole_patterns(holes: &[Hole], options: PatternOptions) -> Vec<Pattern> {
+    let mut used = vec![false; holes.len()];
+    let mut out = vec![];
+    for i in 0..holes.len() {
+        if used[i] || normalize(holes[i].axis).is_none() || !holes[i].diameter.is_finite() {
+            continue;
+        }
+        let group: Vec<usize> = (i..holes.len())
+            .filter(|&j| {
+                !used[j]
+                    && (holes[j].diameter - holes[i].diameter).abs() <= options.diameter_tolerance
+                    && parallel(holes[j].axis, holes[i].axis, options.axis_tolerance_deg)
+            })
+            .collect();
+        for &j in &group {
+            used[j] = true;
+        }
+        if group.len() < 3 {
+            continue;
+        }
+        if let Some(p) = line(holes, &group, &options).or_else(|| circle(holes, &group, &options)) {
+            out.push(p);
+        }
+    }
+    out
+}
+
+fn line(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
+    let pts: Vec<Vec3> = g.iter().map(|&i| holes[i].point).collect();
+    // Direction between the two farthest holes, found against the first.
+    let a = pts[0];
+    let far = pts
+        .iter()
+        .copied()
+        .max_by(|p, q| length(sub(*p, a)).total_cmp(&length(sub(*q, a))))?;
+    let b = pts
+        .iter()
+        .copied()
+        .max_by(|p, q| length(sub(*p, far)).total_cmp(&length(sub(*q, far))))?;
+    let u = normalize(sub(b, far))?;
+    // Offset of each hole from the line, measured across the axis too (axes need not meet the row).
+    let worst = pts
+        .iter()
+        .map(|&p| length(cross(sub(p, far), u)))
+        .fold(0.0, f64::max);
+    if worst > o.position_tolerance {
+        return None;
+    }
+    let mut order: Vec<usize> = (0..g.len()).collect();
+    order.sort_by(|&p, &q| dot(sub(pts[p], far), u).total_cmp(&dot(sub(pts[q], far), u)));
+    let gaps: Vec<f64> = order
+        .windows(2)
+        .map(|w| dot(sub(pts[w[1]], pts[w[0]]), u))
+        .collect();
+    let mean = gaps.iter().sum::<f64>() / gaps.len() as f64;
+    Some(Pattern::Line {
+        members: order.iter().map(|&k| holes[g[k]].name.clone()).collect(),
+        diameter: g.iter().map(|&i| holes[i].diameter).sum::<f64>() / g.len() as f64,
+        spacing: mean,
+        equal_spacing: gaps.iter().all(|x| (x - mean).abs() <= o.spacing_tolerance),
+        worst_offset: worst,
+    })
+}
+
+fn circle(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
+    let z = normalize(holes[g[0]].axis)?;
+    let seed = if z[0].abs() < 0.9 {
+        [1., 0., 0.]
+    } else {
+        [0., 1., 0.]
+    };
+    let x = normalize(cross(z, seed))?;
+    let y = cross(z, x);
+    let origin = holes[g[0]].point;
+    let uv: Vec<(f64, f64)> = g
+        .iter()
+        .map(|&i| {
+            let d = sub(holes[i].point, origin);
+            (dot(d, x), dot(d, y))
+        })
+        .collect();
+    // Algebraic circle: u² + v² + a u + b v + c = 0 (least squares over all holes).
+    let mut m = vec![0.0; 9];
+    let mut r = vec![0.0; 3];
+    for &(u, v) in &uv {
+        let row = [u, v, 1.0];
+        let rhs = -(u * u + v * v);
+        for p in 0..3 {
+            for q in 0..3 {
+                m[p * 3 + q] += row[p] * row[q];
+            }
+            r[p] += row[p] * rhs;
+        }
+    }
+    let s = solve_dense(m, r)?;
+    let (cu, cv) = (-s[0] / 2.0, -s[1] / 2.0);
+    let r2 = cu * cu + cv * cv - s[2];
+    if r2.is_nan() || r2 <= 0.0 {
+        return None;
+    }
+    let radius = r2.sqrt();
+    let dist = |&(u, v): &(f64, f64)| ((u - cu).hypot(v - cv) - radius).abs();
+    let worst = uv.iter().map(dist).fold(0.0, f64::max);
+    if worst > o.position_tolerance {
+        return None;
+    }
+    let mut order: Vec<usize> = (0..g.len()).collect();
+    let ang = |k: usize| (uv[k].1 - cv).atan2(uv[k].0 - cu);
+    order.sort_by(|&p, &q| ang(p).total_cmp(&ang(q)));
+    let n = order.len();
+    let gaps: Vec<f64> = (0..n)
+        .map(|k| {
+            let d = ang(order[(k + 1) % n]) - ang(order[k]);
+            (if d <= 0.0 {
+                d + std::f64::consts::TAU
+            } else {
+                d
+            })
+            .to_degrees()
+        })
+        .collect();
+    let step = gaps.iter().copied().fold(f64::MAX, f64::min);
+    let regular = gaps.iter().all(|&gap| {
+        let k = (gap / step).round().max(1.0);
+        (gap - k * step).abs() <= o.spacing_deg
+    });
+    if !regular {
+        return None;
+    }
+    let centre = add(origin, add(scale(x, cu), scale(y, cv)));
+    Some(Pattern::Circle {
+        members: order.iter().map(|&k| holes[g[k]].name.clone()).collect(),
+        diameter: g.iter().map(|&i| holes[i].diameter).sum::<f64>() / n as f64,
+        center: centre,
+        radius,
+        step_deg: step,
+        worst_offset: worst,
+    })
+}
+
+/// One guess at a design value.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+pub struct Guess {
+    /// The round number, in mm.
+    pub value: f64,
+    /// Which family of round numbers it comes from.
+    pub basis: &'static str,
+    /// Measured minus guessed, mm (the evidence).
+    pub error: f64,
+}
+
+const STEPS: [(&str, f64); 6] = [
+    ("whole mm", 1.0),
+    ("half mm", 0.5),
+    ("tenth mm", 0.1),
+    ("eighth inch", 25.4 / 8.0),
+    ("sixteenth inch", 25.4 / 16.0),
+    ("thirty-second inch", 25.4 / 32.0),
+];
+
+/// Round numbers a measured length could have been designed as. For each family, the nearest round
+/// number is offered when the measurement is within `tolerance` of it. Millimetre families come first,
+/// coarse to fine, then inch families. Returns nothing for a value or tolerance
+/// that is not finite, or a tolerance of 0 or less.
+pub fn design_guesses(measured: f64, tolerance: f64) -> Vec<Guess> {
+    if !measured.is_finite() || !tolerance.is_finite() || tolerance <= 0.0 {
+        return vec![];
+    }
+    STEPS
+        .iter()
+        .filter_map(|&(basis, step)| {
+            let value = (measured / step).round() * step;
+            let error = measured - value;
+            (error.abs() <= tolerance && value != 0.0).then_some(Guess {
+                value,
+                basis,
+                error,
+            })
+        })
+        .collect()
+}
