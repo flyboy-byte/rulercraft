@@ -3,12 +3,12 @@
   "milestone": "R1",
   "title": "Read PLY (ASCII, binary LE/BE)",
   "spec": "mesh-import",
-  "status": "specced",
+  "status": "in-progress",
   "depends_on": [
     "io.stl"
   ],
-  "owner": null,
+  "owner": "Codex",
   "pr": null,
   "verified_by": [],
-  "left": "Everything."
+  "left": "PLY reader, dispatcher, CLI and fast checks."
 }

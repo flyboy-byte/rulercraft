@@ -27,7 +27,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `history.undo` Undo and redo for every command | planned | - | unclaimed | Everything. |
 | `io.3mf` Read 3MF (zip + model XML) | specced | - | unclaimed | Everything; zip/deflate reader is pre-approved (D-006). |
 | `io.obj` Read OBJ (geometry only; materials later) | specced | - | unclaimed | Everything. |
-| `io.ply` Read PLY (ASCII, binary LE/BE) | specced | - | unclaimed | Everything. |
+| `io.ply` Read PLY (ASCII, binary LE/BE) | in-progress | - | Codex | PLY reader, dispatcher, CLI and fast checks. |
 | `io.stl` Read ASCII and binary STL | implemented | math, wrong-value | Claude | Known-design check once corpus.known lands. |
 | `math.core` Small linear algebra: vectors, 3x3 eigen, covariance, least squares | specced | - | unclaimed | Everything. |
 | `mcp.server` MCP server exposing the same commands to Claude | planned | - | unclaimed | Everything. |
