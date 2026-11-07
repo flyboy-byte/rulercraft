@@ -21,7 +21,7 @@ Last updated 2026-11-07, Claude. Read AGENTS.md first (it outranks this), then P
   datums; CLI/MCP commands for recipe, robust fit, patterns and datum frame.
 - R1 exit: Logan's run on a real downloaded STL (compare hole sizes with the real design), and the
   clipping decision (docs/findings/2026-11-07-clipping-on-real-scans.md).
-- engine.library (R5) is the last unclaimed ready feature besides cad.check.
+- engine.library (R5) is in progress (docs, doctest, prelude, API page done); publishing needs Logan.
 
 ## Habits that held up
 - Claim by draft PR titled `<feature id>: ...`; re-run `plan.py next` right before claiming.
