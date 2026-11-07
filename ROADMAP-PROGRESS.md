@@ -56,7 +56,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
 | `align.icp` Align a scan to a reference (datums, ICP) | planned | - | unclaimed | Everything. |
-| `compare.deviation` Mesh-to-mesh deviation map and statistics | planned | - | unclaimed | Everything. |
+| `compare.deviation` Mesh-to-mesh deviation map and statistics | planned | - | claude | Everything. |
 | `fit.robust` Robust fits on noisy scans (RANSAC seeding, noise estimation) | planned | - | unclaimed | Everything. |
 | `measure.thickness` Wall thickness | verified | math, known-design, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/31 | Engine normal-ray API complete; dense-query acceleration and CLI/MCP exposure remain later work. |
 

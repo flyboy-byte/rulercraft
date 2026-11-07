@@ -20,7 +20,6 @@ Overall roadmap progress: **38%** (details in ROADMAP-PROGRESS.md).
 ## Ready to claim
 
 - `cad.check` (R2): Deviation of the mesh from the rebuilt CAD (via SolidCore projection)
-- `compare.deviation` (R3): Mesh-to-mesh deviation map and statistics
 - `engine.library` (R5): Stable library API, docs, crates.io, Wasm build
 - `fit.robust` (R3): Robust fits on noisy scans (RANSAC seeding, noise estimation)
 - `re.features` (R4): Reverse-engineering workflows: hole patterns, symmetry, design-intent guesses
