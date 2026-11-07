@@ -1,0 +1,14 @@
+{
+  "id": "history.undo",
+  "milestone": "R1",
+  "title": "Undo and redo for every command",
+  "spec": "commands",
+  "status": "planned",
+  "depends_on": [
+    "project.file"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

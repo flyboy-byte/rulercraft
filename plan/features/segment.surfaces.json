@@ -1,0 +1,15 @@
+{
+  "id": "segment.surfaces",
+  "milestone": "R1",
+  "title": "Split a mesh into planar and round regions automatically",
+  "spec": "segmentation",
+  "status": "planned",
+  "depends_on": [
+    "fit.plane",
+    "fit.cylinder"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "reference.local",
+  "milestone": "R1",
+  "title": "Optional local reference numbers from another program (gitignored)",
+  "spec": "reference-numbers",
+  "status": "planned",
+  "depends_on": [
+    "repo.skeleton"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Skip-when-absent test helper and the local capture notes."
+}

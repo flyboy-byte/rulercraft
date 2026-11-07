@@ -1,0 +1,14 @@
+{
+  "id": "io.3mf",
+  "milestone": "R1",
+  "title": "Read 3MF (zip + model XML)",
+  "spec": "mesh-import",
+  "status": "specced",
+  "depends_on": [
+    "mesh.graph"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything; needs a zip/deflate dependency decision."
+}

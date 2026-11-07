@@ -1,0 +1,12 @@
+name: Feature
+description: Propose a capability (one a user would name)
+body:
+  - type: textarea
+    attributes:
+      label: What a user could do
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: How we would know it is right
+      description: A known answer (math, design dimensions, a reference program's number).

@@ -1,0 +1,14 @@
+{
+  "id": "align.icp",
+  "milestone": "R3",
+  "title": "Align a scan to a reference (datums, ICP)",
+  "spec": "alignment",
+  "status": "planned",
+  "depends_on": [
+    "compare.deviation"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

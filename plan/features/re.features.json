@@ -1,0 +1,15 @@
+{
+  "id": "re.features",
+  "milestone": "R4",
+  "title": "Reverse-engineering workflows: hole patterns, symmetry, design-intent guesses",
+  "spec": "reverse-engineering",
+  "status": "planned",
+  "depends_on": [
+    "segment.surfaces",
+    "cad.solidcraft"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

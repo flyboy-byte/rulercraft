@@ -1,0 +1,6 @@
+/target/
+__pycache__/
+# Real scans for local testing only; never committed.
+/fixtures/private/
+# Machine-specific notes (which local tools exist, where downloads came from); never committed.
+/local/

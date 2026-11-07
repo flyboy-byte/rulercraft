@@ -1,0 +1,15 @@
+{
+  "id": "fit.robust",
+  "milestone": "R3",
+  "title": "Robust fits on noisy scans (RANSAC seeding, noise estimation)",
+  "spec": "fit-plane",
+  "status": "planned",
+  "depends_on": [
+    "fit.plane",
+    "fit.cylinder"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

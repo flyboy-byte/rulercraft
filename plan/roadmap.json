@@ -1,0 +1,41 @@
+{
+  "_about": "Milestones for tools/plan.py. Each milestone is done when its exit condition is met, not when its features are checked off. Weights are effort shares (judgement).",
+  "milestones": [
+    {
+      "id": "R1",
+      "title": "Clean meshes: open, fit, measure, over CLI and MCP",
+      "weight": 30,
+      "exit": "Logan downloads an STL from a model-sharing site, asks Claude over MCP for its hole diameters and face distances, and they match the design dimensions."
+    },
+    {
+      "id": "R2",
+      "title": "Mesh to editable CAD through SolidCraft",
+      "weight": 20,
+      "exit": "A simple prismatic downloaded part is rebuilt as a SolidCraft model whose deviation from the STL is under 0.05 mm."
+    },
+    {
+      "id": "R3",
+      "title": "Noisy scans: robust fits, deviation, alignment, thickness",
+      "weight": 20,
+      "exit": "A real scan (a public sample scan or a phone scan) gives stable fits and a deviation report against its CAD."
+    },
+    {
+      "id": "R4",
+      "title": "Reverse-engineering workflows with AI",
+      "weight": 15,
+      "exit": "Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft."
+    },
+    {
+      "id": "R5",
+      "title": "Reusable engine",
+      "weight": 10,
+      "exit": "Another project depends on rulercraft-mesh from crates.io or git and builds in Wasm."
+    },
+    {
+      "id": "R6",
+      "title": "Photos to mesh (research)",
+      "weight": 5,
+      "exit": "A written go/no-go with a prototype on photos of one object."
+    }
+  ]
+}

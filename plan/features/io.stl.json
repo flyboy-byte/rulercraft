@@ -1,0 +1,17 @@
+{
+  "id": "io.stl",
+  "milestone": "R1",
+  "title": "Read ASCII and binary STL",
+  "spec": "mesh-import",
+  "status": "implemented",
+  "depends_on": [
+    "repo.skeleton"
+  ],
+  "owner": "Claude",
+  "pr": null,
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Known-design check once corpus.known lands."
+}

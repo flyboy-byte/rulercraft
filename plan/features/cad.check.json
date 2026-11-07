@@ -1,0 +1,14 @@
+{
+  "id": "cad.check",
+  "milestone": "R2",
+  "title": "Deviation of the mesh from the rebuilt CAD (via SolidCore projection)",
+  "spec": "mesh-to-cad",
+  "status": "planned",
+  "depends_on": [
+    "cad.solidcraft"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything; SolidCore behind an optional feature."
+}

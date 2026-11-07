@@ -1,0 +1,12 @@
+{
+  "id": "repo.skeleton",
+  "milestone": "R1",
+  "title": "Workspace, docs, plan tool and fast CI",
+  "spec": null,
+  "status": "implemented",
+  "depends_on": [],
+  "owner": "Claude",
+  "pr": null,
+  "verified_by": [],
+  "left": "Done when hosted CI is green on main."
+}

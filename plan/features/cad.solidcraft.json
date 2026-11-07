@@ -1,0 +1,15 @@
+{
+  "id": "cad.solidcraft",
+  "milestone": "R2",
+  "title": "Rebuild fitted features as a SolidCraft model over its MCP",
+  "spec": "mesh-to-cad",
+  "status": "planned",
+  "depends_on": [
+    "measure.relations",
+    "mcp.server"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

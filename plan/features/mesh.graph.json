@@ -1,0 +1,14 @@
+{
+  "id": "mesh.graph",
+  "milestone": "R1",
+  "title": "Welded vertices, faces, normals, adjacency, components",
+  "spec": "mesh-model",
+  "status": "specced",
+  "depends_on": [
+    "io.stl"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

@@ -1,0 +1,18 @@
+[package]
+name = "rulercraft-cli"
+description = "The rulercraft command-line tool"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[[bin]]
+name = "rulercraft"
+path = "src/main.rs"
+
+[dependencies]
+rulercraft-mesh = { path = "../rulercraft-mesh" }
+
+[lints]
+workspace = true

@@ -1,0 +1,15 @@
+{
+  "id": "mcp.server",
+  "milestone": "R1",
+  "title": "MCP server exposing the same commands to Claude",
+  "spec": "mcp",
+  "status": "planned",
+  "depends_on": [
+    "cli.commands",
+    "fit.plane"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

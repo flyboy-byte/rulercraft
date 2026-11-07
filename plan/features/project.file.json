@@ -1,0 +1,14 @@
+{
+  "id": "project.file",
+  "milestone": "R1",
+  "title": "Save and reopen a RulerCraft project (own JSON format)",
+  "spec": "project-file",
+  "status": "planned",
+  "depends_on": [
+    "fit.plane"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

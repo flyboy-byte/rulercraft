@@ -1,0 +1,14 @@
+{
+  "id": "photo.mesh",
+  "milestone": "R6",
+  "title": "Photos to mesh (photogrammetry / AI shape guessing), research",
+  "spec": null,
+  "status": "planned",
+  "depends_on": [
+    "engine.library"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Research first; any library must pass the licence rules (no copyleft)."
+}

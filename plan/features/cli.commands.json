@@ -1,0 +1,14 @@
+{
+  "id": "cli.commands",
+  "milestone": "R1",
+  "title": "rulercraft CLI: info, fit, measure, save, open",
+  "spec": "commands",
+  "status": "in-progress",
+  "depends_on": [
+    "io.stl"
+  ],
+  "owner": "Claude",
+  "pr": null,
+  "verified_by": [],
+  "left": "`info` (STL) exists; fit, measure, save, open to come with their features."
+}

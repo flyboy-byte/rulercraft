@@ -1,0 +1,16 @@
+{
+  "id": "measure.relations",
+  "milestone": "R1",
+  "title": "Distances and angles between fitted elements",
+  "spec": "measure",
+  "status": "specced",
+  "depends_on": [
+    "fit.plane",
+    "fit.sphere",
+    "fit.cylinder"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}
