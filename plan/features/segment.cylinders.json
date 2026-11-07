@@ -1,11 +1,11 @@
 {
-  "id": "segment.surfaces",
+  "id": "segment.cylinders",
   "milestone": "R1",
-  "title": "Split a mesh into planar and round regions automatically",
+  "title": "Find round regions (holes, bosses) from how their normals turn",
   "spec": "segmentation",
   "status": "planned",
   "depends_on": [
-    "fit.plane",
+    "segment.planes",
     "fit.cylinder"
   ],
   "owner": null,

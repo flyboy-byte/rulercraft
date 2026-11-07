@@ -5,8 +5,9 @@
   "spec": "reverse-engineering",
   "status": "planned",
   "depends_on": [
-    "segment.surfaces",
-    "cad.solidcraft"
+    "cad.solidcraft",
+    "segment.planes",
+    "segment.cylinders"
   ],
   "owner": null,
   "pr": null,

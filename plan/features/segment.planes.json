@@ -1,0 +1,15 @@
+{
+  "id": "segment.planes",
+  "milestone": "R1",
+  "title": "Grow flat regions over neighbouring triangles (a mesh's faces, named automatically)",
+  "spec": "segmentation",
+  "status": "in-progress",
+  "depends_on": [
+    "mesh.graph",
+    "fit.plane"
+  ],
+  "owner": "Claude",
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

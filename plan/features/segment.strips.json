@@ -1,0 +1,15 @@
+{
+  "id": "segment.strips",
+  "milestone": "R1",
+  "title": "Join the flat strips a faceted round surface breaks into back into one surface",
+  "spec": "segmentation",
+  "status": "planned",
+  "depends_on": [
+    "segment.planes",
+    "segment.cylinders"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

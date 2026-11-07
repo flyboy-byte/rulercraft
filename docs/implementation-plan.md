@@ -27,7 +27,9 @@ they match the design dimensions.
 | 2 | `cli.commands` | M | A small command layer in `rulercraft-mesh::commands` (one typed input/output per command: `mesh.open`, `select.box`, `select.facing`, `fit.plane`, `fit.sphere`, `fit.cylinder`), and `rulercraft fit <kind> <mesh> --box ... [--facing x y z --within deg] [--sigma k]` printing JSON. Tests run the binary on generated meshes | the fits |
 | 3 | `measure.relations` | M | `measure.rs`: plane-plane angle and distance, point/centre-plane distance, centre-centre, axis-plane angle, axis-axis angle and distance (parallel case), each saying which convention applied; `rulercraft measure` | fits |
 | 4 | `mcp.server` | M | New crate `rulercraft-mcp` (official Rust MCP SDK is pre-approved, D-006): stdio server, one tool per command with its JSON schema, a short built-in guide; a test that drives it over stdio | cli.commands |
-| 5 | `segment.surfaces` | L, split | (a) region growing of near-coplanar neighbours into planar regions; (b) cylindrical regions from normal patterns; (c) joining strips of a round surface. Lets Claude say "the top face" or "that hole" without marking vertices | mesh.graph, fits |
+| 5a | `segment.planes` | M | Region growing of near-coplanar neighbouring triangles into flat regions with their plane fits, largest first | mesh.graph, fit.plane |
+| 5b | `segment.cylinders` | M | Round regions (holes, bosses) from how normals turn around an axis | 5a, fit.cylinder |
+| 5c | `segment.strips` | S | Join the flat strips a faceted round surface breaks into | 5a, 5b |
 | 6 | `corpus.known` | M | A generator (Rust test helper or script) that writes test parts with exact stated dimensions as STL plus `fixtures/known/<part>.json` answers: a block with 3/5/8 mm holes at stated spacing, a stepped cylinder, a sphere seat, a bracket with two parallel faces at a stated distance. Tests: every answer recovered within a stated tolerance | fits, measure |
 | 7 | R1 exit run | S | Logan's check: an STL from a model-sharing site with published dimensions, driven over MCP. Record the result in ROADMAP.md (struck through with a date when it passes) | all above |
 
@@ -47,7 +49,7 @@ they match the design dimensions.
 | --- | --- | --- |
 | ~~`checkpoint.r1-fits`~~ | DONE 2026-11-07 (#19) | readers, graph, selection, all three fits, relations: invariance, hostile input, real scan |
 | `checkpoint.r1-mcp` | after `mcp.server` merges | drive the MCP server end to end on the real scan; invariance and hostile input for anything new; findings |
-| `checkpoint.r1-exit` | after `segment.planes` and `corpus.known` | everything in R1 against the known-design corpus and downloaded models; then Logan's R1 exit run |
+| `checkpoint.r1-exit` | after `segment.planes`, `segment.cylinders` and `corpus.known` | everything in R1 against the known-design corpus and downloaded models; then Logan's R1 exit run |
 | `checkpoint.r2` / `r3` / ... | at each milestone exit | the same, for that milestone's features |
 
 ## R2: mesh to editable CAD through SolidCraft
