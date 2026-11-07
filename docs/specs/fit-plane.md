@@ -25,3 +25,16 @@ Status: R1 spec. Features: `fit.plane`, later `fit.robust`.
 Checks: points on z = 5 with noise σ=0.01 give normal (0,0,±1) within 1e-3 and sigma near 0.01; a cube
 face fits exactly with sigma below 1e-6; adding far outliers with a 3-sigma cut-off leaves the plane
 unchanged within 1e-4.
+
+## Robust fit (2026-11-07)
+
+`fit_plane_robust(positions, normals, selection, options)` handles what clipping cannot: far outliers with
+enough leverage to tilt the ordinary fit. It tries `iterations` (default 500, at most 100000) planes
+through three random selected points, counts the points within `threshold` (default 0.1 mm) of each, keeps
+the plane with the most, and fits the ordinary total least squares plane (no clipping) through exactly
+those points. The sampling is a fixed sequence from `seed`, so a run is repeatable. Returns the fit and
+the agreeing vertex ids. Refuses: a threshold that is not positive and finite, 0 or too many iterations,
+fewer than 3 points, bad indices, and a selection with no three points making a plane that at least
+3 points agree with. Check: 300 points on z = 5 plus 100 far one-sided outliers tilt the ordinary fit
+off 1 in normal z, while the robust fit keeps normal z within 1e-4 and keeps no outlier.
+Not done: robust sphere and cylinder seeding, and CLI/MCP exposure.

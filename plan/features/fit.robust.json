@@ -3,7 +3,7 @@
   "milestone": "R3",
   "title": "Robust fits on noisy scans (RANSAC seeding, noise estimation)",
   "spec": "fit-plane",
-  "status": "planned",
+  "status": "implemented",
   "depends_on": [
     "fit.plane",
     "fit.cylinder"
@@ -11,5 +11,5 @@
   "owner": "claude",
   "pr": null,
   "verified_by": [],
-  "left": "Everything."
+  "left": "Plane only so far. Still owed: robust sphere and cylinder seeding, and CLI/MCP exposure."
 }
