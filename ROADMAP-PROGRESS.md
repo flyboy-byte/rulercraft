@@ -49,7 +49,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
-| `cad.check` Deviation of the mesh from the rebuilt CAD (via SolidCore projection) | planned | - | unclaimed | Everything; SolidCore behind an optional feature. |
+| `cad.check` Deviation of the mesh from the rebuilt CAD (via SolidCore projection) | planned | - | claude | Everything; SolidCore behind an optional feature. |
 | `cad.solidcraft` Rebuild fitted features as a SolidCraft model over its MCP | implemented | - | claude | Recipe is done and tested on synthetic parts. Still owed: a CLI/MCP command to produce it, and one replay against a live SolidCraft server (SolidCraft is not built on this machine). |
 
 ## R3: Noisy scans: robust fits, deviation, alignment, thickness (90%)

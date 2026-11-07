@@ -19,4 +19,4 @@ Overall roadmap progress: **66%** (details in ROADMAP-PROGRESS.md).
 
 ## Ready to claim
 
-- `cad.check` (R2): Deviation of the mesh from the rebuilt CAD (via SolidCore projection)
+- none

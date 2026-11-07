@@ -7,7 +7,7 @@
   "depends_on": [
     "cad.solidcraft"
   ],
-  "owner": null,
+  "owner": "claude",
   "pr": null,
   "verified_by": [],
   "left": "Everything; SolidCore behind an optional feature."
