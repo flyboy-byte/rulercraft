@@ -1,32 +1,23 @@
 # Handoff
 
-Last updated 2026-11-07, Claude. Read AGENTS.md first (it outranks this), then PROCESS.md.
+Last updated 2026-11-07, Codex. Check `gh pr list` and `python3 tools/plan.py next` before a claim;
+main was `88bbaef` when merged into the branch below. Work in a separate worktree, not the shared
+`~/projects/rulercraft` checkout.
 
-## State
-- All feature PRs are merged; check `gh pr list` and `python3 tools/plan.py next` before starting.
-- Shipped this day: readers (STL/PLY/OBJ/3MF), graph, selection, plane/sphere/cylinder fits, relations,
-  thickness, CLI (`info`, `fit`, `segment`), MCP server (open, info, select, fit, measure, segment,
-  compare, undo/redo, guide), project file, local reference numbers, known-design corpus,
-  segmentation (planes, cylinders, joined strips), `math.range`, and the library pieces below.
-- Library only so far (no CLI/MCP yet): `cad::recipe` (cad.solidcraft, `implemented`), `fit_plane_robust`
-  (fit.robust, plane only, `implemented`), `reverse::hole_patterns` and `design_guesses` (re.features,
-  `implemented`), `align::datum_frame` (verified), `deviation::patches` (verified). `align_icp` and
-  `deviation` are reachable through the MCP `compare` tool.
-
-## Owed
-- cad.solidcraft: one replay of a recipe against a live SolidCraft server (SolidCraft is not built on
-  this machine; mind the disk guard before building it).
-- cad.check needs SolidCore projection (optional cargo feature, D-002).
-- fit.robust for spheres and cylinders; re.features grid patterns; plane-line-point
-  datums; CLI/MCP commands for recipe, robust fit, patterns and datum frame.
-- R1 exit: Logan's run on a real downloaded STL (compare hole sizes with the real design), and the
-  clipping decision (docs/findings/2026-11-07-clipping-on-real-scans.md).
-- engine.library (R5) is the last unclaimed ready feature besides cad.check.
-
-## Habits that held up
-- Claim by draft PR titled `<feature id>: ...`; re-run `plan.py next` right before claiming.
-- Every rule gets a wrong-value run that a test fails on, or the rule is deleted.
-- Codex and Claude share one checkout: do your work in `git worktree add /tmp/<name>`, never switch
-  branches in `~/projects/rulercraft`. A commit made there once landed on Codex's branch.
-- Merge commits only. A merge conflict in generated files: merge main, `python3 tools/plan.py render`.
-- Local only, never committed: fixtures/private (vase scan) and local/NOTES.md.
+- PR #51, `mcp.datum`, branch `codex/mcp-datum`, worktree `/tmp/rulercraft-codex-resume`: exposes a
+  three-plane datum frame over MCP by reusing the existing plane fits and `align::datum_frame`. The
+  tool returns the three fit summaries and the transform; failures leave the mesh unchanged.
+- After merging main through #52 into the branch: format, clippy, workspace tests (143 passed, 2
+  local-scan tests ignored), and plan check passed. Swapping the primary and secondary inputs made
+  the stdio cube check fail; the correct order was restored. Check PR #51's current state and CI.
+- Main includes readers, graph, fits, selection, measurements, segmentation, project JSON and MCP
+  open/info/select/fit/measure/segment/compare/reverse/history tools. `math.range`, ICP and datum
+  frame math are present. The reverse tool provides a CAD recipe and geometric guesses.
+- Remaining: replay a CAD recipe against a live SolidCraft server; `cad.check` needs SolidCore
+  projection; robust sphere/cylinder fitting, grid patterns, plane-line-point datums and CLI datum
+  exposure. R1 still needs Logan's published-dimension exit run and clipping decision
+  (`docs/findings/2026-11-07-clipping-on-real-scans.md`).
+- Draft PRs claim features; lowest PR number wins. Render generated plan files, and on merge
+  conflicts take main's handoff and re-render the generated files. Logan merges; merge commits only.
+  Private fixtures and `local/` notes stay local. Do not apply old MCP stashes or use the abandoned
+  `codex/mcp-server` branch.
