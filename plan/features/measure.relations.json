@@ -3,14 +3,17 @@
   "milestone": "R1",
   "title": "Distances and angles between fitted elements",
   "spec": "measure",
-  "status": "in-progress",
+  "status": "verified",
   "depends_on": [
     "fit.plane",
     "fit.sphere",
     "fit.cylinder"
   ],
   "owner": "Codex",
-  "pr": null,
-  "verified_by": [],
-  "left": "Typed distances and angles with explicit conventions and known-answer checks."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/15",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Ready for Logan review. Known-design corpus checks pending corpus.known."
 }

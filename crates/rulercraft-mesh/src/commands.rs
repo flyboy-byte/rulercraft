@@ -141,3 +141,6 @@ pub fn fit(
         fitted,
     })
 }
+
+// The relation command is also available to both front ends through this layer.
+pub use crate::measure::{MeasureError, MeasureRequest, Measurement, measure};

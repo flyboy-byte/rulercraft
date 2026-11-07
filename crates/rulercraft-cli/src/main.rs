@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! `rulercraft`: the command-line front end (docs/specs/commands.md).
 
+mod measure;
+
 use rulercraft_mesh::commands::{FitKind, FitRequest, Fitted, Selection, fit};
 use rulercraft_mesh::fit::Clip;
 use rulercraft_mesh::graph::MeshGraph;
@@ -9,6 +11,7 @@ use serde_json::{Value, json};
 use std::process::ExitCode;
 
 const USAGE: &str = "Usage:
+  rulercraft measure first.json second.json
   rulercraft info <mesh> [--units mm|cm|m|in]
   rulercraft fit <plane|sphere> <mesh> [--units U] [--box X Y Z X Y Z] [--near X Y Z R]
                  [--facing DX DY DZ] [--within DEG] [--sigma 0|1|2|3] [--known-diameter D]
@@ -111,6 +114,9 @@ fn run(args: &[String]) -> Result<String, String> {
     let [command, rest @ ..] = args else {
         return Err(USAGE.into());
     };
+    if command == "measure" {
+        return measure::run(rest);
+    }
     if command == "fit" {
         return fit_command(rest);
     }
