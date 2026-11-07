@@ -27,4 +27,17 @@ radius and 60° step; arcs of three holes are circles and irregular ones are not
 spacing 15 and an uneven row is flagged; turning the part changes no number; empty, tiny, zero-axis,
 NaN and coincident inputs give nothing and do not panic. Four wrong-value runs (irregular circles
 allowed, diameters ignored, spacing check dropped, guess tolerance ignored) each failed a test.
-Not done: symmetry planes, grid patterns, grouping a partial pattern out of a larger group, and CLI/MCP.
+Not done: grid patterns, grouping a partial pattern out of a larger group, and CLI/MCP.
+
+## Symmetry planes (2026-11-07)
+
+`reverse::symmetry_planes(mesh, tolerance)` tries the three planes through the vertex centroid whose
+normals are the principal axes of the vertex cloud. Every vertex is reflected through the plane and its
+distance to the mesh surface measured (exact, as in deviation.md). Each plane reports RMS and largest
+distance, and is called a symmetry plane when the largest is within the tolerance. Limits: only those
+three candidate planes are tried; a part with nearly equal spread along two axes (a cube, a round part)
+has no well-defined principal axes there, so a true plane can be missed; vertices are sampled, not
+surface points. Refused: a tolerance that is not finite and above 0, fewer than 4 vertices, no triangles.
+Checks: a plate with a centred block on one end is symmetric across its width only, with the plane at the
+right place, and the verdict is unchanged after turning and moving the part. Three wrong-value runs
+(mirror not doubled, tolerance ignored, centroid dropped) each failed two tests.
