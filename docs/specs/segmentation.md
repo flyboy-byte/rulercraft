@@ -15,6 +15,11 @@ Lets a user or agent say "the top face" or "that hole" without marking vertices 
 - Growth: breadth-first across shared edges; a neighbour joins when both limits hold against the region's
   current plane. The plane starts as the seed triangle's and is refitted (total least squares on the
   region's vertices so far) whenever the region has doubled in triangle count since the last refit.
+- After growing, a region is refitted and any triangle with a corner past the distance limit from that
+  fit is handed back (free for later seeds), repeating until none strays. So every region lies within
+  the distance limit of the plane it reports. Without this a region creeps along a gentle slope (found
+  2026-11-07 on a 5° ramp: 0.29 mm off its own plane). A region may still take in the start of a gentle
+  slope as long as it stays within the limits.
 - Every triangle ends in at most one region. Regions below the area limit are dropped and their
   triangles left unassigned.
 - Output: regions largest area first, each with its triangles, its vertices (sorted, unique), its area
