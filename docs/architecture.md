@@ -25,7 +25,7 @@ math/          small linear algebra: Vec3 helpers, 3x3 symmetric eigen, small le
 fit/           plane.rs, sphere.rs, cylinder.rs, shared clipping loop
 measure.rs     relations between elements                  (measure.relations)
 segment.rs     automatic surface regions                   (segment.surfaces)
-project.rs     project file                                (project.file)
+project.rs     embedded-source JSON project, named recipes and refit-on-open (exists)                                (project.file)
 commands.rs    the command layer: name -> typed input -> typed output, undo  (cli.commands, history.undo)
 ```
 
@@ -57,6 +57,10 @@ symmetric eigen solver and small least squares are all R1 needs).
 
 Import dispatch uses `io::ImportLimits` (also exported at the crate root) with byte, source-vertex
 and candidate-triangle caps. The original STL-only `Limits` API remains available.
+
+Project persistence uses serde/serde_json for typed recipes and results. Project::decode always
+reimports source bytes and reruns commands::fit; saved results only detect changes. The CLI owns
+filesystem reads and atomic project writes; the engine still accepts bytes only.
 
 3MF uses zip for bounded in-memory package reads and a private XML geometry-subset reader. Its
 model unit overrides the caller unit; build/component transforms flatten through MeshBuilder.

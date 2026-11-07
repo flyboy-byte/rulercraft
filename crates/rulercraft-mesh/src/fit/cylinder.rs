@@ -53,7 +53,7 @@ impl Default for CylinderOptions {
     }
 }
 /// Measured cylinder, lengths in millimetres.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct CylinderFit {
     /// Point on axis at midpoint of measured axial span.
     pub axis_point: Vec3,
