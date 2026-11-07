@@ -8,7 +8,10 @@ pub mod sphere;
 
 pub use cylinder::{CylinderFit, CylinderLimits, CylinderOptions, fit_cylinder};
 pub use plane::{Clip, FitError, PlaneFit, fit_plane};
-pub use robust::{RobustOptions, RobustPlane, fit_plane_robust};
+pub use robust::{
+    RobustCylinder, RobustOptions, RobustPlane, RobustSphere, fit_cylinder_robust,
+    fit_plane_robust, fit_sphere_robust,
+};
 pub use sphere::{SphereFit, fit_sphere};
 
 use crate::math::Vec3;

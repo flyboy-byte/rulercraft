@@ -8,8 +8,8 @@ use rmcp::{
 };
 use rulercraft_mesh::{
     ImportLimits, Mesh, Unit,
-    align::{IcpOptions, Rigid, align_icp},
-    cad::recipe,
+    align::{IcpOptions, Rigid, align_icp, datum_frame},
+    cad::{check, recipe},
     commands::{self, FitKind, FitRequest, Fitted, Selection},
     deviation::{deviation, patches},
     fit::{Clip, RobustOptions, fit_plane_robust},
@@ -29,7 +29,7 @@ use std::{
     io::Read,
     sync::{Arc, Mutex},
 };
-const GUIDE: &str = "Open a local STL, PLY, OBJ or 3MF with mesh.open (file unit defaults to mm; 3MF model units win), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The reverse tool returns a CAD recipe, hole patterns and symmetry for the open mesh. The thickness tool measures inward normal rays on a consistently wound mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
+const GUIDE: &str = "Open a local STL, PLY, OBJ or 3MF with mesh.open (file unit defaults to mm; 3MF model units win), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The datum tool builds a frame from three fitted planes. The reverse tool returns a CAD recipe, hole patterns and symmetry for the open mesh. The thickness tool measures inward normal rays on a consistently wound mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
 #[derive(Debug, Clone, Copy, Hash, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 enum FileUnit {
@@ -194,6 +194,16 @@ struct SegmentArgs {
 }
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
+struct DatumArgs {
+    /// Primary plane fit: its normal sets the Z axis.
+    primary: FitArgs,
+    /// Secondary plane fit: its normal sets the X axis after removing the Z component.
+    secondary: FitArgs,
+    /// Tertiary plane fit: fixes the origin together with the other planes.
+    tertiary: FitArgs,
+}
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
 struct MeasureArgs {
     /// First fit, establishing the first element's measurement convention.
     first: FitArgs,
@@ -316,6 +326,10 @@ impl Loaded {
             "planes_found": planes.regions.len(),
             "cylinders_found": cyls.regions.len(),
             "recipe": recipe(&named_planes, &named_cyls),
+            "recipe_check": match check(&self.mesh, &named_planes, &named_cyls, 0.1) {
+                Ok(c) => json!({"tolerance":0.1,"explained_fraction":c.explained_fraction,"rms":c.rms,"max":c.max,"unexplained_count":c.unexplained.len(),"first_unexplained":c.unexplained.iter().take(20).collect::<Vec<_>>(),"per_feature":c.per_feature}),
+                Err(e) => json!({"unavailable": e.to_string()}),
+            },
             "hole_patterns": hole_patterns(&holes, PatternOptions::default()),
             "design_value_guesses": guesses,
             "symmetry": symmetry,
@@ -604,6 +618,28 @@ impl MeshServer {
         self.with_mesh(|m|{let (first,a)=m.fit(&args.first)?;let (second,b)=m.fit(&args.second)?;let r=relate(&a,&b);
             if r.distance.into_iter().chain(r.angle_deg).chain(r.components.into_iter().flatten()).any(|v|!v.is_finite()) {return Err("measurement produced a non-finite result".into());}
             Ok(json!({"first":first,"second":second,"relation":{"distance":r.distance,"components":r.components,"angle_deg":r.angle_deg,"convention":r.convention}}))})
+    }
+    #[tool(
+        description = "Fit three selected planes and return the transform to their datum frame. The plane normals determine axis directions. The open mesh is unchanged."
+    )]
+    fn datum(&self, Parameters(args): Parameters<DatumArgs>) -> CallToolResult {
+        self.with_mesh(|m| {
+            let plane = |name: &str, request: &FitArgs| -> Result<_, String> {
+                if !matches!(request.kind, Kind::Plane) {
+                    return Err(format!("{name}: datum requires a plane fit"));
+                }
+                let (summary, element) = m.fit(request).map_err(|e| format!("{name}: {e}"))?;
+                match element {
+                    Element::Plane { center, normal } => Ok((summary, (center, normal))),
+                    _ => Err(format!("{name}: datum requires a plane fit")),
+                }
+            };
+            let (primary, p) = plane("primary", &args.primary)?;
+            let (secondary, s) = plane("secondary", &args.secondary)?;
+            let (tertiary, t) = plane("tertiary", &args.tertiary)?;
+            let transform = datum_frame(p, s, t).map_err(|e| e.to_string())?;
+            Ok(json!({"primary":primary,"secondary":secondary,"tertiary":tertiary,"transform":transform}))
+        })
     }
     #[tool(
         description = "Segment the current mesh into flat or round regions. Defaults to cylinders for scans; strips are for tessellated CAD meshes. Returns compact region summaries."

@@ -103,3 +103,145 @@ pub fn fit_plane_robust(
     let fit = fit_plane(positions, normals, &inliers, Clip::None)?;
     Ok(RobustPlane { fit, inliers })
 }
+
+/// A robust sphere and the vertices it agreed with.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RobustSphere {
+    /// Fit through the agreeing vertices.
+    pub fit: super::SphereFit,
+    /// The agreeing vertex ids, in selection order.
+    pub inliers: Vec<u32>,
+}
+
+/// A robust cylinder and the vertices it agreed with.
+#[derive(Debug, Clone, PartialEq)]
+pub struct RobustCylinder {
+    /// Fit through the agreeing vertices.
+    pub fit: super::CylinderFit,
+    /// The agreeing vertex ids, in selection order.
+    pub inliers: Vec<u32>,
+}
+
+fn check_options(o: &RobustOptions) -> Result<(), FitError> {
+    if !(o.threshold.is_finite() && o.threshold > 0.0)
+        || o.iterations == 0
+        || o.iterations > MAX_ITERATIONS
+    {
+        return Err(FitError::Degenerate(
+            "robust fit needs a positive threshold and 1 to 100000 iterations",
+        ));
+    }
+    Ok(())
+}
+
+/// Random subset of `k` distinct selection indices.
+fn subset(seed: &mut u64, n: usize, k: usize) -> Vec<usize> {
+    let mut idx: Vec<usize> = vec![];
+    while idx.len() < k {
+        let i = next(seed) as usize % n;
+        if !idx.contains(&i) {
+            idx.push(i);
+        }
+    }
+    idx
+}
+
+/// Fits a sphere to `selection` ignoring far outliers: trial spheres are fitted to random 6-point subsets
+/// and scored by how many selected points lie within `threshold` of the sphere's surface; the best
+/// agreeing set is then fitted without clipping. The same rules and refusals as [`fit_plane_robust`];
+/// needs at least 6 selected points. A trial that cannot be fitted is skipped.
+pub fn fit_sphere_robust(
+    positions: &[[f32; 3]],
+    selection: &[u32],
+    options: RobustOptions,
+) -> Result<RobustSphere, FitError> {
+    const K: usize = 6;
+    check_options(&options)?;
+    let pts = gather(positions, selection)?;
+    let n = pts.len();
+    if n < K {
+        return Err(FitError::TooFewPoints {
+            found: n,
+            needed: K,
+        });
+    }
+    let mut seed = options.seed;
+    let mut best: Vec<usize> = vec![];
+    for _ in 0..options.iterations {
+        let ids: Vec<u32> = subset(&mut seed, n, K)
+            .iter()
+            .map(|&i| selection[i])
+            .collect();
+        let Ok(t) = super::fit_sphere(positions, &ids, Clip::None, None) else {
+            continue;
+        };
+        let inl: Vec<usize> = (0..n)
+            .filter(|&i| (length(sub(pts[i], t.center)) - t.radius).abs() <= options.threshold)
+            .collect();
+        if inl.len() > best.len() {
+            best = inl;
+        }
+    }
+    if best.len() < K {
+        return Err(FitError::Degenerate(
+            "no sphere that at least 6 selected points agree with",
+        ));
+    }
+    let inliers: Vec<u32> = best.iter().map(|&i| selection[i]).collect();
+    let fit = super::fit_sphere(positions, &inliers, Clip::None, None)?;
+    Ok(RobustSphere { fit, inliers })
+}
+
+/// Fits a cylinder to `selection` ignoring far outliers: trial cylinders are fitted to random 12-point
+/// subsets and scored by how many selected points lie within `threshold` of the cylinder's surface; the
+/// best agreeing set is then fitted without clipping. Needs at least 12 selected points; `iterations`
+/// should be small (default options are fine for a few hundred points) because each trial is a full fit.
+pub fn fit_cylinder_robust(
+    positions: &[[f32; 3]],
+    selection: &[u32],
+    options: RobustOptions,
+) -> Result<RobustCylinder, FitError> {
+    const K: usize = 12;
+    check_options(&options)?;
+    let pts = gather(positions, selection)?;
+    let n = pts.len();
+    if n < K {
+        return Err(FitError::TooFewPoints {
+            found: n,
+            needed: K,
+        });
+    }
+    let opts = super::CylinderOptions {
+        clip: Clip::None,
+        ..Default::default()
+    };
+    let mut seed = options.seed;
+    let mut best: Vec<usize> = vec![];
+    for _ in 0..options.iterations {
+        let ids: Vec<u32> = subset(&mut seed, n, K)
+            .iter()
+            .map(|&i| selection[i])
+            .collect();
+        let Ok(t) = super::fit_cylinder(positions, None, &ids, opts) else {
+            continue;
+        };
+        let inl: Vec<usize> = (0..n)
+            .filter(|&i| {
+                let d = sub(pts[i], t.axis_point);
+                let radial = length(sub(d, crate::math::scale(t.axis, dot(d, t.axis))));
+                (radial - t.radius).abs() <= options.threshold
+            })
+            .collect();
+        if inl.len() > best.len() {
+            best = inl;
+        }
+    }
+    if best.len() < K {
+        return Err(FitError::Degenerate(
+            "no cylinder that at least 12 selected points agree with",
+        ));
+    }
+    let inliers: Vec<u32> = best.iter().map(|&i| selection[i]).collect();
+    let fit = super::fit_cylinder(positions, None, &inliers, opts)?;
+    Ok(RobustCylinder { fit, inliers })
+}

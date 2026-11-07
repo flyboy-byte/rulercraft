@@ -31,4 +31,8 @@ three planes that do not meet at one point (determinant of the normals below sin
 axis signs, so give them the same side on every part of a batch. Checks: planes taken from three faces of
 a part moved by an arbitrary turn and move return every vertex to its original place within 1e-6; each
 refusal has a case, including 5 degrees off parallel with a good third plane.
-Not done: plane-line-point datums and CLI/MCP exposure.
+MCP `datum` fits three plane requests on the open mesh (primary, secondary, tertiary), using the
+same filters and limits as `fit`. It returns their fit summaries and a transform `p' = R p + t`
+that maps the mesh into the datum frame. Each request must be a plane; failed fits and dependent
+planes produce a tool error and leave the mesh unchanged. Plane normal signs determine axis directions.
+Not done: plane-line-point datums and CLI exposure.
