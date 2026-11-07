@@ -17,7 +17,7 @@ Last updated 2026-11-07, Claude. Read AGENTS.md first (it outranks this), then P
 - cad.solidcraft: one replay of a recipe against a live SolidCraft server (SolidCraft is not built on
   this machine; mind the disk guard before building it).
 - cad.check needs SolidCore projection (optional cargo feature, D-002).
-- fit.robust for spheres and cylinders; re.features symmetry planes and grid patterns; plane-line-point
+- fit.robust for spheres and cylinders; re.features grid patterns; plane-line-point
   datums; CLI/MCP commands for recipe, robust fit, patterns and datum frame.
 - R1 exit: Logan's run on a real downloaded STL (compare hole sizes with the real design), and the
   clipping decision (docs/findings/2026-11-07-clipping-on-real-scans.md).
