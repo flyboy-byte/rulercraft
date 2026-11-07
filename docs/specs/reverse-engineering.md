@@ -41,3 +41,17 @@ surface points. Refused: a tolerance that is not finite and above 0, fewer than 
 Checks: a plate with a centred block on one end is symmetric across its width only, with the plane at the
 right place, and the verdict is unchanged after turning and moving the part. Three wrong-value runs
 (mirror not doubled, tolerance ignored, centroid dropped) each failed two tests.
+
+## Grid patterns (2026-11-07)
+
+A group of 4 or more equal parallel holes that is neither a line nor a circle is tried as a lattice: the
+first lattice direction is the vector from the first hole to its nearest neighbour, the second is the
+nearest vector not along the first (the directions need not be square). Every hole must sit within the
+position tolerance (0.1 mm) of an integer combination of the two vectors, and no two holes may share a
+lattice position. A grid needs at least 2 rows and 2 columns. It reports members row by row, columns, rows,
+both spacings, the angle between the directions (90 for a rectangular grid), whether every position inside
+the rows and columns holds a hole (`full`), and the worst offset. A square of four holes is reported as a
+circle, since it is one. Checks: a 4 x 3 grid at 10 x 15 mm; a grid with a hole missing is `full: false`;
+a hole pulled off its position makes it no grid; two holes on one position make it no grid; a turned grid
+reports the same spacings. Three wrong-value runs (full always true, position tolerance ignored, duplicate
+positions allowed) each failed a test.
