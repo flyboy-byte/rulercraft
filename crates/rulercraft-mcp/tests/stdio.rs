@@ -338,3 +338,45 @@ fn stdio_tools_schemas_geometry_and_failure_state() {
     assert_eq!(history["steps"], 2);
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn compare_measures_distance_to_a_reference_file_and_reports_patches() {
+    let dir = std::env::temp_dir().join(format!("rulercraft-mcp-cmp-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let (reference, scan) = (dir.join("reference.ply"), dir.join("scan.ply"));
+    std::fs::write(&reference, cube()).unwrap();
+    std::fs::write(&scan, cube().replace("20", "21")).unwrap(); // 21 mm cube from the same corner
+    let mut c = Client::new();
+    assert_eq!(
+        c.call("compare", json!({"reference":reference}))["isError"],
+        true
+    );
+    c.data("mesh.open", json!({"path":scan}));
+    let r = c.data("compare", json!({"reference":reference,"tolerance":0.5}));
+    assert_eq!(r["stats"]["count"], 8);
+    // The far corner is sqrt(3) mm off the reference corner; the origin corner is on it.
+    assert!(
+        (r["stats"]["max_outside"].as_f64().unwrap() - 3f64.sqrt()).abs() < 1e-5,
+        "{r}"
+    );
+    assert_eq!(r["stats"]["max_inside"], 0.0);
+    assert_eq!(r["stats"]["beyond_tolerance"], 7);
+    assert_eq!(r["patches"]["total"], 1);
+    assert_eq!(r["patches"]["list"][0]["vertices"], 7);
+    assert_eq!(r["patches"]["list"][0]["outside"], true);
+    assert!(r["icp"].is_null());
+    // Bad tolerance and a missing reference are plain errors, and the open mesh survives.
+    assert_eq!(
+        c.call("compare", json!({"reference":reference,"tolerance":-1}))["isError"],
+        true
+    );
+    assert_eq!(
+        c.call("compare", json!({"reference":dir.join("none.ply")}))["isError"],
+        true
+    );
+    assert_eq!(c.data("mesh.info", json!({}))["vertices"], 8);
+    // Aligning identical meshes leaves them where they are.
+    c.data("mesh.open", json!({"path":reference}));
+    let a = c.data("compare", json!({"reference":reference,"align":true}));
+    assert!(a["icp"]["rms_after"].as_f64().unwrap() < 1e-6, "{a}");
+}

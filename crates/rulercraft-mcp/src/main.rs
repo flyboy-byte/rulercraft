@@ -8,7 +8,9 @@ use rmcp::{
 };
 use rulercraft_mesh::{
     ImportLimits, Mesh, Unit,
+    align::{IcpOptions, Rigid, align_icp},
     commands::{self, FitKind, FitRequest, Fitted, Selection},
+    deviation::{deviation, patches},
     fit::Clip,
     graph::MeshGraph,
     measure::{Element, relate},
@@ -22,7 +24,7 @@ use std::{
     io::Read,
     sync::{Arc, Mutex},
 };
-const GUIDE: &str = "Open a local STL, PLY, OBJ or 3MF with mesh.open (file unit defaults to mm; 3MF model units win), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
+const GUIDE: &str = "Open a local STL, PLY, OBJ or 3MF with mesh.open (file unit defaults to mm; 3MF model units win), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
 #[derive(Debug, Clone, Copy, Hash, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 enum FileUnit {
@@ -44,6 +46,18 @@ struct OpenArgs {
     max_vertices: Option<usize>,
     /// Lower candidate triangle limit, maximum 50 million.
     max_triangles: Option<usize>,
+}
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct CompareArgs {
+    /// Local reference mesh path (.stl, .ply, .obj, .3mf).
+    reference: String,
+    /// Coordinate unit in the reference file, default mm.
+    unit: Option<FileUnit>,
+    /// A vertex is out of tolerance beyond this distance in mm, default 0.1.
+    tolerance: Option<f64>,
+    /// Align the current mesh onto the reference first (point-to-plane ICP; needs a rough start).
+    align: Option<bool>,
 }
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -475,6 +489,40 @@ impl MeshServer {
     fn segment(&self, Parameters(args): Parameters<SegmentArgs>) -> CallToolResult {
         let kind = args.kind.unwrap_or(SegmentKind::Cylinders);
         self.with_mesh(|m| Ok(m.segment(kind)))
+    }
+    #[tool(
+        description = "Compare the current mesh with a reference mesh file: signed distance statistics in mm (positive is outside the reference) and the largest out-of-tolerance patches. Optionally aligns first with ICP. Does not change the open mesh."
+    )]
+    fn compare(&self, Parameters(args): Parameters<CompareArgs>) -> CallToolResult {
+        let reference = match self.load(&OpenArgs {
+            path: args.reference.clone(),
+            unit: args.unit,
+            max_bytes: None,
+            max_vertices: None,
+            max_triangles: None,
+        }) {
+            Ok((r, _)) => r,
+            Err(e) => return result(Err(e)),
+        };
+        self.with_mesh(|m| {
+            let tolerance = args.tolerance.unwrap_or(0.1);
+            let mut scan = m.mesh.clone();
+            let mut icp = Value::Null;
+            if args.align.unwrap_or(false) {
+                let r = align_icp(&scan, &reference.mesh, Rigid::IDENTITY, IcpOptions::default())
+                    .map_err(|e| e.to_string())?;
+                for p in &mut scan.positions {
+                    *p = r.transform.apply(p.map(f64::from)).map(|v| v as f32);
+                }
+                icp = json!({"transform":r.transform,"rms_before":r.rms_before,"rms_after":r.rms_after,"iterations":r.iterations,"converged":r.converged});
+            }
+            let d = deviation(&scan, &reference.mesh, tolerance).map_err(|e| e.to_string())?;
+            let found = patches(&m.graph, &d.distances, tolerance).map_err(|e| e.to_string())?;
+            let shown: Vec<Value> = found.iter().take(10).map(|p| {
+                json!({"vertices":p.vertices.len(),"first_vertices":p.vertices.iter().take(20).collect::<Vec<_>>(),"outside":p.outside,"mean":p.mean,"max_abs":p.max_abs})
+            }).collect();
+            Ok(json!({"stats":d.stats,"icp":icp,"patches":{"total":found.len(),"shown":shown.len(),"list":shown}}))
+        })
     }
     #[tool(
         description = "Read the short guide to mesh opening, inspection, selection, fitting and measurement, with units and limits."

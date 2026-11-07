@@ -28,3 +28,12 @@ built-in guide tells the agent the usual flow: open, inspect, segment or select,
 - Tool execution failures are MCP tool errors with an actionable text message; invalid schemas or
   unknown tools use SDK protocol errors. Errors do not terminate the server. Saving, arbitrary explicit
   vertex lists and network transports are outside this feature.
+
+## compare (2026-11-07)
+
+`compare(reference, unit?, tolerance?, align?)` measures the open mesh against another mesh file without
+changing the open mesh. It returns the deviation statistics (positive means outside the reference, mm),
+the largest out-of-tolerance patches (at most 10, each with its vertex count and first 20 vertex ids), and,
+when `align` is true, the ICP transform and residuals (the scan is moved onto the reference first; it
+must already be roughly in place). Tolerance defaults to 0.1 mm and must be 0 or more. A missing or
+unreadable reference is a tool error; the open mesh is untouched.
