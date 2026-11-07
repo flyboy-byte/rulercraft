@@ -3,13 +3,16 @@
   "milestone": "R1",
   "title": "Find round regions (holes, bosses) from how their normals turn",
   "spec": "segmentation",
-  "status": "planned",
+  "status": "verified",
   "depends_on": [
     "segment.planes",
     "fit.cylinder"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "owner": "Claude",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/24",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Coarse faceting (under about 24 facets around) is left to segment.strips; real-scan run at checkpoint.r1-mcp."
 }

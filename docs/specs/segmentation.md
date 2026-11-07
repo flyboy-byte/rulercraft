@@ -31,10 +31,28 @@ Checks: a cube gives 6 regions of 2 triangles, each with its face's normal and a
 gives its 8 faces; a noisy plate (noise under the distance limit) is one region; a flat plate with a dome
 on it keeps the dome out of the plate's region; refusals: none (an empty mesh gives no regions).
 
-## (b) Round regions (`segment.cylinders`), outline
+## (b) Round regions (`segment.cylinders`)
 
-From the flat regions and the triangles left between them: groups whose normals all lie close to one
-plane (their cross products share an axis) are cylinder candidates; fit.cylinder confirms each.
+- Input: a mesh, its graph; options: largest angle between a triangle's normal and the cylinder's radial
+  direction at its centroid (default 15°), largest distance of a triangle's corners from the cylinder
+  surface (default 0.2 mm), largest radius accepted (default 10,000 mm, beyond that it is flat), smallest
+  angular coverage kept (default 20°).
+- Seeds: triangles whose largest angle to an edge-neighbour is between 0.5° and 45° (curving, not a sharp
+  edge), in index order. A seed patch is the seed and every triangle within two edge-steps; it is kept only
+  if fit.cylinder accepts the patch's vertices (with vertex normals), the radius is under the limit, and
+  every patch corner lies within the distance limit.
+- Growth: breadth-first across shared edges; a neighbour joins when its surface (corners, edge midpoints
+  and centroid, not only corners: a large flat triangle's corners can sit on a big cylinder while its
+  middle sags off it) is within the distance limit of the current cylinder and its normal is within the angle of the radial direction (either sign,
+  so holes and bosses both work). The cylinder is refitted whenever the region has doubled.
+- Trim: as for flat regions, refit and hand back triangles with a corner past the distance limit until
+  none strays, so every region lies within the limit of the cylinder it reports.
+- Regions below the coverage limit are dropped (their triangles freed). Output: regions largest area
+  first, each with triangles, vertices, area and its cylinder fit; and the count of triangles in none.
+
+Checks: an open tube is one region with its radius and axis; a block with one rounded edge gives the
+fillet alone (radius, axis, about 90° coverage) and none of the flat faces; two separate tubes give two
+regions; a cube gives none; every region stays within the limit of its cylinder.
 
 ## (c) Joining strips (`segment.strips`), outline
 
