@@ -3,7 +3,7 @@
   "milestone": "R1",
   "title": "Fit a cylinder to marked vertices",
   "spec": "fit-cylinder",
-  "status": "verified",
+  "status": "in-progress",
   "depends_on": [
     "math.core",
     "mesh.graph"
@@ -14,5 +14,5 @@
     "math",
     "wrong-value"
   ],
-  "left": "Ready for Logan review. Known-design corpus and large real meshes not yet checked."
+  "left": "Fix stationary symmetric tube being refused as stalled; found by MCP stdio test."
 }
