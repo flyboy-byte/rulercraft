@@ -3,12 +3,12 @@
   "milestone": "R1",
   "title": "Join the flat strips a faceted round surface breaks into back into one surface",
   "spec": "segmentation",
-  "status": "planned",
+  "status": "in-progress",
   "depends_on": [
     "segment.planes",
     "segment.cylinders"
   ],
-  "owner": null,
+  "owner": "Claude",
   "pr": null,
   "verified_by": [],
   "left": "Everything."
