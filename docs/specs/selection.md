@@ -14,3 +14,6 @@ Marks the vertices a fit runs on.
   stated) so a large selection does not flood an agent.
 - A fit needs at least a handful of points (3 for a plane, 4 for a sphere, 5 for a cylinder); fewer is
   refused with how many were found.
+
+Finite near queries compare unsquared distances to avoid overflow/underflow. Facing directions are
+scaled before normalization so any finite nonzero direction, including subnormal values, works.

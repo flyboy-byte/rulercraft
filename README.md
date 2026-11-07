@@ -3,7 +3,9 @@
 **Measure any mesh, and turn it back into editable CAD, with Claude doing the driving.**
 
 > [!NOTE]
-> Early days (started 2026-11-06). Today it reads STL and prints a summary. Progress is tracked in
+> As of 2026-11-07: reads STL/PLY/OBJ/3MF, fits planes/spheres/cylinders, measures fitted elements
+> over MCP, and saves fit recipes in JSON projects through the CLI. CAD reconstruction is still planned.
+> Progress is tracked in
 > [STATUS.md](STATUS.md) and [ROADMAP-PROGRESS.md](ROADMAP-PROGRESS.md).
 
 Download an STL from a model-sharing site, or take a phone scan, and ask: *what diameter are these holes, how far
@@ -15,8 +17,16 @@ them, over a CLI and an MCP server. The CAD half (building the solid, STEP expor
 ## Try it
 
 ```bash
-cargo run -p rulercraft-cli -- info part.stl
+cargo run -p rulercraft-cli -- info fixtures/known/hole-block.stl
+cargo run -p rulercraft-cli -- fit sphere fixtures/known/sphere-seat.stl --near 0 0 12 12.01 --sigma 0
+cargo run -p rulercraft-mcp # stdio server; connect using an MCP client
 ```
+
+Project commands are `rulercraft project create`, `project fit` and `project info`; see
+[project format and CLI](docs/specs/project-file.md). [MCP tools](docs/specs/mcp.md) provide bounded
+selection pages, fits and two-selection measurements. Segmentation and wall thickness currently have
+engine APIs; their CLI/MCP front ends and undo/redo remain unfinished. The known corpus is mathematical
+design evidence, with real dimensional acceptance still open.
 
 ## How it is built
 

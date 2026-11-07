@@ -10,8 +10,8 @@ built-in guide tells the agent the usual flow: open, inspect, segment or select,
 
 - Run `rulercraft-mcp` (or `cargo run -p rulercraft-mcp`). It serves MCP JSON-RPC over stdin/stdout;
   stdout contains protocol messages only. The initialize instructions and `guide` describe the flow.
-- One mesh is held per process. `mesh.open(path, unit)` reads local STL/PLY/OBJ (case-insensitive),
-  mm by default, and returns the same summary as `mesh.info`. A failed open preserves the prior mesh.
+- One mesh is held per process. `mesh.open(path, unit)` reads local STL/PLY/OBJ/3MF (case-insensitive),
+  mm by default (3MF model units win), and returns the same summary as `mesh.info`. A failed open preserves the prior mesh.
   Caller limits may lower the defaults: 2 GiB bytes, 50 million source vertices/triangles. The file
   read stops at byte limit + 1. Import/graph work and non-finite converted positions are checked
   before committing state. `mesh.info` does not reread the file.

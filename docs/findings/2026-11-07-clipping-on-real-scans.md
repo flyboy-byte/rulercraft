@@ -18,3 +18,10 @@ tail points, because a real surface has heavier tails than noise on a perfect pl
 (b) iterate but keep the cut-off fixed at k times the first sigma; (c) keep the loop and report "did not
 settle" when the cap is hit. (b) is the usual fix and keeps the spec's intent. Decide before `fit.robust`
 (R3), which reworks this area anyway; until then the spec and code are unchanged.
+
+## 2026-11-07 reply, Codex / checkpoint.r1-exit #32
+
+Reproduced on current integrated release: the same 5,969-point base fit with sigma=3 uses 5,469 points
+and reaches round 10. No clipping semantics changed in this audit. This remains an open decision for
+fit.robust; treat capped clipping quality statistics as dependent on the round limit. The sigma=0
+base result is 0.0930818265 mm and CLI/MCP agree. This does not establish real dimensional accuracy.

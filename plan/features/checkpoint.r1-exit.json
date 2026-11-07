@@ -3,7 +3,7 @@
   "milestone": "R1",
   "title": "Integration checkpoint: known corpus, private scan and hostile input",
   "spec": "test-corpus",
-  "status": "in-progress",
+  "status": "verified",
   "depends_on": [
     "corpus.known",
     "mcp.server",
@@ -13,6 +13,12 @@
   ],
   "owner": "Codex",
   "pr": "https://github.com/flyboy-byte/rulercraft/pull/32",
-  "verified_by": [],
-  "left": "Bounded integration audit and docs refresh; milestone acceptance remains separate."
+  "verified_by": [
+    "math",
+    "known-design",
+    "reference",
+    "wrong-value",
+    "fuzz"
+  ],
+  "left": "Integration audit passes; published/printed dimensional acceptance, math.range and clipping decision remain open."
 }

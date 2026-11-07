@@ -6,16 +6,16 @@ Overall roadmap progress: **29%** (details in ROADMAP-PROGRESS.md).
 
 | Status | Features |
 | --- | ---: |
-| planned | 9 |
+| planned | 10 |
 | specced | 0 |
-| in-progress | 1 |
+| in-progress | 0 |
 | implemented | 3 |
-| verified | 18 |
+| verified | 19 |
 | done | 0 |
 
 ## In progress
 
-- `checkpoint.r1-exit` (Codex, https://github.com/flyboy-byte/rulercraft/pull/32): Bounded integration audit and docs refresh; milestone acceptance remains separate.
+- none
 
 ## Ready to claim
 
@@ -24,3 +24,4 @@ Overall roadmap progress: **29%** (details in ROADMAP-PROGRESS.md).
 - `engine.library` (R5): Stable library API, docs, crates.io, Wasm build
 - `fit.robust` (R3): Robust fits on noisy scans (RANSAC seeding, noise estimation)
 - `history.undo` (R1): Undo and redo for every command
+- `math.range` (R1): Stable public math helpers for extreme finite directions
