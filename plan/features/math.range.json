@@ -3,12 +3,15 @@
   "milestone": "R1",
   "title": "Stable public math helpers for extreme finite directions",
   "spec": "math",
-  "status": "in-progress",
+  "status": "verified",
   "depends_on": [
     "math.core"
   ],
   "owner": "Codex",
   "pr": "https://github.com/flyboy-byte/rulercraft/pull/39",
-  "verified_by": [],
-  "left": "Implement stable public vector normalization and angles for extreme finite directions."
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": ""
 }
