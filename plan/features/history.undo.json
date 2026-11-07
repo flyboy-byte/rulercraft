@@ -3,12 +3,15 @@
   "milestone": "R1",
   "title": "Undo and redo for every command",
   "spec": "commands",
-  "status": "implemented",
+  "status": "verified",
   "depends_on": [
     "project.file"
   ],
   "owner": "Codex",
-  "pr": "https://github.com/flyboy-byte/rulercraft/pull/34",
-  "verified_by": [],
-  "left": "Merged by Logan's go-ahead before Codex finished: still needs one wrong-value run (break undo, a test must fail) and Codex's final report. Tests pass (106)."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/38",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": ""
 }

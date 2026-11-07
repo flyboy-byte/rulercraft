@@ -26,7 +26,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `fit.cylinder` Fit a cylinder to marked vertices | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/10 | Ready for Logan review. Known-design corpus and large real meshes not yet checked. |
 | `fit.plane` Fit a plane to marked vertices (TLS + outlier clipping) | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/3 | Known-design check once corpus.known lands; CLI/MCP once cli.commands grows. |
 | `fit.sphere` Fit a sphere to marked vertices | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/4 | Known-design check once corpus.known lands; far-off strays need fit.robust (R3). |
-| `history.undo` Undo and redo for every command | implemented | - | Codex https://github.com/flyboy-byte/rulercraft/pull/34 | Merged by Logan's go-ahead before Codex finished: still needs one wrong-value run (break undo, a test must fail) and Codex's final report. Tests pass (106). |
+| `history.undo` Undo and redo for every command | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/38 |  |
 | `io.3mf` Read 3MF (zip + model XML) | verified | math, known-design, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/29 | Core single-part geometry supported; required extensions and cross-part references refuse. |
 | `io.obj` Read OBJ (geometry only; materials later) | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/5 | Ready for Logan review. Known-design corpus block awaits corpus.known. |
 | `io.ply` Read PLY (ASCII, binary LE/BE) | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/2 | Ready for Logan review. Known-design corpus check awaits corpus.known. |
@@ -49,7 +49,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
 | `cad.check` Deviation of the mesh from the rebuilt CAD (via SolidCore projection) | planned | - | unclaimed | Everything; SolidCore behind an optional feature. |
-| `cad.solidcraft` Rebuild fitted features as a SolidCraft model over its MCP | planned | - | unclaimed | Everything. |
+| `cad.solidcraft` Rebuild fitted features as a SolidCraft model over its MCP | planned | - | claude | Everything. |
 
 ## R3: Noisy scans: robust fits, deviation, alignment, thickness (22%)
 
