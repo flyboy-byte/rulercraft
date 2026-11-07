@@ -76,6 +76,27 @@ pub enum Pattern {
         /// Largest distance of any hole from the circle, mm.
         worst_offset: f64,
     },
+    /// Holes on a regular lattice (rows and columns, not necessarily square).
+    Grid {
+        /// Member names, row by row.
+        members: Vec<String>,
+        /// Common diameter (mean), mm.
+        diameter: f64,
+        /// Number of lattice positions along the first direction.
+        columns: usize,
+        /// Number of lattice positions along the second direction.
+        rows: usize,
+        /// Spacing along the first direction, mm.
+        spacing_a: f64,
+        /// Spacing along the second direction, mm.
+        spacing_b: f64,
+        /// Angle between the two directions, degrees (90 for a rectangular grid).
+        angle_deg: f64,
+        /// Whether every lattice position inside the rows and columns holds a hole.
+        full: bool,
+        /// Largest distance of any hole from its lattice position, mm.
+        worst_offset: f64,
+    },
 }
 
 fn parallel(a: Vec3, b: Vec3, limit_deg: f64) -> bool {
@@ -83,7 +104,8 @@ fn parallel(a: Vec3, b: Vec3, limit_deg: f64) -> bool {
     d.min(180.0 - d) <= limit_deg
 }
 
-/// Finds lines and circles of equal parallel holes. A circle is reported only when every gap between
+/// Finds lines, circles and grids of equal parallel holes. A square of four holes is reported as a circle
+/// (it is one); a grid needs at least 2 rows and 2 columns and 4 holes. A circle is reported only when every gap between
 /// neighbours (including the closing one) is a whole number of the smallest gap: a bolt circle, possibly
 /// with holes missing. Any three holes lie on some circle, so irregular ones are not called patterns. Holes are grouped by diameter and axis direction
 /// (each group needs 3 or more). A group is reported only when all of it lies on one line or one circle;
@@ -108,7 +130,10 @@ pub fn hole_patterns(holes: &[Hole], options: PatternOptions) -> Vec<Pattern> {
         if group.len() < 3 {
             continue;
         }
-        if let Some(p) = line(holes, &group, &options).or_else(|| circle(holes, &group, &options)) {
+        if let Some(p) = line(holes, &group, &options)
+            .or_else(|| circle(holes, &group, &options))
+            .or_else(|| grid(holes, &group, &options))
+        {
             out.push(p);
         }
     }
@@ -148,6 +173,81 @@ fn line(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
         diameter: g.iter().map(|&i| holes[i].diameter).sum::<f64>() / g.len() as f64,
         spacing: mean,
         equal_spacing: gaps.iter().all(|x| (x - mean).abs() <= o.spacing_tolerance),
+        worst_offset: worst,
+    })
+}
+
+fn grid(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
+    if g.len() < 4 {
+        return None;
+    }
+    let z = normalize(holes[g[0]].axis)?;
+    let seed = if z[0].abs() < 0.9 {
+        [1., 0., 0.]
+    } else {
+        [0., 1., 0.]
+    };
+    let x = normalize(cross(z, seed))?;
+    let y = cross(z, x);
+    let origin = holes[g[0]].point;
+    let uv: Vec<[f64; 2]> = g
+        .iter()
+        .map(|&i| {
+            let d = sub(holes[i].point, origin);
+            [dot(d, x), dot(d, y)]
+        })
+        .collect();
+    let len = |v: [f64; 2]| v[0].hypot(v[1]);
+    let min_step = o.position_tolerance * 2.0;
+    // First lattice direction: the nearest other hole; second: the nearest not along the first.
+    let mut others: Vec<[f64; 2]> = uv[1..]
+        .iter()
+        .copied()
+        .filter(|&v| len(v) > min_step)
+        .collect();
+    others.sort_by(|p, q| len(*p).total_cmp(&len(*q)));
+    let a = *others.first()?;
+    let b = *others
+        .iter()
+        .find(|&&v| (a[0] * v[1] - a[1] * v[0]).abs() > 0.1 * len(a) * len(v))?;
+    let det = a[0] * b[1] - a[1] * b[0];
+    let mut cells: Vec<(i64, i64, usize)> = vec![];
+    let mut worst = 0.0f64;
+    for (k, q) in uv.iter().enumerate() {
+        let i = (q[0] * b[1] - q[1] * b[0]) / det;
+        let j = (a[0] * q[1] - a[1] * q[0]) / det;
+        let (ri, rj) = (i.round(), j.round());
+        let off = len([q[0] - ri * a[0] - rj * b[0], q[1] - ri * a[1] - rj * b[1]]);
+        if off > o.position_tolerance || cells.iter().any(|c| c.0 == ri as i64 && c.1 == rj as i64)
+        {
+            return None;
+        }
+        worst = worst.max(off);
+        cells.push((ri as i64, rj as i64, k));
+    }
+    let (i0, i1) = (
+        cells.iter().map(|c| c.0).min()?,
+        cells.iter().map(|c| c.0).max()?,
+    );
+    let (j0, j1) = (
+        cells.iter().map(|c| c.1).min()?,
+        cells.iter().map(|c| c.1).max()?,
+    );
+    let (columns, rows) = ((i1 - i0 + 1) as usize, (j1 - j0 + 1) as usize);
+    if columns < 2 || rows < 2 {
+        return None;
+    }
+    cells.sort_by_key(|c| (c.1, c.0));
+    let cos = (dot([a[0], a[1], 0.0], [b[0], b[1], 0.0]) / (len(a) * len(b))).clamp(-1.0, 1.0);
+    Some(Pattern::Grid {
+        members: cells.iter().map(|c| holes[g[c.2]].name.clone()).collect(),
+        diameter: g.iter().map(|&i| holes[i].diameter).sum::<f64>() / g.len() as f64,
+        columns,
+        rows,
+        spacing_a: len(a),
+        spacing_b: len(b),
+        angle_deg: cos.acos().to_degrees(),
+        full: cells.len() == columns * rows,
         worst_offset: worst,
     })
 }

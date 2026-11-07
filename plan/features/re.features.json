@@ -3,14 +3,17 @@
   "milestone": "R4",
   "title": "Reverse-engineering workflows: hole patterns, symmetry, design-intent guesses",
   "spec": "reverse-engineering",
-  "status": "implemented",
+  "status": "verified",
   "depends_on": [
     "cad.solidcraft",
     "segment.planes",
     "segment.cylinders"
   ],
   "owner": "claude",
-  "pr": null,
-  "verified_by": [],
-  "left": "Grid patterns, splitting partial patterns out of a group, and CLI/MCP exposure."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/58",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Splitting partial patterns out of a larger group, and a CLI command (MCP reverse returns patterns, guesses and symmetry)."
 }

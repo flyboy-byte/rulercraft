@@ -250,3 +250,112 @@ mod symmetry {
         assert!(symmetry_planes(&Mesh::default(), 0.1).is_err());
     }
 }
+
+mod grid {
+    use super::*;
+
+    fn lattice(cols: u32, rows: u32, da: f64, db: f64, skip: &[(u32, u32)]) -> Vec<Hole> {
+        let mut v = vec![];
+        for j in 0..rows {
+            for i in 0..cols {
+                if skip.contains(&(i, j)) {
+                    continue;
+                }
+                v.push(hole(
+                    &format!("g{i}_{j}"),
+                    [5.0 + f64::from(i) * da, 7.0 + f64::from(j) * db, 0.0],
+                    4.0,
+                ));
+            }
+        }
+        v
+    }
+
+    #[test]
+    fn a_rectangular_grid_gives_its_rows_columns_and_spacings() {
+        let p = hole_patterns(&lattice(4, 3, 10.0, 15.0, &[]), PatternOptions::default());
+        let Pattern::Grid {
+            members,
+            columns,
+            rows,
+            spacing_a,
+            spacing_b,
+            angle_deg,
+            full,
+            ..
+        } = &p[0]
+        else {
+            panic!("{p:?}")
+        };
+        assert_eq!((members.len(), *columns, *rows), (12, 4, 3));
+        assert!(
+            (spacing_a - 10.0).abs() < 1e-9
+                && (spacing_b - 15.0).abs() < 1e-9
+                && (angle_deg - 90.0).abs() < 1e-6
+        );
+        assert!(full);
+        assert_eq!(members[0], "g0_0");
+    }
+
+    #[test]
+    fn a_grid_with_a_missing_hole_is_not_full_and_a_scatter_is_not_a_grid() {
+        let p = hole_patterns(
+            &lattice(4, 3, 10.0, 15.0, &[(2, 1)]),
+            PatternOptions::default(),
+        );
+        let Pattern::Grid { full, members, .. } = &p[0] else {
+            panic!("{p:?}")
+        };
+        assert!(!full && members.len() == 11);
+        let mut scatter = lattice(3, 3, 10.0, 15.0, &[]);
+        scatter[4].point = [13.7, 20.9, 0.0]; // pulled off its lattice position
+        assert!(hole_patterns(&scatter, PatternOptions::default()).is_empty());
+        assert!(
+            hole_patterns(&lattice(2, 1, 10.0, 15.0, &[]), PatternOptions::default()).is_empty()
+        );
+    }
+
+    #[test]
+    fn two_holes_on_one_lattice_position_are_not_a_grid() {
+        let mut g = lattice(3, 3, 10.0, 15.0, &[]);
+        let mut twin = g[4].clone();
+        twin.name = "twin".into();
+        twin.point[0] += 0.05;
+        g.push(twin);
+        assert!(hole_patterns(&g, PatternOptions::default()).is_empty());
+    }
+
+    #[test]
+    fn a_turned_grid_reports_the_same_numbers() {
+        let (s, c) = 0.7f64.sin_cos();
+        let tilted: Vec<Hole> = lattice(3, 3, 12.0, 8.0, &[])
+            .into_iter()
+            .map(|h| Hole {
+                point: [
+                    h.point[0] * c - h.point[1] * s,
+                    h.point[0] * s + h.point[1] * c,
+                    0.0,
+                ],
+                ..h
+            })
+            .collect();
+        let p = hole_patterns(&tilted, PatternOptions::default());
+        let Pattern::Grid {
+            columns,
+            rows,
+            spacing_a,
+            spacing_b,
+            full,
+            ..
+        } = &p[0]
+        else {
+            panic!("{p:?}")
+        };
+        assert!((*columns, *rows) == (3, 3) || (*columns, *rows) == (3, 3));
+        assert!(
+            *full
+                && (spacing_a.min(*spacing_b) - 8.0).abs() < 1e-9
+                && (spacing_a.max(*spacing_b) - 12.0).abs() < 1e-9
+        );
+    }
+}
