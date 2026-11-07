@@ -2,13 +2,13 @@
   "id": "engine.library",
   "milestone": "R5",
   "title": "Stable library API, docs, crates.io, Wasm build",
-  "spec": null,
-  "status": "planned",
+  "spec": "library-api",
+  "status": "in-progress",
   "depends_on": [
     "measure.relations"
   ],
-  "owner": null,
+  "owner": "claude",
   "pr": null,
   "verified_by": [],
-  "left": "Everything."
+  "left": "Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog."
 }

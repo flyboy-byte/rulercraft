@@ -108,3 +108,132 @@ fn bad_input_is_refused_plainly() {
     ];
     assert!(fit_plane_robust(&line, None, &[0, 1, 2, 3], o).is_err());
 }
+
+use rulercraft_mesh::fit::{Clip as C2, fit_cylinder_robust, fit_sphere, fit_sphere_robust};
+
+fn sphere_cloud() -> Vec<[f32; 3]> {
+    let mut s = 11u64;
+    let mut p: Vec<[f32; 3]> = vec![];
+    while p.len() < 200 {
+        let v = [lcg(&mut s), lcg(&mut s), lcg(&mut s)];
+        let n = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
+        if n < 0.3 || n > 1.0 {
+            continue;
+        }
+        // Upper cap only (z above 0.3): a patch, as a scan would give.
+        if v[2] / n < 0.3 {
+            continue;
+        }
+        let r = 10.0 + 0.01 * lcg(&mut s);
+        p.push([5.0 + r * v[0] / n, -3.0 + r * v[1] / n, 2.0 + r * v[2] / n]);
+    }
+    p.extend((0..60).map(|_| {
+        [
+            5.0 + 30.0 * lcg(&mut s),
+            -3.0 + 30.0 * lcg(&mut s),
+            2.0 + 30.0 * lcg(&mut s),
+        ]
+    }));
+    p
+}
+
+#[test]
+fn a_robust_sphere_ignores_scattered_points() {
+    let p = sphere_cloud();
+    let sel = all(&p);
+    let plain = fit_sphere(&p, &sel, C2::None, None).unwrap();
+    assert!(
+        (plain.radius - 10.0).abs() > 0.5,
+        "the plain fit should be pulled off: {}",
+        plain.radius
+    );
+    let r = fit_sphere_robust(&p, &sel, RobustOptions::default()).unwrap();
+    assert!((r.fit.radius - 10.0).abs() < 0.02, "{}", r.fit.radius);
+    assert!(
+        (r.fit.center[0] - 5.0).abs() < 0.05
+            && (r.fit.center[1] + 3.0).abs() < 0.05
+            && (r.fit.center[2] - 2.0).abs() < 0.05,
+        "{:?}",
+        r.fit.center
+    );
+    assert!(
+        r.inliers.iter().all(|&i| i < 200),
+        "a scattered point was kept"
+    );
+    assert!(r.inliers.len() >= 190);
+}
+
+#[test]
+fn a_robust_cylinder_ignores_scattered_points() {
+    // Radius 6 about the line through (1, 2, 3) along (0, 0.6, 0.8); 250 surface points, 80 scattered.
+    let (axis, u) = ([0.0f64, 0.6, 0.8], [1.0f64, 0.0, 0.0]);
+    let w = [
+        axis[1] * u[2] - axis[2] * u[1],
+        axis[2] * u[0] - axis[0] * u[2],
+        axis[0] * u[1] - axis[1] * u[0],
+    ];
+    let mut s = 5u64;
+    let mut p: Vec<[f32; 3]> = (0..250)
+        .map(|_| {
+            let (a, h) = (
+                std::f64::consts::PI * f64::from(lcg(&mut s)) * 0.9,
+                15.0 * f64::from(lcg(&mut s)),
+            );
+            let r = 6.0 + 0.01 * f64::from(lcg(&mut s));
+            [0, 1, 2].map(|k| {
+                ([1.0, 2.0, 3.0][k] + h * axis[k] + r * (a.cos() * u[k] + a.sin() * w[k])) as f32
+            })
+        })
+        .collect();
+    p.extend((0..80).map(|_| {
+        [
+            1.0 + 25.0 * lcg(&mut s),
+            2.0 + 25.0 * lcg(&mut s),
+            3.0 + 25.0 * lcg(&mut s),
+        ]
+    }));
+    let sel = all(&p);
+    let o = RobustOptions {
+        iterations: 60,
+        threshold: 0.1,
+        seed: 2,
+    };
+    let r = fit_cylinder_robust(&p, &sel, o).unwrap();
+    assert!((r.fit.radius - 6.0).abs() < 0.03, "{}", r.fit.radius);
+    assert!(
+        r.fit.axis[0].abs() < 0.01
+            && (r.fit.axis[1] - 0.6).abs() < 0.01
+            && (r.fit.axis[2] - 0.8).abs() < 0.01,
+        "{:?}",
+        r.fit.axis
+    );
+    // A scattered point can land inside the 0.1 mm band by chance; a handful at most.
+    let strays = r.inliers.iter().filter(|&&i| i >= 250).count();
+    assert!(
+        strays <= 3 && r.inliers.len() >= 240,
+        "{strays} strays, {} kept",
+        r.inliers.len()
+    );
+}
+
+#[test]
+fn round_robust_fits_refuse_bad_input() {
+    let p = sphere_cloud();
+    let sel = all(&p);
+    let o = RobustOptions::default();
+    assert!(
+        fit_sphere_robust(
+            &p,
+            &sel,
+            RobustOptions {
+                threshold: -1.0,
+                ..o
+            }
+        )
+        .is_err()
+    );
+    assert!(fit_sphere_robust(&p, &sel[..5], o).is_err());
+    assert!(fit_sphere_robust(&p, &[0, 1, 2, 3, 4, 99999], o).is_err());
+    assert!(fit_cylinder_robust(&p, &sel[..11], o).is_err());
+    assert!(fit_cylinder_robust(&p, &sel, RobustOptions { iterations: 0, ..o }).is_err());
+}

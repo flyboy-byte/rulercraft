@@ -170,6 +170,7 @@ fn stdio_tools_schemas_geometry_and_failure_state() {
         "select",
         "fit",
         "measure",
+        "datum",
         "segment",
         "history.info",
         "history.undo",
@@ -200,6 +201,32 @@ fn stdio_tools_schemas_geometry_and_failure_state() {
     let m=c.data("measure",json!({"first":{"kind":"plane","selection":bottom},"second":{"kind":"plane","selection":top}}));
     assert_eq!(m["relation"]["distance"], 20.);
     assert_eq!(m["relation"]["angle_deg"], 0.);
+    let primary = json!({"kind":"plane","selection":{"in_box":[[-1,-1,19],[21,21,21]]}});
+    let secondary = json!({"kind":"plane","selection":{"in_box":[[19,-1,-1],[21,21,21]]}});
+    let tertiary = json!({"kind":"plane","selection":{"in_box":[[-1,19,-1],[21,21,21]]}});
+    let datum = c.data(
+        "datum",
+        json!({"primary":primary,"secondary":secondary,"tertiary":tertiary}),
+    );
+    let rotation = datum["transform"]["rotation"].as_array().unwrap();
+    for (i, row) in rotation.iter().enumerate() {
+        for (j, value) in row.as_array().unwrap().iter().enumerate() {
+            let expected = if i == j { 1.0 } else { 0.0 };
+            assert!((value.as_f64().unwrap() - expected).abs() < 1e-12);
+        }
+        assert!((datum["transform"]["translation"][i].as_f64().unwrap() + 20.0).abs() < 1e-12);
+    }
+    let parallel = c.call(
+        "datum",
+        json!({"primary":primary,"secondary":primary,"tertiary":tertiary}),
+    );
+    assert_eq!(parallel["isError"], true);
+    let wrong_kind = c.call(
+        "datum",
+        json!({"primary":{"kind":"sphere"},"secondary":secondary,"tertiary":tertiary}),
+    );
+    assert_eq!(wrong_kind["isError"], true);
+    assert_eq!(c.data("mesh.info", json!({}))["vertices"], 8);
     let segmented = c.data("segment", json!({}));
     assert_eq!(segmented["kind"], "cylinders");
     assert_eq!(segmented["regions"].as_array().unwrap().len(), 0);
@@ -454,6 +481,9 @@ fn reverse_returns_a_recipe_guesses_and_symmetry_for_known_shapes() {
     );
     assert_eq!(steps.iter().filter(|s| s["step"] == "unplaced").count(), 4);
     assert_eq!(r["symmetry"].as_array().unwrap().len(), 3);
+    // Every cube vertex lies on three of the six faces the recipe was built from.
+    assert_eq!(r["recipe_check"]["explained_fraction"], 1.0, "{r}");
+    assert_eq!(r["recipe_check"]["unexplained_count"], 0);
     c.data("mesh.open", json!({"path":tube_path}));
     let r = c.data("reverse", json!({}));
     assert_eq!(r["cylinders_found"], 1, "{r}");
@@ -470,4 +500,70 @@ fn reverse_returns_a_recipe_guesses_and_symmetry_for_known_shapes() {
             .any(|x| x["basis"] == "whole mm" && x["value"] == 12.0),
         "{g}"
     );
+}
+
+/// A 2 x 4 x 6 box with a vertex at each face centre, so its normal rays have exact answers.
+fn thickness_box() -> String {
+    let mut positions = Vec::new();
+    for i in 0..8 {
+        positions.push([
+            (i & 1) as f64 * 2.0,
+            ((i >> 1) & 1) as f64 * 4.0,
+            ((i >> 2) & 1) as f64 * 6.0,
+        ]);
+    }
+    let quads = [
+        [0, 2, 3, 1],
+        [4, 5, 7, 6],
+        [0, 1, 5, 4],
+        [2, 6, 7, 3],
+        [0, 4, 6, 2],
+        [1, 3, 7, 5],
+    ];
+    let mut faces = Vec::new();
+    for q in quads {
+        let center =
+            [0, 1, 2].map(|axis| q.iter().map(|i| positions[*i as usize][axis]).sum::<f64>() / 4.0);
+        let id = positions.len() as u32;
+        positions.push(center);
+        for i in 0..4 {
+            faces.push([id, q[i], q[(i + 1) % 4]]);
+        }
+    }
+    ply(&positions, &faces)
+}
+
+#[test]
+fn thickness_tool_measures_a_known_wall_and_pages_results() {
+    let dir = std::env::temp_dir().join(format!("rulercraft-thickness-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("box.ply");
+    std::fs::write(&path, thickness_box()).unwrap();
+    let mut c = Client::new();
+    let selection = json!({"in_box":[[1.0,2.0,6.0],[1.0,2.0,6.0]]});
+    assert_eq!(
+        c.call("thickness", json!({"selection":selection}))["isError"],
+        true
+    );
+    c.data("mesh.open", json!({"path":path}));
+    let v = c.data("thickness", json!({"selection":selection}));
+    assert_eq!(v["total"], 1);
+    assert_eq!(v["returned"], 1);
+    assert!((v["samples"][0]["distance"].as_f64().unwrap() - 6.0).abs() < 1e-10);
+    let short = c.data(
+        "thickness",
+        json!({"selection":selection,"max_distance":1.0}),
+    );
+    assert!(short["samples"][0]["distance"].is_null());
+    let page = c.data("thickness", json!({"offset":0,"limit":2}));
+    assert_eq!(page["total"], 14);
+    assert_eq!(page["returned"], 2);
+    assert_eq!(page["truncated"], true);
+    assert_eq!(c.call("thickness", json!({"limit":1025}))["isError"], true);
+    assert_eq!(
+        c.call("thickness", json!({"max_distance":0.0}))["isError"],
+        true
+    );
+    assert_eq!(c.data("mesh.info", json!({}))["vertices"], 14);
+    std::fs::remove_dir_all(dir).unwrap();
 }

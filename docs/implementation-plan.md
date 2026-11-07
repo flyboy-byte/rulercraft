@@ -44,6 +44,8 @@ they match the design dimensions.
 | ~~`project.file`~~ (done 2026-11-07) | M | Own JSON format (docs/specs/project-file.md): version, embedded source mesh bytes and units, elements with their recipe (selection, settings) and last result; reopen refits and reports changes. serde pre-approved |
 | `history.undo` | S | Once commands exist: every successful command one undo step, failed ones change nothing |
 | `mcp.fit-validation` | S | Make robust and ordinary MCP plane fits reject a sphere/cylinder-only diameter option |
+| `mcp.thickness` | S | Expose paged directional wall-thickness samples over MCP |
+| `mcp.datum` | S | Fit three plane selections and return their datum frame over MCP |
 | ~~`reference.local`~~ (done 2026-11-07) | S | A test helper that loads `fixtures/private/reference/<mesh>.json` and skips with a printed reason when absent |
 | ~~STL overflow fix~~ | S | DONE 2026-11-07: the shared mesh builder refuses a coordinate that overflows f32 after unit conversion, for every reader |
 

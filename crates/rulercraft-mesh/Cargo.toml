@@ -1,6 +1,8 @@
 [package]
 name = "rulercraft-mesh"
 description = "Mesh reading, fitting and measurement for RulerCraft"
+keywords = ["mesh", "stl", "cad", "metrology", "reverse-engineering"]
+categories = ["science", "mathematics"]
 version.workspace = true
 edition.workspace = true
 license.workspace = true
