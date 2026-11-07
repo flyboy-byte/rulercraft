@@ -1,0 +1,39 @@
+{
+  "license": "MIT OR Apache-2.0",
+  "unit": "mm",
+  "tolerance_mm": 1e-05,
+  "tolerance_reason": "f32 coordinate quantization below 4e-6 mm plus solver roundoff; fixed before measurement",
+  "bounds": [
+    [
+      -15,
+      -15,
+      -3
+    ],
+    [
+      15,
+      15,
+      6
+    ]
+  ],
+  "fits": [
+    {
+      "id": "seat",
+      "kind": "sphere",
+      "box": null,
+      "near": [
+        0,
+        0,
+        12,
+        12.01
+      ],
+      "expected": {
+        "radius": 12,
+        "diameter": 24,
+        "center.0": 0,
+        "center.1": 0,
+        "center.2": 12
+      }
+    }
+  ],
+  "relations": []
+}
