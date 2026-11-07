@@ -55,7 +55,7 @@ fn filters_combine_and_feed_the_fit() {
     assert_eq!(
         fit(&m, &g, &bad),
         Err(CommandError::Invalid(
-            "a known diameter only applies to a sphere fit"
+            "a known diameter only applies to a sphere or cylinder fit"
         ))
     );
 }

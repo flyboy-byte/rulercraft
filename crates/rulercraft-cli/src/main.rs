@@ -10,7 +10,7 @@ use std::process::ExitCode;
 
 const USAGE: &str = "Usage:
   rulercraft info <mesh> [--units mm|cm|m|in]
-  rulercraft fit <plane|sphere> <mesh> [--units U] [--box X Y Z X Y Z] [--near X Y Z R]
+  rulercraft fit <plane|sphere|cylinder> <mesh> [--units U] [--box X Y Z X Y Z] [--near X Y Z R]
                  [--facing DX DY DZ] [--within DEG] [--sigma 0|1|2|3] [--known-diameter D]
 Meshes: .stl .ply .obj. Lengths in mm (after --units), angles in degrees. Selection filters combine;
 with none the whole mesh is used. --within defaults to 30, --sigma to 3 (0 keeps every point).";
@@ -46,7 +46,12 @@ fn fit_command(args: &[String]) -> Result<String, String> {
     let kind = match kind.as_str() {
         "plane" => FitKind::Plane,
         "sphere" => FitKind::Sphere,
-        other => return Err(format!("unknown fit kind `{other}`: use plane or sphere")),
+        "cylinder" => FitKind::Cylinder,
+        other => {
+            return Err(format!(
+                "unknown fit kind `{other}`: use plane, sphere or cylinder"
+            ));
+        }
     };
     let (mut unit, mut selection, mut clip, mut known) =
         (Unit::Mm, Selection::default(), Clip::Sigma(3), None);
@@ -102,6 +107,12 @@ fn fit_command(args: &[String]) -> Result<String, String> {
             "form_error": s.form_error, "min_residual": s.min_residual, "max_residual": s.max_residual,
             "used": s.used, "offered": s.offered, "rounds": s.rounds, "cap_angle_deg": s.cap_angle_deg,
             "free_diameter": s.free_diameter,
+        }),
+        Fitted::Cylinder(c) => json!({
+            "kind": "cylinder", "axis_point": c.axis_point, "axis": c.axis, "radius": c.radius,
+            "diameter": c.diameter, "length": c.length, "coverage_deg": c.coverage_deg, "sigma": c.sigma,
+            "form_error": c.form_error, "min_residual": c.min_residual, "max_residual": c.max_residual,
+            "used": c.used, "offered": c.offered, "rounds": c.rounds, "assumed_diameter": c.assumed_diameter,
         }),
     };
     Ok(json!({ "mesh": path, "selected": out.selected, "fit": fitted }).to_string())

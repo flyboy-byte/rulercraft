@@ -2,7 +2,10 @@
 //! The command layer the CLI and the MCP server share (docs/specs/commands.md): typed requests in,
 //! typed results out. No JSON here; front ends translate.
 
-use crate::fit::{Clip, FitError, PlaneFit, SphereFit, fit_plane, fit_sphere};
+use crate::fit::{
+    Clip, CylinderFit, CylinderOptions, FitError, PlaneFit, SphereFit, fit_cylinder, fit_plane,
+    fit_sphere,
+};
 use crate::graph::MeshGraph;
 use crate::math::Vec3;
 use crate::mesh::Mesh;
@@ -27,6 +30,8 @@ pub enum FitKind {
     Plane,
     /// A sphere.
     Sphere,
+    /// A cylinder.
+    Cylinder,
 }
 
 /// A fit command.
@@ -38,7 +43,7 @@ pub struct FitRequest {
     pub selection: Selection,
     /// Outlier cut-off.
     pub clip: Clip,
-    /// Sphere only: hold this diameter, mm.
+    /// Sphere: hold this diameter, mm. Cylinder: the designed (assumed) diameter.
     pub known_diameter: Option<f64>,
 }
 
@@ -49,6 +54,8 @@ pub enum Fitted {
     Plane(PlaneFit),
     /// A sphere.
     Sphere(SphereFit),
+    /// A cylinder.
+    Cylinder(CylinderFit),
 }
 
 /// The result of a fit command.
@@ -110,9 +117,9 @@ pub fn fit(
     graph: &MeshGraph,
     request: &FitRequest,
 ) -> Result<FitOutcome, CommandError> {
-    if request.known_diameter.is_some() && request.kind != FitKind::Sphere {
+    if request.known_diameter.is_some() && request.kind == FitKind::Plane {
         return Err(CommandError::Invalid(
-            "a known diameter only applies to a sphere fit",
+            "a known diameter only applies to a sphere or cylinder fit",
         ));
     }
     let picked = select(mesh, graph, &request.selection)?;
@@ -135,6 +142,22 @@ pub fn fit(
             )
             .map_err(CommandError::Fit)?,
         ),
+        FitKind::Cylinder => {
+            let options = CylinderOptions {
+                clip: request.clip,
+                assumed_diameter: request.known_diameter,
+                ..Default::default()
+            };
+            Fitted::Cylinder(
+                fit_cylinder(
+                    &mesh.positions,
+                    Some(&graph.vertex_normals),
+                    &picked,
+                    options,
+                )
+                .map_err(CommandError::Fit)?,
+            )
+        }
     };
     Ok(FitOutcome {
         selected: picked.len(),

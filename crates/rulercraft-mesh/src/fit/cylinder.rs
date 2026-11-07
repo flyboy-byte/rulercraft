@@ -53,7 +53,7 @@ impl Default for CylinderOptions {
     }
 }
 /// Measured cylinder, lengths in millimetres.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub struct CylinderFit {
     /// Point on axis at midpoint of measured axial span.
     pub axis_point: Vec3,
