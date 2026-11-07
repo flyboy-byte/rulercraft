@@ -139,3 +139,61 @@ fn bad_input_is_refused_plainly() {
     assert_eq!(none.stats.count, 0);
     assert_eq!(none.stats.rms, 0.0);
 }
+
+/// A 10 x 10 vertex grid of unit squares in the x-y plane.
+fn grid() -> Mesh {
+    let mut p = vec![];
+    for j in 0..10 {
+        for i in 0..10 {
+            p.push([i as f32, j as f32, 0.0]);
+        }
+    }
+    let mut t = vec![];
+    for j in 0..9u32 {
+        for i in 0..9u32 {
+            let a = j * 10 + i;
+            t.push([a, a + 1, a + 11]);
+            t.push([a, a + 11, a + 10]);
+        }
+    }
+    mesh(&p, &t)
+}
+
+#[test]
+fn bumps_become_separate_patches_by_side_and_size() {
+    use rulercraft_mesh::deviation::patches;
+    use rulercraft_mesh::graph::MeshGraph;
+    let g = grid();
+    let mut d = vec![0.0; 100];
+    for v in [11, 12, 21, 22] {
+        d[v] = 0.5;
+    } // 4 vertices out
+    for v in [77, 78] {
+        d[v] = -0.4;
+    } // 2 vertices in
+    d[23] = -0.6; // touches the outside bump but is on the other side
+    d[90] = 0.05; // under tolerance
+    let p = patches(&MeshGraph::build(&g), &d, 0.1).unwrap();
+    assert_eq!(p.len(), 3, "{p:?}");
+    assert_eq!(p[0].vertices, vec![11, 12, 21, 22]);
+    assert!(p[0].outside && (p[0].mean - 0.5).abs() < 1e-12 && (p[0].max_abs - 0.5).abs() < 1e-12);
+    assert_eq!(p[1].vertices, vec![77, 78]);
+    assert!(!p[1].outside && (p[1].mean + 0.4).abs() < 1e-12);
+    assert_eq!(p[2].vertices, vec![23]);
+    assert!(!p[2].outside && (p[2].max_abs - 0.6).abs() < 1e-12);
+}
+
+#[test]
+fn patch_inputs_are_checked() {
+    use rulercraft_mesh::deviation::patches;
+    use rulercraft_mesh::graph::MeshGraph;
+    let g = MeshGraph::build(&grid());
+    assert!(patches(&g, &[0.0; 100], f64::NAN).is_err());
+    assert!(patches(&g, &[0.0; 100], -1.0).is_err());
+    assert!(patches(&g, &[0.0; 100], 0.1).unwrap().is_empty());
+    let mut d = vec![0.0; 100];
+    d[5] = f64::NAN;
+    assert!(patches(&g, &d, 0.1).unwrap().is_empty());
+    // Shorter distances than vertices must not panic.
+    assert!(patches(&g, &[1.0; 10], 0.1).is_ok());
+}

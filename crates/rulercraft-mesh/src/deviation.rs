@@ -260,3 +260,71 @@ pub fn deviation(
     };
     Ok(Deviation { distances, stats })
 }
+
+/// A connected group of vertices on the same side of the reference, all beyond the tolerance.
+#[derive(Debug, Clone, PartialEq, serde::Serialize)]
+pub struct Patch {
+    /// Vertex ids, ascending.
+    pub vertices: Vec<u32>,
+    /// True when the patch stands outside the reference (positive distances).
+    pub outside: bool,
+    /// Mean signed distance of the patch, mm.
+    pub mean: f64,
+    /// Largest absolute distance in the patch, mm.
+    pub max_abs: f64,
+}
+
+/// Groups vertices whose absolute distance exceeds `tolerance` into patches: vertices joined by a mesh
+/// edge and on the same side. Largest first; equal sizes by lowest vertex id. `distances` must have one
+/// entry per vertex of the graph's mesh.
+pub fn patches(
+    graph: &crate::graph::MeshGraph,
+    distances: &[f64],
+    tolerance: f64,
+) -> Result<Vec<Patch>, DeviationError> {
+    if !tolerance.is_finite() || tolerance < 0.0 {
+        return Err(DeviationError(
+            "tolerance must be a finite number, 0 or more".into(),
+        ));
+    }
+    let n = distances.len();
+    let bad = |i: usize| distances[i].abs() > tolerance && distances[i].is_finite();
+    let mut seen = vec![false; n];
+    let mut out = vec![];
+    for s in 0..n {
+        if seen[s] || !bad(s) {
+            continue;
+        }
+        let side = distances[s] > 0.0;
+        let mut stack = vec![s as u32];
+        seen[s] = true;
+        let mut vertices = vec![];
+        while let Some(v) = stack.pop() {
+            vertices.push(v);
+            for &u in graph.neighbours_of(v) {
+                let u = u as usize;
+                if u < n && !seen[u] && bad(u) && (distances[u] > 0.0) == side {
+                    seen[u] = true;
+                    stack.push(u as u32);
+                }
+            }
+        }
+        vertices.sort_unstable();
+        let k = vertices.len() as f64;
+        out.push(Patch {
+            outside: side,
+            mean: vertices.iter().map(|&v| distances[v as usize]).sum::<f64>() / k,
+            max_abs: vertices
+                .iter()
+                .fold(0.0, |m, &v| f64::max(m, distances[v as usize].abs())),
+            vertices,
+        });
+    }
+    out.sort_by(|a, b| {
+        b.vertices
+            .len()
+            .cmp(&a.vertices.len())
+            .then(a.vertices[0].cmp(&b.vertices[0]))
+    });
+    Ok(out)
+}
