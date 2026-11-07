@@ -15,7 +15,7 @@ const USAGE: &str = "Usage:
   rulercraft info <mesh> [--units mm|cm|m|in]
   rulercraft fit <plane|sphere|cylinder> <mesh> [--units U] [--box X Y Z X Y Z] [--near X Y Z R]
                  [--facing DX DY DZ] [--within DEG] [--sigma 0|1|2|3] [--known-diameter D]
-Meshes: .stl .ply .obj. Lengths in mm (after --units), angles in degrees. Selection filters combine;
+Meshes: .stl .ply .obj .3mf. Lengths in mm (after --units), angles in degrees. Selection filters combine;
 with none the whole mesh is used. --within defaults to 30, --sigma to 3 (0 keeps every point).";
 
 fn number(v: f32) -> String {

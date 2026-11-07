@@ -18,7 +18,7 @@ changes the pattern.
 ```
 mesh.rs        Mesh, MeshBuilder, Unit, Bounds            (exists)
 stl.rs         STL reader                                  (exists)
-io/            ply.rs, obj.rs, threemf.rs, and a read_mesh(name, bytes, unit, limits) dispatcher
+io/            ply.rs, obj.rs, threemf.rs (exists), and a read_mesh(name, bytes, unit, limits) dispatcher
 graph.rs       MeshGraph: normals, adjacency, components, boundaries, creases  (mesh.graph)
 select.rs      box / near / facing / explicit selections   (select.region)
 math/          small linear algebra: Vec3 helpers, 3x3 symmetric eigen, small least squares
@@ -61,3 +61,6 @@ and candidate-triangle caps. The original STL-only `Limits` API remains availabl
 Project persistence uses serde/serde_json for typed recipes and results. Project::decode always
 reimports source bytes and reruns commands::fit; saved results only detect changes. The CLI owns
 filesystem reads and atomic project writes; the engine still accepts bytes only.
+
+3MF uses zip for bounded in-memory package reads and a private XML geometry-subset reader. Its
+model unit overrides the caller unit; build/component transforms flatten through MeshBuilder.

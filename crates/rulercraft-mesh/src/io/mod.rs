@@ -2,6 +2,8 @@
 //! Bounded mesh import selected by file extension.
 pub mod obj;
 pub mod ply;
+pub mod threemf;
+mod xml;
 
 use crate::{Mesh, MeshBuilder, Unit};
 use std::fmt;
@@ -47,8 +49,9 @@ pub fn format_name(name: &str) -> Result<&'static str, ReadError> {
         "stl" => Ok("stl"),
         "ply" => Ok("ply"),
         "obj" => Ok("obj"),
+        "3mf" => Ok("3mf"),
         _ => Err(ReadError(
-            "unknown extension: supported extensions are .stl, .ply, .obj".into(),
+            "unknown extension: supported extensions are .stl, .ply, .obj, .3mf".into(),
         )),
     }
 }
@@ -63,6 +66,7 @@ pub fn read_mesh(
     check_bytes(bytes, limits)?;
     match format {
         "ply" => ply::read_ply(bytes, unit, limits),
+        "3mf" => threemf::read_threemf(bytes, limits),
         "obj" => obj::read_obj(bytes, unit, limits),
         _ => {
             let m = crate::read_stl(

@@ -3,12 +3,16 @@
   "milestone": "R1",
   "title": "Read 3MF (zip + model XML)",
   "spec": "mesh-import",
-  "status": "specced",
+  "status": "verified",
   "depends_on": [
     "io.stl"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything; zip/deflate reader is pre-approved (D-006)."
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/29",
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Core single-part geometry supported; required extensions and cross-part references refuse."
 }
