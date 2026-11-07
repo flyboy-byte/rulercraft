@@ -44,6 +44,7 @@ unreadable reference is a tool error; the open mesh is untouched.
 0.1, must be above 0). The plane is then taken from the largest set of selected vertices agreeing with a
 random three-point plane (see fit-plane.md) and fitted without clipping; the result adds `robust: true`
 and `inliers`. Normal orientation uses the no-normals convention.
+A `known_diameter` is invalid for all plane fits, including robust plane fits.
 
 ## Datum frame (2026-11-07)
 

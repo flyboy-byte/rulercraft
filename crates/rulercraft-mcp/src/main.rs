@@ -233,6 +233,9 @@ impl Loaded {
     }
     fn fit(&self, args: &FitArgs) -> Result<(Value, Element), String> {
         let request = args.request()?;
+        if request.known_diameter.is_some() && request.kind == FitKind::Plane {
+            return Err("a known diameter only applies to a sphere or cylinder fit".into());
+        }
         let selected = commands::select(&self.mesh, &self.graph, &request.selection)
             .map_err(|e| e.to_string())?;
         if selected.len() > 1_000_000 {

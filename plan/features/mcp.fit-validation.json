@@ -1,0 +1,18 @@
+{
+  "id": "mcp.fit-validation",
+  "milestone": "R3",
+  "title": "Consistent MCP plane fit option validation",
+  "spec": "mcp",
+  "status": "verified",
+  "depends_on": [
+    "mcp.server",
+    "fit.robust"
+  ],
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/54",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": ""
+}
