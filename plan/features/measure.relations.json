@@ -3,13 +3,13 @@
   "milestone": "R1",
   "title": "Distances and angles between fitted elements",
   "spec": "measure",
-  "status": "specced",
+  "status": "in-progress",
   "depends_on": [
     "fit.plane",
     "fit.sphere",
     "fit.cylinder"
   ],
-  "owner": null,
+  "owner": "Claude",
   "pr": null,
   "verified_by": [],
   "left": "Everything."
