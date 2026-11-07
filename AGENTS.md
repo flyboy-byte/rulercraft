@@ -4,7 +4,7 @@ Rules for every model (Claude, Codex, others) and every contributor. This file o
 other doc here; if another doc disagrees, this one wins and the other gets fixed.
 
 Read first, in order: CONTEXT.md (what this is), this file, PROCESS.md (how work gets done),
-docs/architecture.md (where code goes), STATUS.md (where things stand), HANDOFF.md (what the last
+docs/architecture.md (where code goes), docs/implementation-plan.md (build order), STATUS.md (where things stand), HANDOFF.md (what the last
 session left). Then the feature file in `plan/features/` and its spec in `docs/specs/`.
 
 There is no original to copy: behaviour comes from `docs/specs/`. When a spec does not settle a
@@ -40,7 +40,9 @@ Toolchain: system Rust (1.99+), no rustup. Python 3, no packages.
 Several sessions work at once: Claude, Codex, sometimes more than one of each. They never talk
 to each other directly. Everything they need to know is in the repo:
 
-- **Claims are draft PRs.** Before starting, `gh pr list` and `python3 tools/plan.py next`. Claim a
+- **Claims are draft PRs.** Before starting, `python3 tools/plan.py next`: it lists ready features and
+  every claim, including open PRs whose title starts with a feature id (a claim lives on its branch
+  until it merges, so main's feature files alone cannot show it). Open the draft PR first, then code. Claim a
   feature by opening a draft PR titled with its id (`fit.cylinder: ...`) and setting `owner` and
   `pr` in its `plan/features/<id>.json`. Lowest PR number wins a tie. One feature per PR.
 - **Hot files** (`.github/workflows/`, `Cargo.toml` at the root, `tools/plan.py`, `plan/roadmap.json`)
