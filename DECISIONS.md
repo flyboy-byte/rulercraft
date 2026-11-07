@@ -66,6 +66,12 @@ checked and stated in the PR. Linear algebra stays in our own small `math/` modu
 **Why.** Fresh sessions should not stall asking about obvious choices, and a light dependency tree keeps
 builds and CI fast.
 
+## D-007 — MCP transport dependencies (2026-11-07)
+
+Use the pre-approved official Rust MCP SDK `rmcp` (Apache-2.0) with stdio/server/macros/schema
+features, plus its Tokio runtime (MIT), Serde (MIT OR Apache-2.0) and existing serde_json
+(MIT OR Apache-2.0). No network transport is enabled. Engine crates remain independent of MCP.
+
 ## D-009 3MF archive reader (2026-11-07)
 
 **Decision.** `io.3mf` uses zip 2.6 (MIT), default features off with deflate enabled, as pre-approved by

@@ -10,7 +10,7 @@ changes the pattern.
 | --- | --- | --- |
 | `rulercraft-mesh` | The engine: readers, mesh model, selection, fits, measurements, project file. No I/O except reading bytes it is given. | nothing heavy (see Dependencies) |
 | `rulercraft-cli` | The `rulercraft` binary: argument parsing, files, printing JSON. Thin. | mesh |
-| `rulercraft-mcp` (to come, `mcp.server`) | The MCP server over the same commands. Thin. | mesh |
+| `rulercraft-mcp` | Stdio MCP tools over the same commands; local file loading and JSON schemas. | mesh, rmcp |
 | `rulercraft-cad` (to come, R2) | SolidCraft/SolidCore bridge, behind an optional feature. | mesh, SolidCore |
 
 ## Modules in `rulercraft-mesh`
