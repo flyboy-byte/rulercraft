@@ -9,6 +9,7 @@ pub mod io;
 pub mod math;
 pub mod measure;
 pub mod mesh;
+pub mod segment;
 pub mod select;
 pub mod stl;
 
