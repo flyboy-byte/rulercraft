@@ -3,13 +3,13 @@
   "milestone": "R1",
   "title": "MCP server exposing the same commands to Claude",
   "spec": "mcp",
-  "status": "planned",
+  "status": "in-progress",
   "depends_on": [
     "cli.commands",
     "fit.plane"
   ],
-  "owner": null,
+  "owner": "Codex",
   "pr": null,
   "verified_by": [],
-  "left": "Everything."
+  "left": "Stdio tools over commands, schemas, guide and protocol integration check."
 }
