@@ -19,4 +19,16 @@ or round scan can slide along the reference and is not constrained by ICP alone;
 edges follows the closest triangle, so residuals beside an edge can differ by a percent or so between
 frames. Checks: an L-shaped part moved by 2.9° and about 0.8 mm is moved back within 2e-3 mm; an aligned
 scan stays put; moving both meshes together gives the same residuals within 2%.
-Not done: datum alignment (three planes, plane-line-point) and CLI/MCP exposure.
+
+
+## Datum frame (2026-11-07)
+
+`align::datum_frame(primary, secondary, tertiary)` takes three fitted planes as (point, unit normal) and
+returns the transform from the part's coordinates onto its datum frame: origin where the three planes
+meet, Z the primary normal, X the secondary normal with its Z part removed, Y = Z × X. The tertiary plane
+only fixes the origin. Refused: a zero normal, primary and secondary within 10 degrees of parallel, and
+three planes that do not meet at one point (determinant of the normals below sin² 10°). Normals set the
+axis signs, so give them the same side on every part of a batch. Checks: planes taken from three faces of
+a part moved by an arbitrary turn and move return every vertex to its original place within 1e-6; each
+refusal has a case, including 5 degrees off parallel with a good third plane.
+Not done: plane-line-point datums and CLI/MCP exposure.

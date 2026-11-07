@@ -202,3 +202,62 @@ pub fn align_icp(
         converged,
     })
 }
+
+/// Why a datum frame could not be made.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DatumError(pub &'static str);
+impl std::fmt::Display for DatumError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.0)
+    }
+}
+impl std::error::Error for DatumError {}
+
+/// A plane must be at least this many degrees off the one before it to count as a different direction.
+pub const DATUM_MIN_ANGLE_DEG: f64 = 10.0;
+
+/// The transform that takes a part's own coordinates onto its datum frame, from three fitted planes
+/// given as (point, unit normal) in the order primary, secondary, tertiary. The origin is where the
+/// three planes meet. Z is the primary normal; X is the secondary normal with its Z part removed; Y is
+/// Z × X. The tertiary plane only fixes the origin. Normals set the axis directions, so give them the
+/// same side each time you align a batch of parts. Refuses planes within [`DATUM_MIN_ANGLE_DEG`] of
+/// parallel, or whose normals are not independent enough to meet at one point.
+pub fn datum_frame(
+    primary: (Vec3, Vec3),
+    secondary: (Vec3, Vec3),
+    tertiary: (Vec3, Vec3),
+) -> Result<Rigid, DatumError> {
+    let unit = |n: Vec3| normalize(n).ok_or(DatumError("a plane normal has no length"));
+    let (n1, n2, n3) = (unit(primary.1)?, unit(secondary.1)?, unit(tertiary.1)?);
+    let min_sin = DATUM_MIN_ANGLE_DEG.to_radians().sin();
+    if length(cross(n1, n2)) < min_sin {
+        return Err(DatumError(
+            "the primary and secondary planes are nearly parallel",
+        ));
+    }
+    let z = n1;
+    let x = unit(sub(n2, crate::math::scale(z, dot(n2, z))))?;
+    let y = cross(z, x);
+    // Meeting point: n_i · o = n_i · p_i for the three planes.
+    let a = [n1, n2, n3].iter().flatten().copied().collect::<Vec<f64>>();
+    let b = vec![
+        dot(n1, primary.0),
+        dot(n2, secondary.0),
+        dot(n3, tertiary.0),
+    ];
+    let det = dot(n1, cross(n2, n3)).abs();
+    if det < min_sin * min_sin {
+        return Err(DatumError("the three planes do not meet at one point"));
+    }
+    let o = solve_dense(a, b).ok_or(DatumError("the three planes do not meet at one point"))?;
+    let rotation = [x, y, z];
+    let translation = [
+        -dot(x, [o[0], o[1], o[2]]),
+        -dot(y, [o[0], o[1], o[2]]),
+        -dot(z, [o[0], o[1], o[2]]),
+    ];
+    Ok(Rigid {
+        rotation,
+        translation,
+    })
+}
