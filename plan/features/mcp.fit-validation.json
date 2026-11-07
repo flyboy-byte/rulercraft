@@ -1,0 +1,12 @@
+{
+  "id": "mcp.fit-validation",
+  "milestone": "R3",
+  "title": "Consistent MCP plane fit option validation",
+  "spec": "mcp",
+  "status": "in-progress",
+  "depends_on": ["mcp.server", "fit.robust"],
+  "owner": "Codex",
+  "pr": null,
+  "verified_by": [],
+  "left": "Refuse a known diameter for robust plane fits as for ordinary plane fits."
+}
