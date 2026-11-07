@@ -123,3 +123,16 @@ fn fitted_holes_measure_their_designed_spacing() {
     assert!(r.distance.is_some_and(|d| (d - 25.0).abs() < 1e-4), "{r:?}");
     assert!(r.angle_deg.is_some_and(|d| d < 1e-3));
 }
+
+#[test]
+fn slightly_tilted_axes_use_their_true_closest_distance() {
+    let theta = 0.5f64.to_radians();
+    let first = cyl([0., 0., 0.], [0., 0., 1.], 1.);
+    for y in [0., 3.] {
+        let second = cyl([10., y, 0.], [theta.sin(), 0., theta.cos()], 1.);
+        let relation = relate(&first, &second);
+        assert!(close(relation.angle_deg, 0.5));
+        // Both projected lines intersect in x/z. Only y separates their infinite axes.
+        assert!(close(relation.distance, y), "{relation:?}");
+    }
+}

@@ -172,7 +172,7 @@ pub fn relate(a: &Element, b: &Element) -> Relation {
             r.angle_deg = Some(angle);
             let n = cross(*u1, *u2);
             r.distance = Some(match normalize(n) {
-                Some(n) if angle >= PARALLEL_DEG => dot(sub(*p2, *p1), n).abs(),
+                Some(n) => dot(sub(*p2, *p1), n).abs(),
                 _ => point_line(*p2, *p1, *u1),
             });
             r

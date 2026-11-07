@@ -69,5 +69,12 @@ class ReferenceTests(unittest.TestCase):
                 reference.load(path)
 
 
+class OversizedNumbers(unittest.TestCase):
+    def test_oversized_integer_is_a_clean_refusal(self):
+        with self.assertRaises(ValueError):
+            reference.compare({"x": 1}, [{"pointer": "/x", "expected": 10**1000,
+                                         "tolerance": 0, "reason": "invalid oversized capture"}])
+
+
 if __name__ == "__main__":
     unittest.main()

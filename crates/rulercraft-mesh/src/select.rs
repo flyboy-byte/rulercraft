@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Marking the vertices a fit runs on (docs/specs/selection.md).
 
-use crate::math::{Vec3, dot, normalize};
+use crate::math::{Vec3, dot, length, normalize};
 use std::fmt;
 
 /// Why a selection could not be made. `Display` gives a message a user can act on.
@@ -87,12 +87,11 @@ pub fn near(positions: &[[f32; 3]], center: Vec3, radius: f64) -> Result<Vec<u32
     if !(radius.is_finite() && radius >= 0.0) {
         return Err(SelectError::BadRadius);
     }
-    let r2 = radius * radius;
     Ok((0..positions.len() as u32)
         .filter(|&i| {
             let p = positions[i as usize].map(f64::from);
             let d = [p[0] - center[0], p[1] - center[1], p[2] - center[2]];
-            dot(d, d) <= r2
+            length(d) <= radius
         })
         .collect())
 }
@@ -105,10 +104,15 @@ pub fn facing(
     direction: Vec3,
     within: f64,
 ) -> Result<Vec<u32>, SelectError> {
-    let d = (finite(direction))
-        .then(|| normalize(direction))
-        .flatten()
-        .ok_or(SelectError::ZeroDirection)?;
+    if !finite(direction) {
+        return Err(SelectError::ZeroDirection);
+    }
+    let magnitude = direction.iter().map(|v| v.abs()).fold(0.0, f64::max);
+    if magnitude == 0.0 {
+        return Err(SelectError::ZeroDirection);
+    }
+    // Scaling first also supports finite subnormal directions without reciprocal overflow.
+    let d = normalize(direction.map(|v| v / magnitude)).ok_or(SelectError::ZeroDirection)?;
     if !(within > 0.0 && within <= std::f64::consts::PI) {
         return Err(SelectError::BadAngle);
     }

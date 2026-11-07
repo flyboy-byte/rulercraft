@@ -1,0 +1,18 @@
+{
+  "id": "checkpoint.r1-exit",
+  "milestone": "R1",
+  "title": "Integration checkpoint: known corpus, private scan and hostile input",
+  "spec": "test-corpus",
+  "status": "in-progress",
+  "depends_on": [
+    "corpus.known",
+    "mcp.server",
+    "io.3mf",
+    "project.file",
+    "reference.local"
+  ],
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/32",
+  "verified_by": [],
+  "left": "Bounded integration audit and docs refresh; milestone acceptance remains separate."
+}

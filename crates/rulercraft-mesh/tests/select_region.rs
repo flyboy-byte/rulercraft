@@ -130,3 +130,26 @@ fn refusals_say_what_is_wrong() {
     );
     assert!(SelectError::InvertedBox(2).to_string().ends_with("on z"));
 }
+
+#[test]
+fn finite_extreme_queries_do_not_square_to_infinity_or_zero() {
+    let points = [[0.0, 0.0, 0.0]];
+    assert!(
+        rulercraft_mesh::select::near(&points, [1e200, 0., 0.], 1e199)
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(
+        rulercraft_mesh::select::near(&points, [1e200, 0., 0.], 1e201).unwrap(),
+        [0]
+    );
+    assert!(
+        rulercraft_mesh::select::near(&points, [1e-200, 0., 0.], 0.)
+            .unwrap()
+            .is_empty()
+    );
+    assert_eq!(
+        rulercraft_mesh::select::facing(&[0], &[[0., 0., 1.]], [0., 0., 1e-320], 0.1).unwrap(),
+        [0]
+    );
+}
