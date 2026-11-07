@@ -41,6 +41,15 @@ they match the design dimensions.
 | `reference.local` | S | A test helper that loads `fixtures/private/reference/<mesh>.json` and skips with a printed reason when absent |
 | ~~STL overflow fix~~ | S | DONE 2026-11-07: the shared mesh builder refuses a coordinate that overflows f32 after unit conversion, for every reader |
 
+## Checkpoints (PROCESS.md "Checkpoints")
+
+| Checkpoint | Due | Scope |
+| --- | --- | --- |
+| ~~`checkpoint.r1-fits`~~ | DONE 2026-11-07 (#19) | readers, graph, selection, all three fits, relations: invariance, hostile input, real scan |
+| `checkpoint.r1-mcp` | after `mcp.server` merges | drive the MCP server end to end on the real scan; invariance and hostile input for anything new; findings |
+| `checkpoint.r1-exit` | after `segment.planes` and `corpus.known` | everything in R1 against the known-design corpus and downloaded models; then Logan's R1 exit run |
+| `checkpoint.r2` / `r3` / ... | at each milestone exit | the same, for that milestone's features |
+
 ## R2: mesh to editable CAD through SolidCraft
 
 **Exit:** a simple prismatic downloaded part is rebuilt as a SolidCraft model whose deviation from the

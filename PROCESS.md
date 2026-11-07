@@ -45,6 +45,24 @@ Tolerances are stated in the test with a reason and never loosened to get green.
 never replaced with RulerCraft's own output. PR reports and commit messages follow AGENTS.md
 "Independence": no outside product names.
 
+## Checkpoints (deeper dives, scheduled)
+
+Per-feature checks are kept cheap on purpose. Checkpoints are where deeper verification happens, at set
+points instead of in every PR. A checkpoint is one bounded session (about an hour or two of agent time),
+taken by whoever is free when one is due, claimed like a feature (`checkpoint.<name>: ...`).
+
+A checkpoint does, for everything merged since the last one:
+1. **Real data:** run the CLI (and MCP, once it exists) on the local real scans and downloaded models in
+   `fixtures/private/`; record numbers and timings in `local/NOTES.md`, outcomes in the PR.
+2. **Cross-checks with no expected answer:** extend `tests/invariance.rs` (move, turn, rescale, reorder)
+   and `tests/hostile_input.rs` (corrupt every new reader's input) to the new features.
+3. **Read the open findings** in `docs/findings/` and decide or re-date each one.
+4. **Fix what it finds** in the same PR when small; otherwise a finding file and a feature.
+5. **Report:** what was checked, what was found, what was fixed, what is still unproven.
+
+When one is due is listed in docs/implementation-plan.md. The first one ran on 2026-11-07 (#19): it found
+a scale-dependent solver stall and confirmed the plane fit on a real scan.
+
 ## The PR report
 
 The PR body is the report Logan reads instead of the code. Plain words, this shape:
