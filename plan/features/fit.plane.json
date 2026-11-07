@@ -3,12 +3,15 @@
   "milestone": "R1",
   "title": "Fit a plane to marked vertices (TLS + outlier clipping)",
   "spec": "fit-plane",
-  "status": "in-progress",
+  "status": "verified",
   "depends_on": [
     "math.core"
   ],
   "owner": "Claude",
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/3",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Known-design check once corpus.known lands; CLI/MCP once cli.commands grows."
 }
