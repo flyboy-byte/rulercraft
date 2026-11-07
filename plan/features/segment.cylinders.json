@@ -3,12 +3,12 @@
   "milestone": "R1",
   "title": "Find round regions (holes, bosses) from how their normals turn",
   "spec": "segmentation",
-  "status": "planned",
+  "status": "in-progress",
   "depends_on": [
     "segment.planes",
     "fit.cylinder"
   ],
-  "owner": null,
+  "owner": "Claude",
   "pr": null,
   "verified_by": [],
   "left": "Everything."
