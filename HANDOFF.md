@@ -1,27 +1,32 @@
 # Handoff
 
-Last updated 2026-11-07, Codex. Main was `5166f05` when PR #42 was opened; its branch now includes
-main through `e18acaa` (#44). Check #42's current GitHub state first. PRs #38 (`history.undo`
-verification), #39 (`math.range`), #40 (`cad.solidcraft`), #41 (`compare.deviation`), #43
-(`fit.robust`) and #44 (`align.icp`) are merged.
+Last updated 2026-11-07, Claude. Read AGENTS.md first (it outranks this), then PROCESS.md.
 
-- This session verified #34's owed history wrong-value run in #38. Changing the undo cursor decrement to
-  a no-op made the stdio check fail; #38 records `history.undo` as verified.
-- `math.range` now scales before normalizing, and both angle helpers use unit directions. Known-answer
-  cases span ordinary, large and small finite scales; the smallest subnormal normalizes to finite unit
-  length. The deliberate denominator mutation failed its test. #39 merged.
-- PR #42 exposes `rulercraft segment <mesh>` and MCP `segment` over the existing library functions.
-  Default mode is cylinders for scans; planes and joined strips are explicit. Joined strips stay opt-in
-  for tessellated CAD meshes because scans can yield thousands of small patches. Synthetic cube and tube
-  checks cover all modes; MCP is driven over stdio. The private vase scan was not opened or committed.
-- On the branch with main through #44, `cargo fmt --all --check`, workspace clippy with `-D warnings`,
-  full workspace tests (127 passed, two local-scan tests ignored), `python3 tools/plan.py render`, and
-  `python3 tools/plan.py check` passed. A deliberate wrong-default run changed CLI default to planes
-  and the CLI test failed; the source was restored.
-- R1 still needs Logan's published-dimension exit run and a decision on clipping
-  (`docs/findings/2026-11-07-clipping-on-real-scans.md`). The requested work for this session ends at
-  segmentation front ends. Do not start the next roadmap feature without a new instruction.
+## State
+- All feature PRs are merged; check `gh pr list` and `python3 tools/plan.py next` before starting.
+- Shipped this day: readers (STL/PLY/OBJ/3MF), graph, selection, plane/sphere/cylinder fits, relations,
+  thickness, CLI (`info`, `fit`, `segment`), MCP server (open, info, select, fit, measure, segment,
+  compare, undo/redo, guide), project file, local reference numbers, known-design corpus,
+  segmentation (planes, cylinders, joined strips), `math.range`, and the library pieces below.
+- Library only so far (no CLI/MCP yet): `cad::recipe` (cad.solidcraft, `implemented`), `fit_plane_robust`
+  (fit.robust, plane only, `implemented`), `reverse::hole_patterns` and `design_guesses` (re.features,
+  `implemented`), `align::datum_frame` (verified), `deviation::patches` (verified). `align_icp` and
+  `deviation` are reachable through the MCP `compare` tool.
 
-Work branch: `codex/segment-frontends`, PR #42. If #42 is still open, its checks/report are the next
-review step. Once merged, fetch main and run `python3 tools/plan.py next`; stop at that listing unless
-Logan authorizes more work.
+## Owed
+- cad.solidcraft: one replay of a recipe against a live SolidCraft server (SolidCraft is not built on
+  this machine; mind the disk guard before building it).
+- cad.check needs SolidCore projection (optional cargo feature, D-002).
+- fit.robust for spheres and cylinders; re.features symmetry planes and grid patterns; plane-line-point
+  datums; CLI/MCP commands for recipe, robust fit, patterns and datum frame.
+- R1 exit: Logan's run on a real downloaded STL (compare hole sizes with the real design), and the
+  clipping decision (docs/findings/2026-11-07-clipping-on-real-scans.md).
+- engine.library (R5) is the last unclaimed ready feature besides cad.check.
+
+## Habits that held up
+- Claim by draft PR titled `<feature id>: ...`; re-run `plan.py next` right before claiming.
+- Every rule gets a wrong-value run that a test fails on, or the rule is deleted.
+- Codex and Claude share one checkout: do your work in `git worktree add /tmp/<name>`, never switch
+  branches in `~/projects/rulercraft`. A commit made there once landed on Codex's branch.
+- Merge commits only. A merge conflict in generated files: merge main, `python3 tools/plan.py render`.
+- Local only, never committed: fixtures/private (vase scan) and local/NOTES.md.
