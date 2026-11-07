@@ -1,6 +1,6 @@
 # Segmentation
 
-Status: R1 spec for (a); outline for (b) and (c). Features: `segment.planes`, `segment.cylinders`,
+Status: R1 spec for (a), (b) and (c). Features: `segment.planes`, `segment.cylinders`,
 `segment.strips`.
 
 Lets a user or agent say "the top face" or "that hole" without marking vertices by hand.
@@ -54,7 +54,38 @@ Checks: an open tube is one region with its radius and axis; a block with one ro
 fillet alone (radius, axis, about 90° coverage) and none of the flat faces; two separate tubes give two
 regions; a cube gives none; every region stays within the limit of its cylinder.
 
-## (c) Joining strips (`segment.strips`), outline
+## (c) Joining strips (`segment.strips`)
 
-Neighbouring flat regions whose normals turn steadily about a common axis and whose fitted planes are all
-tangent to one cylinder are one round surface; report it as one region with its cylinder fit.
+A coarsely faceted hole, boss or fillet (a CAD export with few segments) has facet middles that sag past
+(b)'s distance limit (a 12-sided radius-6 tube sags 0.2 mm), so (b) misses it and (a) gives one flat
+region per facet. `join_strips` joins those back into one round surface.
+
+- Input: a mesh, its graph and its flat segmentation from (a); options: largest angle between
+  neighbouring strips' normals (default 40°: a prism of nine sides or fewer stays flat, ten or more is
+  round), largest distance of a strip's vertices from the cylinder (default 0.2 mm; vertices only, since
+  facet middles sag inside the true surface by design), largest radius (10,000 mm), fewest strips (3),
+  smallest angular coverage (20°).
+- Neighbours: two flat regions that share a manifold edge and whose normals are within the turn limit.
+- Seeds: flat regions in their segmentation order (largest first), each paired with each free
+  neighbour. Quick test first: the pair's axis is across their two normals, and seen along it their
+  vertices must lie on one circle within the distance limit (algebraic circle fit). Then fit.cylinder on
+  the pair's vertices (radius under the limit).
+- Growth: breadth-first over neighbours; a strip joins when all its vertices are within the distance
+  limit of the current cylinder. After each pass the surface is refitted on all its strips and grown
+  again, until a pass adds none (a fit from two noisy strips extrapolates poorly round the circle).
+- Kept when it has at least the fewest strips and the coverage; otherwise its strips stay free for
+  later seeds. A strip is in at most one surface. Output: surfaces largest area first, each with its
+  strips (indices into (a)'s regions), triangles, vertices, area and cylinder fit on its vertices.
+- Meant for tessellated CAD meshes. On a scan (the private vase, 43,613 flat regions) it runs in about
+  1.5 s but reports some 2,000 small low-coverage patches of the curved body; use (b) for scans.
+- Known limit: vertex noise near half the distance limit (±0.12 mm on a radius-8, 14-sided tube) splits
+  the surface into several with wrong radii, because a wrong cylinder through a few noisy strips still
+  holds them. Up to ±0.08 mm it stays one surface.
+
+Checks: a 12-sided tube is one surface of 12 strips with its radius and axis; a fillet in four 22.5°
+steps gives the fillet alone (radius 3, about 90°) and no flat face; two coarse tubes give two surfaces;
+a 14-sided tube with ±0.08 mm noise on every vertex is one surface; 3-, 4-, 6- and 8-sided prisms
+(corners all on a circle) stay flat; a bent plate of three wide 20° panels (creases on a circle, inner
+grid points off it) is not round; an 18° arc of three strips is dropped by the coverage limit and kept
+without it; every surface's vertices lie within the limit of its cylinder. Opt-in: the private scan
+joins in under 30 s.
