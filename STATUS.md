@@ -6,21 +6,20 @@ Overall roadmap progress: **18%** (details in ROADMAP-PROGRESS.md).
 
 | Status | Features |
 | --- | ---: |
-| planned | 15 |
+| planned | 14 |
 | specced | 1 |
-| in-progress | 0 |
+| in-progress | 1 |
 | implemented | 3 |
 | verified | 11 |
 | done | 0 |
 
 ## In progress
 
-- none
+- `corpus.known` (Codex): Generate four designed parts and verify stored dimensions through imports, fits and relations.
 
 ## Ready to claim
 
 - `compare.deviation` (R3): Mesh-to-mesh deviation map and statistics
-- `corpus.known` (R1): Test meshes with known design dimensions (our designs committed, downloads local)
 - `engine.library` (R5): Stable library API, docs, crates.io, Wasm build
 - `fit.robust` (R3): Robust fits on noisy scans (RANSAC seeding, noise estimation)
 - `io.3mf` (R1): Read 3MF (zip + model XML)
