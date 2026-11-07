@@ -37,3 +37,10 @@ the largest out-of-tolerance patches (at most 10, each with its vertex count and
 when `align` is true, the ICP transform and residuals (the scan is moved onto the reference first; it
 must already be roughly in place). Tolerance defaults to 0.1 mm and must be 0 or more. A missing or
 unreadable reference is a tool error; the open mesh is untouched.
+
+## Robust plane fit (2026-11-07)
+
+`fit` accepts `robust: true` (planes only; other kinds are an error) and `robust_threshold` (mm, default
+0.1, must be above 0). The plane is then taken from the largest set of selected vertices agreeing with a
+random three-point plane (see fit-plane.md) and fitted without clipping; the result adds `robust: true`
+and `inliers`. Normal orientation uses the no-normals convention.

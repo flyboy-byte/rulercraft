@@ -11,7 +11,7 @@ use rulercraft_mesh::{
     align::{IcpOptions, Rigid, align_icp},
     commands::{self, FitKind, FitRequest, Fitted, Selection},
     deviation::{deviation, patches},
-    fit::Clip,
+    fit::{Clip, RobustOptions, fit_plane_robust},
     graph::MeshGraph,
     measure::{Element, relate},
     read_mesh,
@@ -125,6 +125,10 @@ struct FitArgs {
     sigma: Option<u8>,
     /// Sphere held diameter, or cylinder assumed diameter metadata, mm.
     known_diameter: Option<f64>,
+    /// Planes only: ignore far outliers by taking the largest consensus set first (RANSAC). Default false.
+    robust: Option<bool>,
+    /// With robust: a vertex agrees with a trial plane within this distance in mm, default 0.1.
+    robust_threshold: Option<f64>,
 }
 impl FitArgs {
     fn request(&self) -> Result<FitRequest, String> {
@@ -208,6 +212,22 @@ impl Loaded {
             return Err(
                 "fit selection exceeds the 1 million point limit; select a smaller region".into(),
             );
+        }
+        if args.robust.unwrap_or(false) {
+            if !matches!(args.kind, Kind::Plane) {
+                return Err("robust fitting is available for planes only".into());
+            }
+            let options = RobustOptions {
+                threshold: args.robust_threshold.unwrap_or(0.1),
+                ..Default::default()
+            };
+            let r = fit_plane_robust(&self.mesh.positions, None, &selected, options)
+                .map_err(|e| e.to_string())?;
+            let p = r.fit;
+            return Ok((
+                json!({"selected":selected.len(),"robust":true,"inliers":r.inliers.len(),"fit":{"kind":"plane","center":p.center,"normal":p.normal,"basis_u":p.basis_u,"basis_v":p.basis_v,"span_u":p.span_u,"span_v":p.span_v,"sigma":p.sigma,"form_error":p.form_error,"min_distance":p.min_distance,"max_distance":p.max_distance,"used":p.used,"offered":p.offered,"rounds":p.rounds}}),
+                Element::from(&p),
+            ));
         }
         let out = commands::fit(&self.mesh, &self.graph, &request).map_err(|e| e.to_string())?;
         let (value, element) = match out.fitted {
