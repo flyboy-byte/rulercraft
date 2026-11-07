@@ -7,15 +7,15 @@ Overall roadmap progress: **5%** (details in ROADMAP-PROGRESS.md).
 | Status | Features |
 | --- | ---: |
 | planned | 15 |
-| specced | 11 |
-| in-progress | 0 |
+| specced | 10 |
+| in-progress | 1 |
 | implemented | 2 |
 | verified | 0 |
 | done | 0 |
 
 ## In progress
 
-- none
+- `math.core` (Claude): Everything.
 
 ## Ready to claim
 
@@ -24,6 +24,5 @@ Overall roadmap progress: **5%** (details in ROADMAP-PROGRESS.md).
 - `io.3mf` (R1): Read 3MF (zip + model XML)
 - `io.obj` (R1): Read OBJ (geometry only; materials later)
 - `io.ply` (R1): Read PLY (ASCII, binary LE/BE)
-- `math.core` (R1): Small linear algebra: vectors, 3x3 eigen, covariance, least squares
 - `mesh.graph` (R1): Welded vertices, faces, normals, adjacency, components
 - `reference.local` (R1): Optional local reference numbers from another program (gitignored)

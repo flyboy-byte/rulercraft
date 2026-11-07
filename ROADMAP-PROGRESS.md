@@ -29,7 +29,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `io.obj` Read OBJ (geometry only; materials later) | specced | - | unclaimed | Everything. |
 | `io.ply` Read PLY (ASCII, binary LE/BE) | specced | - | unclaimed | Everything. |
 | `io.stl` Read ASCII and binary STL | implemented | math, wrong-value | Claude | Known-design check once corpus.known lands. |
-| `math.core` Small linear algebra: vectors, 3x3 eigen, covariance, least squares | specced | - | unclaimed | Everything. |
+| `math.core` Small linear algebra: vectors, 3x3 eigen, covariance, least squares | in-progress | - | Claude | Everything. |
 | `mcp.server` MCP server exposing the same commands to Claude | planned | - | unclaimed | Everything. |
 | `measure.relations` Distances and angles between fitted elements | specced | - | unclaimed | Everything. |
 | `mesh.graph` Welded vertices, faces, normals, adjacency, components | specced | - | unclaimed | Everything. |
