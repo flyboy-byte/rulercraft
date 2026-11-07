@@ -3,7 +3,7 @@
   "milestone": "R2",
   "title": "Rebuild fitted features as a SolidCraft model over its MCP",
   "spec": "mesh-to-cad",
-  "status": "planned",
+  "status": "implemented",
   "depends_on": [
     "measure.relations",
     "mcp.server"
@@ -11,5 +11,5 @@
   "owner": "claude",
   "pr": null,
   "verified_by": [],
-  "left": "Everything."
+  "left": "Recipe is done and tested on synthetic parts. Still owed: a CLI/MCP command to produce it, and one replay against a live SolidCraft server (SolidCraft is not built on this machine)."
 }
