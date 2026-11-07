@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Bounded mesh import selected by file extension.
+pub mod obj;
 pub mod ply;
 
 use crate::{Mesh, MeshBuilder, Unit};
@@ -45,8 +46,9 @@ pub fn format_name(name: &str) -> Result<&'static str, ReadError> {
     {
         "stl" => Ok("stl"),
         "ply" => Ok("ply"),
+        "obj" => Ok("obj"),
         _ => Err(ReadError(
-            "unknown extension: supported extensions are .stl, .ply".into(),
+            "unknown extension: supported extensions are .stl, .ply, .obj".into(),
         )),
     }
 }
@@ -61,6 +63,7 @@ pub fn read_mesh(
     check_bytes(bytes, limits)?;
     match format {
         "ply" => ply::read_ply(bytes, unit, limits),
+        "obj" => obj::read_obj(bytes, unit, limits),
         _ => {
             let m = crate::read_stl(
                 bytes,

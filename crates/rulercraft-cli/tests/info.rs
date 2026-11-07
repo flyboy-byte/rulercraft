@@ -48,3 +48,21 @@ fn info_reads_ply_by_extension() {
     );
     std::fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn info_reads_obj_by_extension() {
+    let path = std::env::temp_dir().join(format!("rulercraft-obj-{}.OBJ", std::process::id()));
+    std::fs::write(&path, "v 0 0 0\nv 2 0 0\nv 0 3 0\nf -3 -2 -1\n").unwrap();
+    let out = Command::new(env!("CARGO_BIN_EXE_rulercraft"))
+        .arg("info")
+        .arg(&path)
+        .args(["--units", "cm"])
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    assert_eq!(
+        String::from_utf8(out.stdout).unwrap().trim(),
+        r#"{"format":"obj","vertices":3,"triangles":1,"degenerate_dropped":0,"bounds":{"min":[0,0,0],"max":[20,30,0]}}"#
+    );
+    std::fs::remove_file(path).unwrap();
+}

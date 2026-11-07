@@ -4,7 +4,7 @@
 use rulercraft_mesh::{ImportLimits, Unit, read_mesh};
 use std::process::ExitCode;
 
-const USAGE: &str = "Usage: rulercraft info <mesh.stl|mesh.ply> [--units mm|cm|m|in]";
+const USAGE: &str = "Usage: rulercraft info <mesh.stl|mesh.ply|mesh.obj> [--units mm|cm|m|in]";
 
 fn number(v: f32) -> String {
     format!("{v}")
