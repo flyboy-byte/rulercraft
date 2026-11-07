@@ -1,44 +1,37 @@
 # Handoff
 
-Last updated 2026-11-07, Codex. Integration consolidated and audited at Logan's request.
+Last updated 2026-11-07, Codex. Consolidation and integration audit are finished.
 
-## Shipped and verified
+## State
 
-- #18 MCP and #25 strips / #30 MCP checkpoint were merged before this audit.
-- #26 corpus, #27 local references, #28 project JSON, #29 3MF and #31 wall thickness are MERGED,
-  merge commits only. Logan authorized consolidation in this session after the earlier no-merge rule.
-  This is session authorization, not a general change to AGENTS.md/PROCESS.md.
-- Checkpoint #32: current docs and findings, hostile 3MF/project bytes, invariance and real-scan run.
-  Fixed near-query overflow/underflow, subnormal facing direction, tilted-axis spacing, oversized local
-  reference integer traceback. Genuine tilted axes use closest infinite-line distance; numerical
-  parallel cutoff 1e-12 preserves analytically parallel fits. Existing known-answer tolerances unchanged.
-- Latest full gate: fmt/clippy/workspace tests/plan render+check pass; 105 Rust tests, 2 existing ignored
-  scan checks. Both ignored checks separately PASS in release on private data. Python 7 tests, 1 skip
-  for standalone CLI-fixture case (cargo supplies the binary and runs it). Local reference capture passes.
-- MCP corpus: all 41 fixed dimensions/relations pass. Private scan 412755 vertices/825506 triangles;
-  CLI/MCP base plane sigma0.0930818265,5969points, agree within1e-8. Imports0.13-0.35s, MCP fit0.003s.
-  Scan plane segmentation0.93s, strip joining2.41s. Raw logs /tmp/checkpoint-*.log; private driver/notes local/.
+- #26 corpus, #27 local references, #28 projects, #29 3MF, #31 thickness and #32 integration audit
+  are MERGED with merge commits. Main's integration audit has 105 passing Rust tests and both private
+  scan checks pass in release. All41 fixed corpus dimensions/relations pass through MCP. Docs updated.
+- Audit fixes: near overflow/underflow, subnormal facing direction, tilted-axis distance, oversized
+  reference integer errors. Math-range and clipping-cap findings remain open; src/math/ untouched.
+- Final small follow-up #33, codex/cli-import-limits, is READY for review; not merged.
+  CLI now checks declared file size before allocation and reuses bounded reads. Sparse2GiB+1 file
+  tested under512MiB child address-space cap gives byte-limit error instead of out-of-memory.
+  Deliberate off-by-one metadata guard failed that regression and was restored. Full local gate passes.
+  No dependencies, CI/workflow changes or math edits. Check hosted CI before merging.
+- User reported13% remaining and asked whether work was done. Do not infer a request for further
+  feature work from this handoff. The persistent continuing goal is still active and may trigger
+  automatic continuations; user must pause it to prevent those.
 
-## Remaining work and cautions
+## Remaining
 
-- Read docs/findings/2026-11-07-math-extreme-directions.md and plan/features/math.range.json.
-  Public angle helper returns45deg instead of30 for huge finite vectors; normalization of a subnormal
-  vector can return NaN/infinity. Caller-facing selection fixed, but src/math/ untouched per lane rule.
-- Clipping-cap finding reproduced/re-dated, not silently changed. Sigma3 reaches10rounds on the scan.
-- R1 is NOT complete: published-dimension/printed-caliper acceptance and undo/redo remain.
-  Engine segmentation, project operations and thickness still lack MCP front ends. No CAD bridge yet.
-- User reported13% usage remaining: this run is wrapping the checkpoint, not starting new features.
+math.range finding: huge-vector angle45 instead of30 and subnormal normalization NaN/infinity.
+Clipping still reaches10 rounds on the real scan. Undo/redo and segmentation/project/thickness MCP
+front ends remain unfinished. R1 physical/published-dimension acceptance is not complete.
 
-## Resumption and machine state
+## Resumption / machine
 
-Worktree /tmp/rulercraft-io, branch codex/checkpoint-r1-exit. Check #32's live CI/merge state first,
-then fetch main, read instructions and run tools/plan.py next immediately before any claim.
-README, ROADMAP, implementation plan and generated status reflect the combined state.
-Original ~/projects/rulercraft checkout belongs to Claude (paused); it was not switched or edited.
-Build cache filled /tmp: only this worktree's target moved to
-/home/logan/.cache/rulercraft-codex-target; target is a locally excluded symlink. No source/data removed.
+Worktree /tmp/rulercraft-io, branch codex/cli-import-limits. Original checkout belongs to paused Claude.
+Fetch main, inspect live PRs and run plan.py next immediately before any future authorized claim.
+Build cache moved off full /tmp to /home/logan/.cache/rulercraft-codex-target; target is an excluded
+symlink. Private scan/reference/driver/notes stay ignored. Raw logs /tmp/checkpoint-*.log and
+/tmp/cli-limits-*.log. Local gate: fmt, clippy, workspace tests, Python tests, plan render/check pass.
 
-Scratch trap: local codex/mcp-server contains an abandoned unpushed merge of closed/unnecessary #23.
-Do not push or use it or apply old MCP stashes. Correct MCP is main / codex/mcp-server-refresh.
-Graph #8 and measure #15 were duplicates, closed; use merged APIs. Wrong-value mutations all restored:
-latest doubled skew-axis separation (6 vs3), failed as required. No expected values/tolerances loosened.
+Do not use local codex/mcp-server: abandoned unpushed merge of closed/unnecessary #23.
+Correct MCP is merged main / codex/mcp-server-refresh. Do not apply old MCP stashes.
+Duplicates graph #8 and measure #15 closed. No expected answers or tolerances loosened.

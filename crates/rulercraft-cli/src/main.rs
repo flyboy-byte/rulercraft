@@ -24,7 +24,7 @@ fn number(v: f32) -> String {
 
 fn load(path: &str, unit: Unit) -> Result<Mesh, String> {
     rulercraft_mesh::io::format_name(path).map_err(|e| e.to_string())?;
-    let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
+    let bytes = limited_read(path, ImportLimits::default().max_bytes)?;
     read_mesh(path, &bytes, unit, ImportLimits::default()).map_err(|e| format!("{path}: {e}"))
 }
 
@@ -184,6 +184,9 @@ fn main() -> ExitCode {
 fn limited_read(path: &str, max: usize) -> Result<Vec<u8>, String> {
     use std::io::Read;
     let file = std::fs::File::open(path).map_err(|e| format!("{path}: {e}"))?;
+    if file.metadata().map_err(|e| format!("{path}: {e}"))?.len() > max as u64 {
+        return Err(format!("{path}: byte limit exceeded ({max})"));
+    }
     let mut bytes = Vec::new();
     file.take(max as u64 + 1)
         .read_to_end(&mut bytes)

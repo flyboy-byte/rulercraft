@@ -1,0 +1,17 @@
+{
+  "id": "cli.import-limits",
+  "milestone": "R1",
+  "title": "Enforce mesh byte limits before CLI allocation",
+  "spec": "mesh-import",
+  "status": "verified",
+  "depends_on": [
+    "cli.commands"
+  ],
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/33",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "CLI info/fit now reuse bounded reads and refuse declared oversize before allocation."
+}

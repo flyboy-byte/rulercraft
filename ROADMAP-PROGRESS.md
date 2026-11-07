@@ -8,19 +8,20 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 
 | Milestone | Progress | % | Weight | Exit condition |
 | --- | --- | ---: | ---: | --- |
-| R1 Clean meshes: open, fit, measure, over CLI and MCP | `████████░░` | 80% | 30 | Logan downloads an STL from a model-sharing site, asks Claude over MCP for its hole diameters and face distances, and they match the design dimensions. |
+| R1 Clean meshes: open, fit, measure, over CLI and MCP | `████████░░` | 81% | 30 | Logan downloads an STL from a model-sharing site, asks Claude over MCP for its hole diameters and face distances, and they match the design dimensions. |
 | R2 Mesh to editable CAD through SolidCraft | `░░░░░░░░░░` | 0% | 20 | A simple prismatic downloaded part is rebuilt as a SolidCraft model whose deviation from the STL is under 0.05 mm. |
 | R3 Noisy scans: robust fits, deviation, alignment, thickness | `██░░░░░░░░` | 22% | 20 | A real scan (a public sample scan or a phone scan) gives stable fits and a deviation report against its CAD. |
 | R4 Reverse-engineering workflows with AI | `░░░░░░░░░░` | 0% | 15 | Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft. |
 | R5 Reusable engine | `░░░░░░░░░░` | 0% | 10 | Another project depends on rulercraft-mesh from crates.io or git and builds in Wasm. |
 | R6 Photos to mesh (research) | `░░░░░░░░░░` | 0% | 5 | A written go/no-go with a prototype on photos of one object. |
 
-## R1: Clean meshes: open, fit, measure, over CLI and MCP (80%)
+## R1: Clean meshes: open, fit, measure, over CLI and MCP (81%)
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
 | `checkpoint.r1-exit` Integration checkpoint: known corpus, private scan and hostile input | verified | math, known-design, reference, wrong-value, fuzz | Codex https://github.com/flyboy-byte/rulercraft/pull/32 | Integration audit passes; published/printed dimensional acceptance, math.range and clipping decision remain open. |
 | `cli.commands` rulercraft CLI: info, fit, measure, save, open | implemented | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/14 | fit cylinder, measure, save/open join the command layer and CLI as those features land. |
+| `cli.import-limits` Enforce mesh byte limits before CLI allocation | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/33 | CLI info/fit now reuse bounded reads and refuse declared oversize before allocation. |
 | `corpus.known` Test meshes with known design dimensions (our designs committed, downloads local) | verified | math, known-design, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/26 | Four designed parts verified through imports, fits and relations. Printed/caliper and downloaded-part exit checks remain. |
 | `fit.cylinder` Fit a cylinder to marked vertices | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/10 | Ready for Logan review. Known-design corpus and large real meshes not yet checked. |
 | `fit.plane` Fit a plane to marked vertices (TLS + outlier clipping) | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/3 | Known-design check once corpus.known lands; CLI/MCP once cli.commands grows. |
