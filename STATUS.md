@@ -7,21 +7,20 @@ Overall roadmap progress: **6%** (details in ROADMAP-PROGRESS.md).
 | Status | Features |
 | --- | ---: |
 | planned | 15 |
-| specced | 10 |
-| in-progress | 0 |
+| specced | 9 |
+| in-progress | 1 |
 | implemented | 2 |
 | verified | 1 |
 | done | 0 |
 
 ## In progress
 
-- none
+- `fit.plane` (Claude): Everything.
 
 ## Ready to claim
 
 - `cli.commands` (R1): rulercraft CLI: info, fit, measure, save, open
 - `corpus.known` (R1): Test meshes with known design dimensions (our designs committed, downloads local)
-- `fit.plane` (R1): Fit a plane to marked vertices (TLS + outlier clipping)
 - `fit.sphere` (R1): Fit a sphere to marked vertices
 - `io.3mf` (R1): Read 3MF (zip + model XML)
 - `io.obj` (R1): Read OBJ (geometry only; materials later)

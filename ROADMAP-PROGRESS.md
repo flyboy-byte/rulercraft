@@ -22,7 +22,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `cli.commands` rulercraft CLI: info, fit, measure, save, open | specced | - | unclaimed | `info` (STL) exists; fit, measure, save, open to come with their features. |
 | `corpus.known` Test meshes with known design dimensions (our designs committed, downloads local) | planned | - | unclaimed | Design 3-5 test parts with stated dimensions in SolidCraft; export STL; record known answers. |
 | `fit.cylinder` Fit a cylinder to marked vertices | specced | - | unclaimed | Everything. |
-| `fit.plane` Fit a plane to marked vertices (TLS + outlier clipping) | specced | - | unclaimed | Everything. |
+| `fit.plane` Fit a plane to marked vertices (TLS + outlier clipping) | in-progress | - | Claude | Everything. |
 | `fit.sphere` Fit a sphere to marked vertices | specced | - | unclaimed | Everything. |
 | `history.undo` Undo and redo for every command | planned | - | unclaimed | Everything. |
 | `io.3mf` Read 3MF (zip + model XML) | specced | - | unclaimed | Everything; zip/deflate reader is pre-approved (D-006). |

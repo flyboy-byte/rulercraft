@@ -3,11 +3,11 @@
   "milestone": "R1",
   "title": "Fit a plane to marked vertices (TLS + outlier clipping)",
   "spec": "fit-plane",
-  "status": "specced",
+  "status": "in-progress",
   "depends_on": [
     "math.core"
   ],
-  "owner": null,
+  "owner": "Claude",
   "pr": null,
   "verified_by": [],
   "left": "Everything."
