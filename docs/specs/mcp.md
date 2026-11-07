@@ -45,6 +45,13 @@ unreadable reference is a tool error; the open mesh is untouched.
 random three-point plane (see fit-plane.md) and fitted without clipping; the result adds `robust: true`
 and `inliers`. Normal orientation uses the no-normals convention.
 
+## Datum frame (2026-11-07)
+
+`datum(primary, secondary, tertiary)` fits three plane requests on the current mesh and returns their
+fit summaries and the rotation and translation to the resulting frame. Requests use the same selection,
+sigma, and robust-plane options as `fit`. Plane normal signs set the frame's axes. Non-plane requests,
+failed fits, and planes that cannot form a frame return a tool error without changing the mesh.
+
 ## reverse (2026-11-07)
 
 `reverse()` runs the automatic plane and cylinder segmentation on the open mesh (largest 50 of each) and

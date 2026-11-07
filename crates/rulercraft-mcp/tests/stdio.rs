@@ -170,6 +170,7 @@ fn stdio_tools_schemas_geometry_and_failure_state() {
         "select",
         "fit",
         "measure",
+        "datum",
         "segment",
         "history.info",
         "history.undo",
@@ -200,6 +201,32 @@ fn stdio_tools_schemas_geometry_and_failure_state() {
     let m=c.data("measure",json!({"first":{"kind":"plane","selection":bottom},"second":{"kind":"plane","selection":top}}));
     assert_eq!(m["relation"]["distance"], 20.);
     assert_eq!(m["relation"]["angle_deg"], 0.);
+    let primary = json!({"kind":"plane","selection":{"in_box":[[-1,-1,19],[21,21,21]]}});
+    let secondary = json!({"kind":"plane","selection":{"in_box":[[19,-1,-1],[21,21,21]]}});
+    let tertiary = json!({"kind":"plane","selection":{"in_box":[[-1,19,-1],[21,21,21]]}});
+    let datum = c.data(
+        "datum",
+        json!({"primary":primary,"secondary":secondary,"tertiary":tertiary}),
+    );
+    let rotation = datum["transform"]["rotation"].as_array().unwrap();
+    for (i, row) in rotation.iter().enumerate() {
+        for (j, value) in row.as_array().unwrap().iter().enumerate() {
+            let expected = if i == j { 1.0 } else { 0.0 };
+            assert!((value.as_f64().unwrap() - expected).abs() < 1e-12);
+        }
+        assert!((datum["transform"]["translation"][i].as_f64().unwrap() + 20.0).abs() < 1e-12);
+    }
+    let parallel = c.call(
+        "datum",
+        json!({"primary":primary,"secondary":primary,"tertiary":tertiary}),
+    );
+    assert_eq!(parallel["isError"], true);
+    let wrong_kind = c.call(
+        "datum",
+        json!({"primary":{"kind":"sphere"},"secondary":secondary,"tertiary":tertiary}),
+    );
+    assert_eq!(wrong_kind["isError"], true);
+    assert_eq!(c.data("mesh.info", json!({}))["vertices"], 8);
     let segmented = c.data("segment", json!({}));
     assert_eq!(segmented["kind"], "cylinders");
     assert_eq!(segmented["regions"].as_array().unwrap().len(), 0);
