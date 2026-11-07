@@ -10,7 +10,7 @@ Overall roadmap progress: **50%** (details in ROADMAP-PROGRESS.md).
 | specced | 0 |
 | in-progress | 0 |
 | implemented | 6 |
-| verified | 23 |
+| verified | 24 |
 | done | 0 |
 
 ## In progress

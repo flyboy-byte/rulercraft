@@ -1,7 +1,7 @@
 # Segmentation
 
-Status: R1 spec for (a), (b) and (c). Features: `segment.planes`, `segment.cylinders`,
-`segment.strips`.
+Status: R1 spec for (a), (b), (c), and their CLI/MCP front ends. Features: `segment.planes`,
+`segment.cylinders`, `segment.strips`, `segment.frontends`.
 
 Lets a user or agent say "the top face" or "that hole" without marking vertices by hand.
 
@@ -89,3 +89,13 @@ a 14-sided tube with ±0.08 mm noise on every vertex is one surface; 3-, 4-, 6- 
 grid points off it) is not round; an 18° arc of three strips is dropped by the coverage limit and kept
 without it; every surface's vertices lie within the limit of its cylinder. Opt-in: the private scan
 joins in under 30 s.
+
+## CLI and MCP front ends (`segment.frontends`)
+
+- `rulercraft segment <mesh> [--kind planes|cylinders|strips] [--units mm|cm|m|in]` prints one compact JSON summary. The kind defaults to `cylinders`, which is the useful default for scans; joined strips are opt-in for tessellated CAD meshes because a scan can produce thousands of small low-coverage patches.
+- The MCP `segment` tool uses the currently open mesh and accepts optional `kind` with the same values and default.
+- Plane and cylinder modes call `segment_planes` and `segment_cylinders` with their default limits. Strip mode first runs `segment_planes`, then `join_strips` with default limits.
+- Output has `kind`, `regions`, and `unassigned`. Each region summary contains its triangle and vertex counts, area, and the corresponding plane/cylinder fit fields; strip summaries also contain the number of joined strips. Strip `unassigned` counts triangles absent from returned surfaces. Full vertex/triangle id lists are not returned.
+- Unknown kinds and import failures are refused cleanly. The CLI uses the existing bounded mesh loader; MCP operates on the current already-loaded mesh.
+
+The front ends do not expose segmentation tuning options in this first pass; all three modes use the existing library defaults.
