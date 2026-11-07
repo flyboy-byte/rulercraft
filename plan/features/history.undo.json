@@ -3,12 +3,12 @@
   "milestone": "R1",
   "title": "Undo and redo for every command",
   "spec": "commands",
-  "status": "planned",
+  "status": "in-progress",
   "depends_on": [
     "project.file"
   ],
-  "owner": null,
-  "pr": null,
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/34",
   "verified_by": [],
-  "left": "Everything."
+  "left": "Implement session undo/redo for successful MCP mesh.open calls with source fingerprint validation; add stdio regression coverage."
 }
