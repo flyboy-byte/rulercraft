@@ -21,4 +21,3 @@ Overall roadmap progress: **51%** (details in ROADMAP-PROGRESS.md).
 
 - `cad.check` (R2): Deviation of the mesh from the rebuilt CAD (via SolidCore projection)
 - `engine.library` (R5): Stable library API, docs, crates.io, Wasm build
-- `re.features` (R4): Reverse-engineering workflows: hole patterns, symmetry, design-intent guesses

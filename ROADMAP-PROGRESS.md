@@ -65,7 +65,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
-| `re.features` Reverse-engineering workflows: hole patterns, symmetry, design-intent guesses | planned | - | unclaimed | Everything. |
+| `re.features` Reverse-engineering workflows: hole patterns, symmetry, design-intent guesses | planned | - | claude | Everything. |
 
 ## R5: Reusable engine (0%)
 
