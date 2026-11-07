@@ -11,7 +11,7 @@ use crate::math::{
 };
 
 /// A fitted sphere. Lengths in mm, angles in degrees.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct SphereFit {
     /// Centre.
     pub center: Vec3,

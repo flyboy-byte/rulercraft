@@ -9,6 +9,9 @@ use serde_json::{Value, json};
 use std::process::ExitCode;
 
 const USAGE: &str = "Usage:
+  rulercraft project create <project.json> <mesh> [--units U]
+  rulercraft project fit <project.json> <id> <plane|sphere|cylinder> [fit options]
+  rulercraft project info <project.json>
   rulercraft info <mesh> [--units mm|cm|m|in]
   rulercraft fit <plane|sphere|cylinder> <mesh> [--units U] [--box X Y Z X Y Z] [--near X Y Z R]
                  [--facing DX DY DZ] [--within DEG] [--sigma 0|1|2|3] [--known-diameter D]
@@ -39,11 +42,8 @@ fn numbers<const N: usize>(
     Ok(out)
 }
 
-fn fit_command(args: &[String]) -> Result<String, String> {
-    let [kind, path, rest @ ..] = args else {
-        return Err(USAGE.into());
-    };
-    let kind = match kind.as_str() {
+fn fit_request(kind: &str, rest: &[String]) -> Result<(Unit, FitRequest), String> {
+    let kind = match kind {
         "plane" => FitKind::Plane,
         "sphere" => FitKind::Sphere,
         "cylinder" => FitKind::Cylinder,
@@ -86,14 +86,22 @@ fn fit_command(args: &[String]) -> Result<String, String> {
         }
     }
     selection.facing = facing.map(|d| (d, within.to_radians()));
-    let mesh = load(path, unit)?;
-    let graph = MeshGraph::build(&mesh);
     let request = FitRequest {
         kind,
         selection,
         clip,
         known_diameter: known,
     };
+    Ok((unit, request))
+}
+
+fn fit_command(args: &[String]) -> Result<String, String> {
+    let [kind, path, rest @ ..] = args else {
+        return Err(USAGE.into());
+    };
+    let (unit, request) = fit_request(kind, rest)?;
+    let mesh = load(path, unit)?;
+    let graph = MeshGraph::build(&mesh);
     let out = fit(&mesh, &graph, &request).map_err(|e| e.to_string())?;
     let fitted: Value = match out.fitted {
         Fitted::Plane(p) => json!({
@@ -122,6 +130,9 @@ fn run(args: &[String]) -> Result<String, String> {
     let [command, rest @ ..] = args else {
         return Err(USAGE.into());
     };
+    if command == "project" {
+        return project_command(rest);
+    }
     if command == "fit" {
         return fit_command(rest);
     }
@@ -168,4 +179,90 @@ fn main() -> ExitCode {
             ExitCode::from(2)
         }
     }
+}
+
+fn limited_read(path: &str, max: usize) -> Result<Vec<u8>, String> {
+    use std::io::Read;
+    let file = std::fs::File::open(path).map_err(|e| format!("{path}: {e}"))?;
+    let mut bytes = Vec::new();
+    file.take(max as u64 + 1)
+        .read_to_end(&mut bytes)
+        .map_err(|e| format!("{path}: {e}"))?;
+    if bytes.len() > max {
+        return Err(format!("{path}: byte limit exceeded ({max})"));
+    }
+    Ok(bytes)
+}
+
+fn write_project(path: &str, bytes: &[u8], create: bool) -> Result<(), String> {
+    use std::io::Write;
+    // Create-new protects our temporary path. Hard-link creation refuses to replace an existing
+    // destination; subsequent edits atomically rename over the project only after writing finishes.
+    let temporary = format!("{path}.{}.tmp", std::process::id());
+    let mut file = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&temporary)
+        .map_err(|e| format!("{temporary}: {e}"))?;
+    let result = (|| -> std::io::Result<()> {
+        file.write_all(bytes)?;
+        file.sync_all()?;
+        if create {
+            std::fs::hard_link(&temporary, path)?;
+        } else {
+            std::fs::rename(&temporary, path)?;
+        }
+        Ok(())
+    })();
+    drop(file);
+    let _ = std::fs::remove_file(&temporary);
+    result.map_err(|e| format!("{path}: {e}"))
+}
+
+fn project_command(args: &[String]) -> Result<String, String> {
+    use rulercraft_mesh::project::{Project, ProjectLimits};
+    let limits = ProjectLimits::default();
+    let [operation, path, rest @ ..] = args else {
+        return Err(USAGE.into());
+    };
+    let (project, changed) = match operation.as_str() {
+        "create" => {
+            let [mesh, options @ ..] = rest else {
+                return Err(USAGE.into());
+            };
+            let unit = match options {
+                [] => Unit::Mm,
+                [flag, u] if flag == "--units" => {
+                    Unit::parse(u).ok_or("source units must be mm, cm, m or in")?
+                }
+                _ => return Err(USAGE.into()),
+            };
+            let bytes = limited_read(mesh, limits.import.max_bytes)?;
+            let project = Project::new(mesh, &bytes, unit, limits).map_err(|e| e.to_string())?;
+            write_project(path, &project.encode().map_err(|e| e.to_string())?, true)?;
+            (project, Vec::new())
+        }
+        "info" | "fit" => {
+            let reopened = Project::decode(&limited_read(path, limits.max_bytes)?, limits)
+                .map_err(|e| e.to_string())?;
+            let mut project = reopened.project;
+            if operation == "fit" {
+                let [id, kind, options @ ..] = rest else {
+                    return Err(USAGE.into());
+                };
+                if options.iter().any(|s| s == "--units") {
+                    return Err("project units come from its saved source".into());
+                }
+                let (_, recipe) = fit_request(kind, options)?;
+                project.add(id, recipe).map_err(|e| e.to_string())?;
+                write_project(path, &project.encode().map_err(|e| e.to_string())?, false)?;
+            } else if !rest.is_empty() {
+                return Err(USAGE.into());
+            }
+            (project, reopened.changed)
+        }
+        _ => return Err(USAGE.into()),
+    };
+    Ok(json!({"project":path,"vertices":project.mesh().positions.len(),
+              "triangles":project.mesh().triangles.len(),"elements":project.elements(),"changed":changed}).to_string())
 }

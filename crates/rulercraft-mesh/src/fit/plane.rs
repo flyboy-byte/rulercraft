@@ -8,7 +8,7 @@ use crate::math::{Vec3, covariance, cross, dot, symmetric_eigen3};
 use std::fmt;
 
 /// Outlier cut-off: keep points within `k` standard deviations of the plane, or all of them.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum Clip {
     /// Use every offered point.
     None,
@@ -17,7 +17,7 @@ pub enum Clip {
 }
 
 /// A fitted plane. Lengths in mm.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct PlaneFit {
     /// Centroid of the kept points.
     pub center: Vec3,

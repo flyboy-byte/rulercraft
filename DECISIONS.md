@@ -65,3 +65,10 @@ checked and stated in the PR. Linear algebra stays in our own small `math/` modu
 
 **Why.** Fresh sessions should not stall asking about obvious choices, and a light dependency tree keeps
 builds and CI fast.
+
+## D-008 Project JSON serialization (2026-11-07)
+
+**Decision.** `project.file` uses serde (derive) and serde_json (float_roundtrip), both
+MIT OR Apache-2.0, pre-approved by D-006. Source bytes are embedded in version 1 JSON, avoiding a new
+hashing or archive dependency. Exact float round trips keep unchanged cached fits from being reported
+as changed solely by JSON parsing.
