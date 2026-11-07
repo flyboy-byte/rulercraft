@@ -8,14 +8,14 @@ Overall roadmap progress: **14%** (details in ROADMAP-PROGRESS.md).
 | --- | ---: |
 | planned | 15 |
 | specced | 3 |
-| in-progress | 1 |
-| implemented | 2 |
+| in-progress | 0 |
+| implemented | 3 |
 | verified | 7 |
 | done | 0 |
 
 ## In progress
 
-- `cli.commands` (Claude): `info` (STL) exists; fit, measure, save, open to come with their features.
+- none
 
 ## Ready to claim
 
@@ -23,6 +23,7 @@ Overall roadmap progress: **14%** (details in ROADMAP-PROGRESS.md).
 - `corpus.known` (R1): Test meshes with known design dimensions (our designs committed, downloads local)
 - `fit.cylinder` (R1): Fit a cylinder to marked vertices
 - `io.3mf` (R1): Read 3MF (zip + model XML)
+- `mcp.server` (R1): MCP server exposing the same commands to Claude
 - `measure.thickness` (R3): Wall thickness
 - `project.file` (R1): Save and reopen a RulerCraft project (own JSON format)
 - `reference.local` (R1): Optional local reference numbers from another program (gitignored)

@@ -3,12 +3,15 @@
   "milestone": "R1",
   "title": "rulercraft CLI: info, fit, measure, save, open",
   "spec": "commands",
-  "status": "in-progress",
+  "status": "implemented",
   "depends_on": [
     "io.stl"
   ],
   "owner": "Claude",
-  "pr": null,
-  "verified_by": [],
-  "left": "`info` (STL) exists; fit, measure, save, open to come with their features."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/14",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "fit cylinder, measure, save/open join the command layer and CLI as those features land."
 }
