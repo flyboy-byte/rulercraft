@@ -1,18 +1,21 @@
 # Handoff
 
-Last updated 2026-11-07, Claude. State: main a98c50c + this PR; 106 tests (~1 s), CI green, no open PRs, roadmap 29%.
+Last updated 2026-11-07, Codex. Current main was `5166f05` when PR #42 was opened; #42 contains the
+segmentation CLI/MCP front end and is being readied for review. PRs #38 (`history.undo` verification),
+#39 (`math.range`) and #40 (`cad.solidcraft`) are merged.
 
-- Shipped: readers (STL/PLY/OBJ/3MF), mesh graph, selection, plane/sphere/cylinder fits, relations,
-  thickness, command layer, CLI (`rulercraft info|fit`), MCP stdio server (`rulercraft-mcp`: open/info,
-  select, fit, measure, undo/redo, guide), project file, local-only reference numbers, known-design
-  corpus (CLI and MCP), segment_planes / segment_cylinders / join_strips (library only), R1 integration audit.
-- R1 is ~82%. Left: Logan's exit run (real downloaded STL, compare hole sizes with the real design);
-  segmentation + project tools on the CLI/MCP (`rulercraft segment`); `math.range` (ready); the clipping
-  decision (docs/findings/2026-11-07-clipping-on-real-scans.md).
-- history.undo (#34) was merged before Codex's wrong-value run and report; status is `implemented`, one run owed.
-- join_strips is for tessellated CAD meshes; on scans use segment_cylinders (spec has the limits).
-- After R1: R2 `cad.solidcraft` (SolidCraft MCP bridge; the Tangency Labs path), then compare.deviation,
-  fit.robust, engine.library. Run `python3 tools/plan.py next` immediately before claiming.
-- Habits: claim by draft PR; light review then merge commits; every rule needs a wrong-value run a test
-  fails on, or it goes; render generated plan files, never hand-merge them (take main's HANDOFF on conflict).
-- Local only: fixtures/private (vase scan, never commit), local/NOTES.md (real-scan numbers, checkpoint log).
+- This session verified #34's owed history wrong-value run in #38. Changing the undo cursor decrement to
+  a no-op made the stdio check fail; #38 records `history.undo` as verified.
+- `math.range` now scales before normalizing, and both angle helpers use unit directions. Known-answer
+  cases span ordinary, large and small finite scales; the smallest subnormal normalizes to finite unit
+  length. The deliberate denominator mutation failed its test. #39 merged.
+- PR #42 exposes `rulercraft segment <mesh>` and MCP `segment` over the existing library functions.
+  Default mode is cylinders for scans; planes and joined strips are explicit. Joined strips stay opt-in
+  for tessellated CAD meshes because scans can yield thousands of small patches. Synthetic cube and tube
+  checks cover all modes; MCP is driven over stdio. The private vase scan was not opened or committed.
+- #42 checks: `cargo fmt --all --check`, workspace clippy with `-D warnings`, full workspace tests,
+  `python3 tools/plan.py render`, and `python3 tools/plan.py check` passed. A deliberate wrong-default
+  run changed CLI default to planes and the CLI test failed; the source was restored.
+- R1 still needs Logan's published-dimension exit run and a decision on clipping (`docs/findings/2026-11-07-clipping-on-real-scans.md`). The requested work for this session ends at segmentation front ends. Do not start the next roadmap feature without a new instruction.
+
+Current branch: `codex/segment-frontends`, PR #42. After merge, `python3 tools/plan.py next` will show the next available feature; stop there unless Logan authorizes more work.

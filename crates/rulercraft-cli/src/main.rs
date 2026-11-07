@@ -4,6 +4,7 @@
 use rulercraft_mesh::commands::{FitKind, FitRequest, Fitted, Selection, fit};
 use rulercraft_mesh::fit::Clip;
 use rulercraft_mesh::graph::MeshGraph;
+use rulercraft_mesh::segment::{join_strips, segment_cylinders, segment_planes};
 use rulercraft_mesh::{ImportLimits, Mesh, Unit, read_mesh};
 use serde_json::{Value, json};
 use std::process::ExitCode;
@@ -13,6 +14,7 @@ const USAGE: &str = "Usage:
   rulercraft project fit <project.json> <id> <plane|sphere|cylinder> [fit options]
   rulercraft project info <project.json>
   rulercraft info <mesh> [--units mm|cm|m|in]
+  rulercraft segment <mesh> [--kind planes|cylinders|strips] [--units mm|cm|m|in]
   rulercraft fit <plane|sphere|cylinder> <mesh> [--units U] [--box X Y Z X Y Z] [--near X Y Z R]
                  [--facing DX DY DZ] [--within DEG] [--sigma 0|1|2|3] [--known-diameter D]
 Meshes: .stl .ply .obj .3mf. Lengths in mm (after --units), angles in degrees. Selection filters combine;
@@ -126,6 +128,73 @@ fn fit_command(args: &[String]) -> Result<String, String> {
     Ok(json!({ "mesh": path, "selected": out.selected, "fit": fitted }).to_string())
 }
 
+fn segment_command(args: &[String]) -> Result<String, String> {
+    let [path, options @ ..] = args else {
+        return Err(USAGE.into());
+    };
+    let (mut kind, mut unit) = ("cylinders", Unit::Mm);
+    let mut it = options.iter();
+    while let Some(flag) = it.next() {
+        match flag.as_str() {
+            "--kind" => {
+                kind = it
+                    .next()
+                    .ok_or("--kind needs planes, cylinders or strips")?;
+                if !matches!(kind, "planes" | "cylinders" | "strips") {
+                    return Err("segment kind must be planes, cylinders or strips".into());
+                }
+            }
+            "--units" => {
+                let value = it.next().ok_or("--units needs mm, cm, m or in")?;
+                unit = Unit::parse(value)
+                    .ok_or_else(|| format!("unknown unit `{value}`: use mm, cm, m or in"))?;
+            }
+            other => return Err(format!("unknown option `{other}`\n{USAGE}")),
+        }
+    }
+    let mesh = load(path, unit)?;
+    let graph = MeshGraph::build(&mesh);
+    let (regions, unassigned) = match kind {
+        "planes" => {
+            let segmented = segment_planes(&mesh, &graph, Default::default());
+            let regions = segmented.regions.iter().map(|r| json!({
+                "triangle_count": r.triangles.len(), "vertex_count": r.vertices.len(), "area": r.area,
+                "fit": {"center": r.plane.center, "normal": r.plane.normal,
+                    "span_u": r.plane.span_u, "span_v": r.plane.span_v, "form_error": r.plane.form_error}
+            })).collect::<Vec<_>>();
+            (regions, segmented.unassigned)
+        }
+        "cylinders" => {
+            let segmented = segment_cylinders(&mesh, &graph, Default::default());
+            let regions = segmented.regions.iter().map(|r| json!({
+                "triangle_count": r.triangles.len(), "vertex_count": r.vertices.len(), "area": r.area,
+                "fit": {"axis_point": r.cylinder.axis_point, "axis": r.cylinder.axis,
+                    "radius": r.cylinder.radius, "diameter": r.cylinder.diameter,
+                    "coverage_deg": r.cylinder.coverage_deg, "form_error": r.cylinder.form_error}
+            })).collect::<Vec<_>>();
+            (regions, segmented.unassigned)
+        }
+        "strips" => {
+            let planes = segment_planes(&mesh, &graph, Default::default());
+            let surfaces = join_strips(&mesh, &graph, &planes, Default::default());
+            let unassigned = mesh
+                .triangles
+                .len()
+                .saturating_sub(surfaces.iter().map(|r| r.triangles.len()).sum::<usize>());
+            let regions = surfaces.iter().map(|r| json!({
+                "triangle_count": r.triangles.len(), "vertex_count": r.vertices.len(),
+                "strip_count": r.strips.len(), "area": r.area,
+                "fit": {"axis_point": r.cylinder.axis_point, "axis": r.cylinder.axis,
+                    "radius": r.cylinder.radius, "diameter": r.cylinder.diameter,
+                    "coverage_deg": r.cylinder.coverage_deg, "form_error": r.cylinder.form_error}
+            })).collect::<Vec<_>>();
+            (regions, unassigned)
+        }
+        _ => return Err("segment kind must be planes, cylinders or strips".into()),
+    };
+    Ok(json!({"mesh":path,"kind":kind,"regions":regions,"unassigned":unassigned}).to_string())
+}
+
 fn run(args: &[String]) -> Result<String, String> {
     let [command, rest @ ..] = args else {
         return Err(USAGE.into());
@@ -135,6 +204,9 @@ fn run(args: &[String]) -> Result<String, String> {
     }
     if command == "fit" {
         return fit_command(rest);
+    }
+    if command == "segment" {
+        return segment_command(rest);
     }
     let [path, rest @ ..] = rest else {
         return Err(USAGE.into());

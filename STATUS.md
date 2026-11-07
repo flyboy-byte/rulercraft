@@ -8,14 +8,14 @@ Overall roadmap progress: **38%** (details in ROADMAP-PROGRESS.md).
 | --- | ---: |
 | planned | 7 |
 | specced | 0 |
-| in-progress | 1 |
+| in-progress | 0 |
 | implemented | 4 |
-| verified | 22 |
+| verified | 23 |
 | done | 0 |
 
 ## In progress
 
-- `segment.frontends` (Codex, https://github.com/flyboy-byte/rulercraft/pull/41): Add rulercraft segment and the MCP segment tool over the existing segmentation library.
+- none
 
 ## Ready to claim
 

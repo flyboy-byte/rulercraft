@@ -8,14 +8,14 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 
 | Milestone | Progress | % | Weight | Exit condition |
 | --- | --- | ---: | ---: | --- |
-| R1 Clean meshes: open, fit, measure, over CLI and MCP | `█████████░` | 86% | 30 | Logan downloads an STL from a model-sharing site, asks Claude over MCP for its hole diameters and face distances, and they match the design dimensions. |
+| R1 Clean meshes: open, fit, measure, over CLI and MCP | `█████████░` | 88% | 30 | Logan downloads an STL from a model-sharing site, asks Claude over MCP for its hole diameters and face distances, and they match the design dimensions. |
 | R2 Mesh to editable CAD through SolidCraft | `████░░░░░░` | 38% | 20 | A simple prismatic downloaded part is rebuilt as a SolidCraft model whose deviation from the STL is under 0.05 mm. |
 | R3 Noisy scans: robust fits, deviation, alignment, thickness | `██░░░░░░░░` | 22% | 20 | A real scan (a public sample scan or a phone scan) gives stable fits and a deviation report against its CAD. |
 | R4 Reverse-engineering workflows with AI | `░░░░░░░░░░` | 0% | 15 | Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft. |
 | R5 Reusable engine | `░░░░░░░░░░` | 0% | 10 | Another project depends on rulercraft-mesh from crates.io or git and builds in Wasm. |
 | R6 Photos to mesh (research) | `░░░░░░░░░░` | 0% | 5 | A written go/no-go with a prototype on photos of one object. |
 
-## R1: Clean meshes: open, fit, measure, over CLI and MCP (86%)
+## R1: Clean meshes: open, fit, measure, over CLI and MCP (88%)
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
@@ -40,7 +40,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `reference.local` Optional local reference numbers from another program (gitignored) | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/27 | Independent local captures are optional and absent; helper skips visibly until supplied. |
 | `repo.skeleton` Workspace, docs, plan tool and fast CI | implemented | - | Claude | Done when hosted CI is green on main. |
 | `segment.cylinders` Find round regions (holes, bosses) from how their normals turn | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/24 | Coarse faceting (under about 24 facets around) is left to segment.strips; real-scan run at checkpoint.r1-mcp. |
-| `segment.frontends` Expose mesh segmentation in the CLI and MCP | in-progress | - | Codex https://github.com/flyboy-byte/rulercraft/pull/41 | Add rulercraft segment and the MCP segment tool over the existing segmentation library. |
+| `segment.frontends` Expose mesh segmentation in the CLI and MCP | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/42 |  |
 | `segment.planes` Grow flat regions over neighbouring triangles (a mesh's faces, named automatically) | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/22 | CLI/MCP exposure (`rulercraft segment`) once mcp.server lands; real-scan check at checkpoint.r1-mcp. |
 | `segment.strips` Join the flat strips a faceted round surface breaks into back into one surface | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/25 | Not yet on the CLI or MCP (rulercraft segment). Noise near half the distance limit splits a surface (known limit, spec). |
 | `select.region` Pick vertices by box, near-point and facing direction | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/9 | CLI/MCP exposure comes with cli.commands. |

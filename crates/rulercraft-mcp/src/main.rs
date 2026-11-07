@@ -13,6 +13,7 @@ use rulercraft_mesh::{
     graph::MeshGraph,
     measure::{Element, relate},
     read_mesh,
+    segment::{join_strips, segment_cylinders, segment_planes},
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -21,7 +22,7 @@ use std::{
     io::Read,
     sync::{Arc, Mutex},
 };
-const GUIDE: &str = "Open a local STL, PLY, OBJ or 3MF with mesh.open (file unit defaults to mm; 3MF model units win), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. Segmentation and project saving are not available in this server yet.";
+const GUIDE: &str = "Open a local STL, PLY, OBJ or 3MF with mesh.open (file unit defaults to mm; 3MF model units win), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
 #[derive(Debug, Clone, Copy, Hash, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 enum FileUnit {
@@ -134,6 +135,28 @@ impl FitArgs {
         })
     }
 }
+#[derive(Debug, Clone, Copy, Deserialize, schemars::JsonSchema)]
+#[serde(rename_all = "lowercase")]
+enum SegmentKind {
+    Planes,
+    Cylinders,
+    Strips,
+}
+impl SegmentKind {
+    fn name(self) -> &'static str {
+        match self {
+            Self::Planes => "planes",
+            Self::Cylinders => "cylinders",
+            Self::Strips => "strips",
+        }
+    }
+}
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct SegmentArgs {
+    /// Segmentation method. Defaults to cylinders for scan meshes; strips suit tessellated CAD meshes.
+    kind: Option<SegmentKind>,
+}
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct MeasureArgs {
@@ -197,6 +220,47 @@ impl Loaded {
             }
         };
         Ok((json!({"selected":out.selected,"fit":value}), element))
+    }
+    fn segment(&self, kind: SegmentKind) -> Value {
+        let (regions, unassigned) = match kind {
+            SegmentKind::Planes => {
+                let segmented = segment_planes(&self.mesh, &self.graph, Default::default());
+                let regions = segmented.regions.iter().map(|r| json!({
+                    "triangle_count": r.triangles.len(), "vertex_count": r.vertices.len(), "area": r.area,
+                    "fit": {"center": r.plane.center, "normal": r.plane.normal,
+                        "span_u": r.plane.span_u, "span_v": r.plane.span_v, "form_error": r.plane.form_error}
+                })).collect::<Vec<_>>();
+                (regions, segmented.unassigned)
+            }
+            SegmentKind::Cylinders => {
+                let segmented = segment_cylinders(&self.mesh, &self.graph, Default::default());
+                let regions = segmented.regions.iter().map(|r| json!({
+                    "triangle_count": r.triangles.len(), "vertex_count": r.vertices.len(), "area": r.area,
+                    "fit": {"axis_point": r.cylinder.axis_point, "axis": r.cylinder.axis,
+                        "radius": r.cylinder.radius, "diameter": r.cylinder.diameter,
+                        "coverage_deg": r.cylinder.coverage_deg, "form_error": r.cylinder.form_error}
+                })).collect::<Vec<_>>();
+                (regions, segmented.unassigned)
+            }
+            SegmentKind::Strips => {
+                let planes = segment_planes(&self.mesh, &self.graph, Default::default());
+                let surfaces = join_strips(&self.mesh, &self.graph, &planes, Default::default());
+                let unassigned = self
+                    .mesh
+                    .triangles
+                    .len()
+                    .saturating_sub(surfaces.iter().map(|r| r.triangles.len()).sum::<usize>());
+                let regions = surfaces.iter().map(|r| json!({
+                    "triangle_count": r.triangles.len(), "vertex_count": r.vertices.len(),
+                    "strip_count": r.strips.len(), "area": r.area,
+                    "fit": {"axis_point": r.cylinder.axis_point, "axis": r.cylinder.axis,
+                        "radius": r.cylinder.radius, "diameter": r.cylinder.diameter,
+                        "coverage_deg": r.cylinder.coverage_deg, "form_error": r.cylinder.form_error}
+                })).collect::<Vec<_>>();
+                (regions, unassigned)
+            }
+        };
+        json!({"kind":kind.name(),"regions":regions,"unassigned":unassigned})
     }
 }
 fn result(value: Result<Value, String>) -> CallToolResult {
@@ -404,6 +468,13 @@ impl MeshServer {
         self.with_mesh(|m|{let (first,a)=m.fit(&args.first)?;let (second,b)=m.fit(&args.second)?;let r=relate(&a,&b);
             if r.distance.into_iter().chain(r.angle_deg).chain(r.components.into_iter().flatten()).any(|v|!v.is_finite()) {return Err("measurement produced a non-finite result".into());}
             Ok(json!({"first":first,"second":second,"relation":{"distance":r.distance,"components":r.components,"angle_deg":r.angle_deg,"convention":r.convention}}))})
+    }
+    #[tool(
+        description = "Segment the current mesh into flat or round regions. Defaults to cylinders for scans; strips are for tessellated CAD meshes. Returns compact region summaries."
+    )]
+    fn segment(&self, Parameters(args): Parameters<SegmentArgs>) -> CallToolResult {
+        let kind = args.kind.unwrap_or(SegmentKind::Cylinders);
+        self.with_mesh(|m| Ok(m.segment(kind)))
     }
     #[tool(
         description = "Read the short guide to mesh opening, inspection, selection, fitting and measurement, with units and limits."

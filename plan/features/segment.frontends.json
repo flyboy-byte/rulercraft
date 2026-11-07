@@ -3,14 +3,17 @@
   "milestone": "R1",
   "title": "Expose mesh segmentation in the CLI and MCP",
   "spec": "segmentation",
-  "status": "in-progress",
+  "status": "verified",
   "depends_on": [
     "segment.planes",
     "segment.cylinders",
     "segment.strips"
   ],
   "owner": "Codex",
-  "pr": "https://github.com/flyboy-byte/rulercraft/pull/41",
-  "verified_by": [],
-  "left": "Add rulercraft segment and the MCP segment tool over the existing segmentation library."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/42",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": ""
 }
