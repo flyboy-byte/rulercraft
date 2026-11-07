@@ -46,11 +46,14 @@ fn opposite_faces_recover_each_design_dimension() {
     } // integer design and axis-aligned rays; f64 roundoff only
     let mut shifted = m.clone();
     for p in &mut shifted.positions {
-        for x in p {
-            *x = *x * 10. + 100.;
-        }
+        *p = [p[2] * 10. + 100., p[0] * 10. + 100., p[1] * 10. + 100.];
     }
-    let moved = wall_thickness(&shifted, &g.vertex_normals, &sel, Default::default()).unwrap();
+    let rotated_normals: Vec<_> = g
+        .vertex_normals
+        .iter()
+        .map(|n| [n[2], n[0], n[1]])
+        .collect();
+    let moved = wall_thickness(&shifted, &rotated_normals, &sel, Default::default()).unwrap();
     for (a, b) in samples.iter().zip(moved) {
         assert!((a.distance.unwrap() * 10. - b.distance.unwrap()).abs() < 1e-10);
     }

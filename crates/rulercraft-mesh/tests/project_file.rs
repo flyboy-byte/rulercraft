@@ -126,3 +126,27 @@ fn curved_recipes_preserve_settings_and_design_dimensions() {
     };
     assert!((f.radius - 10.0).abs() < 1e-5 && (f.length - 20.0).abs() < 1e-5); // f32 source quantization
 }
+
+#[test]
+fn corrupt_project_bytes_refuse_or_refit_without_panicking() {
+    let limits = ProjectLimits {
+        max_bytes: 1 << 16,
+        max_elements: 4,
+        import: rulercraft_mesh::ImportLimits {
+            max_bytes: 4096,
+            max_vertices: 32,
+            max_triangles: 32,
+        },
+    };
+    let mut project = Project::new("plane.obj", PLANE, Unit::Mm, limits).unwrap();
+    project.add("top", recipe()).unwrap();
+    let bytes = project.encode().unwrap();
+    for end in 0..bytes.len() {
+        let _ = Project::decode(&bytes[..end], limits);
+    }
+    for i in 0..bytes.len() {
+        let mut corrupted = bytes.clone();
+        corrupted[i] = 0xff;
+        let _ = Project::decode(&corrupted, limits);
+    }
+}

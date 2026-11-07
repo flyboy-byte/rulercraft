@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Readers must refuse corrupted files, never panic: every prefix and thousands of byte-flipped
-//! copies of small valid STL, PLY and OBJ files. Runs in well under a second.
+//! copies of small valid STL, PLY, OBJ and 3MF files. Runs in well under a second.
 #![allow(clippy::unwrap_used, missing_docs)]
 use rulercraft_mesh::{ImportLimits, Unit, read_mesh};
 
@@ -36,7 +36,17 @@ fn samples() -> Vec<(&'static str, Vec<u8>)> {
         }
     }
     let obj = b"v 0 0 0\nv 1 0 0\nv 1 1 0\nv 0 1 0\nvt 0 0\nvn 0 0 1\nf 1/1/1 2/1/1 3/1/1 4/1/1\nf -4 -2 -1\n".to_vec();
+    use std::io::{Cursor, Write};
+    let mut archive = zip::ZipWriter::new(Cursor::new(Vec::new()));
+    let options = zip::write::SimpleFileOptions::default()
+        .compression_method(zip::CompressionMethod::Deflated);
+    archive.start_file("_rels/.rels", options).unwrap();
+    archive.write_all(b"<Relationships xmlns='http://schemas.openxmlformats.org/package/2006/relationships'><Relationship Id='r' Type='http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel' Target='/a.model'/></Relationships>").unwrap();
+    archive.start_file("a.model", options).unwrap();
+    archive.write_all(b"<model xmlns='http://schemas.microsoft.com/3dmanufacturing/core/2015/02'><resources><object id='1'><mesh><vertices><vertex x='0' y='0' z='0'/><vertex x='1' y='0' z='0'/><vertex x='0' y='1' z='0'/></vertices><triangles><triangle v1='0' v2='1' v3='2'/></triangles></mesh></object></resources><build><item objectid='1'/></build></model>").unwrap();
+    let threemf = archive.finish().unwrap().into_inner();
     vec![
+        ("a.3mf", threemf),
         ("a.stl", ascii_stl),
         ("b.stl", bin_stl),
         ("a.ply", ply_ascii),

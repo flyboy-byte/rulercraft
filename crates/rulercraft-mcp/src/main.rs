@@ -20,7 +20,7 @@ use std::{
     io::Read,
     sync::{Arc, Mutex},
 };
-const GUIDE: &str = "Open a local STL, PLY or OBJ with mesh.open (file unit defaults to mm), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Only mesh.open changes session state; failed opens preserve the old mesh. Segmentation and project saving are not available in this server yet.";
+const GUIDE: &str = "Open a local STL, PLY, OBJ or 3MF with mesh.open (file unit defaults to mm; 3MF model units win), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Only mesh.open changes session state; failed opens preserve the old mesh. Segmentation and project saving are not available in this server yet.";
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 enum FileUnit {
@@ -32,7 +32,7 @@ enum FileUnit {
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct OpenArgs {
-    /// Local mesh file path (.stl, .ply, .obj).
+    /// Local mesh file path (.stl, .ply, .obj, .3mf).
     path: String,
     /// Coordinate unit in file, default mm.
     unit: Option<FileUnit>,

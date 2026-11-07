@@ -36,3 +36,10 @@ normal cosine <=1e-12 are parallel or not outward-facing and are ignored.
 
 This feature adds the bounded engine API only. CLI/MCP thickness tools and acceleration for dense
 scans are later front-end/performance work. Large queries refuse rather than quietly subsampling.
+
+Axis-axis distances use the closest points on infinite lines, including small genuine tilts.
+For unit axes with cross-product magnitude <=1e-12, floating-point directional roundoff is treated
+as parallel and the first axis point is measured to the second line. This numerical cutoff replaces
+the earlier 1-degree parallel approximation for axes (checkpoint #32, 2026-11-07). Small nonparallel
+angles can place the closest points far outside the measured surface; the result is not spacing at a
+specified height. Plane-related near-parallel conventions retain their documented 1-degree threshold.

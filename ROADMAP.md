@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated 2026-11-06. Each milestone ends in something Logan can run and check, not just "tests
+Last updated 2026-11-07. Each milestone ends in something Logan can run and check, not just "tests
 pass". Features and their state live in `plan/features/`; the generated view is ROADMAP-PROGRESS.md.
 Completed items are struck through with a date, never deleted.
 
@@ -13,6 +13,11 @@ Readers (STL, PLY, OBJ, 3MF), the mesh model, selection, plane/sphere/cylinder f
 segmentation into surfaces, distances and angles, a project file, undo, the CLI and the MCP server.
 In parallel: the known-design corpus (our own designed test parts, committed; downloaded models with
 published dimensions, kept local; a test block Logan prints and measures) and local reference numbers.
+
+As of 2026-11-07: ~~readers, fits, relations, MCP, engine segmentation, corpus, project JSON and local
+reference helper~~ are merged. Undo/redo and segmentation/project MCP tools remain. Checkpoint #32
+compares all 41 corpus dimensions/relations through MCP and repeats the private-scan checks; this
+is not the published-dimension or printed/caliper acceptance, which remains open.
 
 ## R2 Mesh to editable CAD through SolidCraft
 

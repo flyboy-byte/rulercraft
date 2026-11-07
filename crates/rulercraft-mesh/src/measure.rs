@@ -7,7 +7,7 @@ pub mod thickness;
 use crate::fit::{CylinderFit, PlaneFit, SphereFit};
 use crate::math::{Vec3, angle_between, cross, dot, length, normalize, sub};
 
-/// Below this angle (degrees) two directions count as parallel.
+/// Below this angle (degrees), plane-related distances use the near-parallel convention.
 pub const PARALLEL_DEG: f64 = 1.0;
 
 /// A fitted element reduced to what relations need.
@@ -169,12 +169,12 @@ pub fn relate(a: &Element, b: &Element) -> Relation {
         ) => {
             let angle = acute(*u1, *u2);
             let mut r = Relation::new(
-                "acute angle between the axes and the closest distance between the axis lines (centre-line spacing when parallel)",
+                "acute angle between the axes and closest infinite-axis distance; centre-line spacing when parallel within 1e-12 cross-product magnitude",
             );
             r.angle_deg = Some(angle);
             let n = cross(*u1, *u2);
             r.distance = Some(match normalize(n) {
-                Some(n) if angle >= PARALLEL_DEG => dot(sub(*p2, *p1), n).abs(),
+                Some(n) if length(cross(*u1, *u2)) > 1e-12 => dot(sub(*p2, *p1), n).abs(),
                 _ => point_line(*p2, *p1, *u1),
             });
             r

@@ -1,0 +1,14 @@
+{
+  "id": "math.range",
+  "milestone": "R1",
+  "title": "Stable public math helpers for extreme finite directions",
+  "spec": "math",
+  "status": "planned",
+  "depends_on": [
+    "math.core"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Confirmed in docs/findings/2026-11-07-math-extreme-directions.md; route to the math lane."
+}

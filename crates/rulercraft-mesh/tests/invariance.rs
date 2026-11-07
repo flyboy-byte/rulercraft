@@ -226,3 +226,29 @@ fn every_fit_works_from_a_hundredth_to_a_thousand_times_the_size() {
         );
     }
 }
+
+#[test]
+fn tilted_axis_spacing_survives_rigid_motion_and_pair_order() {
+    use rulercraft_mesh::measure::{Element, relate};
+    let theta = 0.5f64.to_radians();
+    let make = |point, axis| Element::Cylinder {
+        point,
+        axis,
+        radius: 2.,
+    };
+    let (p, a, q, b) = (
+        [0.; 3],
+        [0., 0., 1.],
+        [10., 3., 0.],
+        [theta.sin(), 0., theta.cos()],
+    );
+    let expected = relate(&make(p, a), &make(q, b));
+    assert!((expected.distance.unwrap() - 3.).abs() < 1e-9); // exact skew-line separation, f64 roundoff
+    let motion = Motion::new([1., 2., 3.], 0.9, [40., -25., 10.]);
+    let first = make(motion.point(p), motion.dir(a));
+    let second = make(motion.point(q), motion.dir(b));
+    for r in [relate(&first, &second), relate(&second, &first)] {
+        assert!((r.distance.unwrap() - 3.).abs() < 1e-9);
+        assert!((r.angle_deg.unwrap() - 0.5).abs() < 1e-9);
+    }
+}

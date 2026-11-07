@@ -21,3 +21,8 @@ Status: R1 spec (2026-11-07). Feature: `corpus.known`. Registry: docs/test-corpu
   Check closed boundaries and no non-manifold edges. Keep this four-part check under a minute.
 - These are mathematical designs, not manufacturing or scan references. Printing/caliper checks
   and downloaded parts with published dimensions remain a separate R1 exit activity.
+
+Checkpoint.r1-exit (#32, 2026-11-07) repeats all 41 fixed corpus dimensions/relations through MCP,
+checks the private scan against CLI and a prior local rounded reference, and extends bounded hostile
+input tests to ZIP 3MF and project JSON. It does not close the milestone or substitute for published
+dimensions and printing/caliper measurements.
