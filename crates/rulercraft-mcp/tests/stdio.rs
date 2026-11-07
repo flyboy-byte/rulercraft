@@ -404,6 +404,19 @@ fn robust_plane_fit_ignores_far_outliers_the_plain_fit_follows() {
     c.data("mesh.open", json!({"path":path}));
     let plain = c.data("fit", json!({"kind":"plane","sigma":0}));
     assert!(plain["fit"]["center"][2].as_f64().unwrap() > 1.0, "{plain}");
+    for robust in [false, true] {
+        let invalid = c.call(
+            "fit",
+            json!({"kind":"plane","robust":robust,"known_diameter":10.0}),
+        );
+        assert_eq!(invalid["isError"], true, "{invalid}");
+        assert!(
+            invalid["content"][0]["text"]
+                .as_str()
+                .unwrap()
+                .contains("known diameter")
+        );
+    }
     let robust = c.data("fit", json!({"kind":"plane","robust":true}));
     assert_eq!(robust["inliers"], 16, "{robust}");
     assert!(robust["fit"]["center"][2].as_f64().unwrap().abs() < 1e-9);
