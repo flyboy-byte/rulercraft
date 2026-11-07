@@ -281,3 +281,59 @@ fn real_scan_joins_strips_in_reasonable_time() {
     );
     assert!(took.as_secs_f64() < 30.0, "joining took {took:?}");
 }
+
+#[test]
+fn moving_turning_and_rescaling_a_coarse_tube_keeps_one_surface() {
+    // Turn about an oblique axis (Rodrigues), move, and scale; the radius must follow the scale.
+    let (k, axis, angle) = ([0.3f64, -0.5, 0.81], [0.48f64, 0.6, 0.64], 1.1f64);
+    let n = length(axis);
+    let u = axis.map(|x| x / n);
+    let turn = |p: [f64; 3]| {
+        let (c, s) = (angle.cos(), angle.sin());
+        let d = u[0] * p[0] + u[1] * p[1] + u[2] * p[2];
+        let x = cross(u, p);
+        [0, 1, 2].map(|i| p[i] * c + x[i] * s + u[i] * d * (1.0 - c))
+    };
+    for scale in [0.1, 1.0, 25.4] {
+        let mut m = extrude(&polygon(0.0, 0.0, 6.0, 12, |_| 0.0), 15.0, 3);
+        for p in &mut m.positions {
+            let q = turn(p.map(f64::from));
+            *p = [0, 1, 2].map(|i| ((q[i] + 40.0 * k[i]) * scale) as f32);
+        }
+        let s = join(&m);
+        assert_eq!(s.len(), 1, "scale {scale}");
+        assert_eq!(s[0].strips.len(), 12, "scale {scale}");
+        let c = &s[0].cylinder;
+        assert!(
+            (c.radius - 6.0 * scale).abs() < 1e-4 * scale.max(1.0),
+            "scale {scale}: {c:?}"
+        );
+        let along = turn([0.0, 1.0, 0.0]);
+        let cos = (c.axis[0] * along[0] + c.axis[1] * along[1] + c.axis[2] * along[2]).abs();
+        assert!(cos > 1.0 - 1e-6, "scale {scale}: axis {:?}", c.axis);
+    }
+}
+
+#[test]
+fn empty_and_degenerate_meshes_give_no_surfaces() {
+    let empty = Mesh {
+        positions: vec![],
+        triangles: vec![],
+        degenerate_dropped: 0,
+    };
+    assert!(join(&empty).is_empty());
+    // Every triangle has zero area: all corners on one line.
+    let flat = Mesh {
+        positions: (0..6).map(|i| [i as f32, 0.0, 0.0]).collect(),
+        triangles: vec![[0, 1, 2], [1, 2, 3], [2, 3, 4], [3, 4, 5]],
+        degenerate_dropped: 0,
+    };
+    assert!(join(&flat).is_empty());
+    // One lone triangle.
+    let one = Mesh {
+        positions: vec![[0.0, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]],
+        triangles: vec![[0, 1, 2]],
+        degenerate_dropped: 0,
+    };
+    assert!(join(&one).is_empty());
+}
