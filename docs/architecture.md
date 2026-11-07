@@ -18,7 +18,7 @@ changes the pattern.
 ```
 mesh.rs        Mesh, MeshBuilder, Unit, Bounds            (exists)
 stl.rs         STL reader                                  (exists)
-io/            ply.rs, obj.rs, threemf.rs, and a read_mesh(name, bytes, unit, limits) dispatcher
+io/            ply.rs, obj.rs, threemf.rs (exists), and a read_mesh(name, bytes, unit, limits) dispatcher
 graph.rs       MeshGraph: normals, adjacency, components, boundaries, creases  (mesh.graph)
 select.rs      box / near / facing / explicit selections   (select.region)
 math/          small linear algebra: Vec3 helpers, 3x3 symmetric eigen, small least squares
@@ -57,3 +57,6 @@ symmetric eigen solver and small least squares are all R1 needs).
 
 Import dispatch uses `io::ImportLimits` (also exported at the crate root) with byte, source-vertex
 and candidate-triangle caps. The original STL-only `Limits` API remains available.
+
+3MF uses zip for bounded in-memory package reads and a private XML geometry-subset reader. Its
+model unit overrides the caller unit; build/component transforms flatten through MeshBuilder.

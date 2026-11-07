@@ -72,3 +72,28 @@ PLY description: https://sites.cc.gatech.edu/projects/large_models/ply.html (for
   positions, including unused ones, are validated and retained through MeshBuilder. Limits count
   source vertices and candidate triangles, including degenerates. Invalid text and numeric data,
   unsupported weights and unit overflow refuse with a line number (byte offset for invalid UTF-8).
+
+## 3MF (2026-11-07)
+
+- Geometry-only core model import from stored/deflated ZIP. `_rels/.rels` selects the primary model
+  by its standard start-part relationship. No archive extraction or external targets. Required
+  extensions refuse; optional appearance, materials, metadata and nongeometry parts are ignored.
+- UTF-8 XML, default or prefixed namespaces, quoted attributes, predefined/numeric entities,
+  comments and processing instructions. DTD/custom entities refuse. Errors identify ZIP context or
+  model XML byte offset. This is a geometry importer, not a complete package/schema validator.
+- Model units win over the supplied unit: micron, millimeter (default), centimeter, inch, foot, meter.
+  Resource objects contain a mesh or components; build items and nested same-model components are
+  flattened with their affine 12-number transforms. Negative determinant reverses triangle winding.
+  Unsupported external model references refuse, including optional path attributes on instances.
+- All source positions/indices and transforms are validated, including unused objects. Unique positive
+  resource ids, existing object references and acyclic components are required. Only build items are
+  emitted; `printable="false"` items are skipped. MeshBuilder merges vertices and drops degenerates.
+- ImportLimits bounds compressed bytes, combined uncompressed relationship/model bytes, total declared
+  source geometry and expanded geometry (vertices/triangles counted before merging/dropping).
+  Additional fixed caps: 10,000 ZIP entries, 100,000 resources/instances, XML/component depth 64.
+  A single relationship selects the model; absent/ambiguous relationships, no build triangles,
+  bad indices, nonfinite coordinates/transforms and f32 overflow after transforms/units refuse.
+- Simplest initial scope: one model part; no manufacturing/material semantics, mesh repair, URI percent
+  escapes or cross-part components. The existing dispatcher and `info`/`fit` accept `.3mf`.
+
+Format description: https://github.com/3MFConsortium/spec_core/blob/master/3MF%20Core%20Specification.md

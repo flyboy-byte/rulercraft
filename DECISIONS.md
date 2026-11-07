@@ -65,3 +65,10 @@ checked and stated in the PR. Linear algebra stays in our own small `math/` modu
 
 **Why.** Fresh sessions should not stall asking about obvious choices, and a light dependency tree keeps
 builds and CI fast.
+
+## D-009 3MF archive reader (2026-11-07)
+
+**Decision.** `io.3mf` uses zip 2.6 (MIT), default features off with deflate enabled, as pre-approved by
+D-006. Stored/deflated model and relationship parts are read in memory with byte caps, never extracted.
+The core geometry XML subset is implemented here without another dependency. zip's Rust 1.73 minimum
+fits the workspace's declared 1.85 minimum; no minimum-version change.
