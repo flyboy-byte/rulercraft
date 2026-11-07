@@ -3,9 +3,18 @@
 Status: R1 spec (outline). Features: `cli.commands`, `history.undo`.
 
 Every user-level action is a named command with a typed JSON input and output (`mesh.open`,
-`select.box`, `fit.plane`, `measure.distance`, `project.save`, `history.undo`, ...). The CLI and
-the MCP server are thin front ends over the same command layer. Each successful command is one undo
-step; a failed command changes nothing.
+`select.box`, `fit.plane`, `measure.distance`, `project.save`, `history.undo`, ...).
+State-changing commands add one undo step after success; a failed command changes nothing. Read-only
+commands do not change history.
+
+The current MCP process keeps a session history of successful `mesh.open` calls. `history.undo` and
+`history.redo` move between those opened meshes; `history.info` reports whether either action is
+available. Opening a mesh after undo discards the redo branch. The history stores each open request and
+a fingerprint of its source bytes, then reloads the file when moving through history. If the file is
+missing or has changed, the move fails and the current mesh and history position are preserved. The
+first undo returns the session to having no open mesh. Inspection, selection, fits and measurements
+are read-only and do not add history steps. The CLI currently runs one command per process and has no
+persistent history.
 
 Engine: `rulercraft_mesh::commands` (`Selection`, `FitRequest`, `select`, `fit`), shared by the CLI and
 the MCP server. Selection filters (box, near, facing) all apply; none means the whole mesh.
