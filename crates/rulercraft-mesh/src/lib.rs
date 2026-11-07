@@ -3,9 +3,12 @@
 //! Behaviour is specified in `docs/specs/`.
 
 pub mod fit;
+pub mod io;
 pub mod math;
 pub mod mesh;
 pub mod stl;
 
 pub use mesh::{Bounds, Mesh, MeshBuilder, Unit};
 pub use stl::{Limits, ReadError, read_stl};
+
+pub use io::{ImportLimits, read_mesh};

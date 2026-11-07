@@ -37,3 +37,24 @@ Status: R1 spec. Features: `io.stl`, `io.ply`, `io.obj`, `io.3mf`.
 
 - Math: a unit cube in ASCII and binary gives 8 vertices, 12 triangles, box (0,0,0)-(1,1,1).
 - Known design: our designed test block reads with the box its design states.
+
+## PLY (2026-11-07)
+
+- Read version 1.0 ASCII, binary little-endian and binary big-endian. Header lines end in LF
+  or CRLF. Comments and obj_info are ignored. Scalar types: signed/unsigned 8/16/32-bit integers
+  and 32/64-bit floats, using standard names or width aliases.
+- Exactly one vertex element precedes exactly one face element. Vertex x/y/z are scalar
+  properties in any order; face vertex_indices (or vertex_index) is an integer list.
+  Other declared properties and elements are consumed and ignored. Duplicate elements or
+  properties, missing coordinates, unsupported types and malformed declarations are refused.
+- Face indices are zero-based. Faces need at least three indices. Fan triangulation preserves
+  their order; it does not repair concave or self-intersecting polygons.
+- ASCII body values are whitespace separated, with line numbers in refusals. Binary refusals
+  give byte offsets. Undeclared trailing data is refused (ASCII trailing whitespace is allowed).
+- ImportLimits bounds bytes, source vertices (default 50 million), and candidate triangles
+  (default 50 million, including dropped degenerates). List lengths are checked against remaining
+  input before allocation. Non-finite positions and unit conversion overflow are refused.
+- The dispatcher currently supports STL and PLY. Its limits apply to STL bytes and triangles;
+  the vertex cap is checked on the STL result. The existing read_stl API remains available.
+
+PLY description: https://sites.cc.gatech.edu/projects/large_models/ply.html (format description only).
