@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
-//! Automatic flat regions grown over neighbouring triangles (docs/specs/segmentation.md, part a).
+//! Automatic regions grown over neighbouring triangles: flat, round, and flat strips joined into round
+//! (docs/specs/segmentation.md).
 
 use crate::fit::{Clip, PlaneFit, fit_plane};
 use crate::graph::MeshGraph;
@@ -498,4 +499,241 @@ fn surface_samples(mesh: &Mesh, t: u32) -> [Vec3; 7] {
         (a[2] + b[2] + c[2]) / 3.0,
     ];
     [a, b, c, mid(a, b), mid(b, c), mid(c, a), g]
+}
+
+/// Limits for joining flat strips into round surfaces (docs/specs/segmentation.md, part c).
+#[derive(Debug, Clone, Copy)]
+pub struct StripJoinOptions {
+    /// Largest angle between neighbouring strips' normals, radians. A prism with fewer sides than
+    /// 360° / this angle stays flat (default 40°: nine sides or fewer is a prism, ten or more is round).
+    pub max_turn: f64,
+    /// Largest distance of a strip's vertices from the joined cylinder, mm.
+    pub max_distance: f64,
+    /// Largest radius accepted, mm.
+    pub max_radius: f64,
+    /// Fewest strips in a surface.
+    pub min_strips: usize,
+    /// Smallest angular coverage kept, degrees.
+    pub min_coverage_deg: f64,
+}
+
+impl Default for StripJoinOptions {
+    fn default() -> Self {
+        Self {
+            max_turn: 40f64.to_radians(),
+            max_distance: 0.2,
+            max_radius: 10_000.0,
+            min_strips: 3,
+            min_coverage_deg: 20.0,
+        }
+    }
+}
+
+/// Flat regions joined into one round surface.
+#[derive(Debug, Clone)]
+pub struct StripSurface {
+    /// Indices into the flat segmentation's regions, ascending.
+    pub strips: Vec<usize>,
+    /// Their triangles, ascending.
+    pub triangles: Vec<u32>,
+    /// Their vertices, ascending and unique.
+    pub vertices: Vec<u32>,
+    /// Total area, mm².
+    pub area: f64,
+    /// Cylinder fit on the vertices (a tessellator puts vertices on the true surface; facet middles
+    /// sag inside it).
+    pub cylinder: crate::fit::CylinderFit,
+}
+
+/// Joins neighbouring flat regions of `planes` whose vertices all lie on one cylinder: the strips a
+/// coarsely faceted hole, boss or fillet breaks into. Surfaces come largest area first; a strip is in
+/// at most one surface.
+pub fn join_strips(
+    mesh: &Mesh,
+    graph: &MeshGraph,
+    planes: &PlaneSegmentation,
+    options: StripJoinOptions,
+) -> Vec<StripSurface> {
+    let n = planes.regions.len();
+    let mut region_of = vec![usize::MAX; mesh.triangles.len()];
+    for (r, region) in planes.regions.iter().enumerate() {
+        for &t in &region.triangles {
+            region_of[t as usize] = r;
+        }
+    }
+    let cos_turn = options.max_turn.cos();
+    let turns = |a: usize, b: usize| {
+        dot(
+            planes.regions[a].plane.normal,
+            planes.regions[b].plane.normal,
+        ) >= cos_turn
+    };
+    let mut adjacent: Vec<Vec<usize>> = vec![Vec::new(); n];
+    for e in &graph.edges {
+        let Some(t1) = e.t1.filter(|_| !e.non_manifold) else {
+            continue;
+        };
+        let (a, b) = (region_of[e.t0 as usize], region_of[t1 as usize]);
+        if a != b && a != usize::MAX && b != usize::MAX && turns(a, b) {
+            adjacent[a].push(b);
+            adjacent[b].push(a);
+        }
+    }
+    for list in &mut adjacent {
+        list.sort_unstable();
+        list.dedup();
+    }
+    let on = |f: &crate::fit::CylinderFit, r: usize| {
+        let axis = Axis::of(f);
+        planes.regions[r].vertices.iter().all(|&v| {
+            axis.surface_distance(mesh.positions[v as usize].map(f64::from)) <= options.max_distance
+        })
+    };
+    let fit = |members: &[usize]| {
+        let mut verts: Vec<u32> = members
+            .iter()
+            .flat_map(|&r| planes.regions[r].vertices.iter().copied())
+            .collect();
+        verts.sort_unstable();
+        verts.dedup();
+        let f = crate::fit::fit_cylinder(
+            &mesh.positions,
+            Some(&graph.vertex_normals),
+            &verts,
+            Default::default(),
+        )
+        .ok()?;
+        (f.radius.is_finite() && f.radius > 0.0 && f.radius <= options.max_radius).then_some(f)
+    };
+
+    let mut taken = vec![false; n];
+    let mut surfaces = Vec::new();
+    for seed in 0..n {
+        if taken[seed] {
+            continue;
+        }
+        for &second in &adjacent[seed] {
+            if taken[second] || taken[seed] {
+                continue;
+            }
+            // Two strips of one cylinder meet along a line parallel to its axis, so the axis is
+            // across their normals and their vertices fall on one circle seen along it. This quick
+            // test spares the full fit for most pairs on a scan.
+            let Some(axis) = crate::math::normalize(cross(
+                planes.regions[seed].plane.normal,
+                planes.regions[second].plane.normal,
+            )) else {
+                continue;
+            };
+            let points: Vec<Vec3> = [seed, second]
+                .iter()
+                .flat_map(|&r| planes.regions[r].vertices.iter())
+                .map(|&v| mesh.positions[v as usize].map(f64::from))
+                .collect();
+            if !on_one_circle(&points, axis, options.max_distance, options.max_radius) {
+                continue;
+            }
+            let mut members = vec![seed, second];
+            let Some(mut cyl) = fit(&members) else {
+                continue;
+            };
+            // Grow breadth-first: a neighbouring strip joins when its vertices lie on the current
+            // cylinder. A fit from a few noisy strips extrapolates poorly round the circle, so after
+            // each pass the surface is refitted on all its strips and grown again until a pass adds none.
+            let mut joined: std::collections::HashSet<usize> = members.iter().copied().collect();
+            loop {
+                let before = members.len();
+                let mut queue: VecDeque<usize> = members.iter().copied().collect();
+                while let Some(m) = queue.pop_front() {
+                    for &u in &adjacent[m] {
+                        if !taken[u] && !joined.contains(&u) && on(&cyl, u) {
+                            joined.insert(u);
+                            members.push(u);
+                            queue.push_back(u);
+                        }
+                    }
+                }
+                if members.len() == before {
+                    break;
+                }
+                match fit(&members) {
+                    Some(f) => cyl = f,
+                    None => break,
+                }
+            }
+            if members.len() < options.min_strips || cyl.coverage_deg < options.min_coverage_deg {
+                continue;
+            }
+            members.sort_unstable();
+            for &m in &members {
+                taken[m] = true;
+            }
+            let mut triangles: Vec<u32> = members
+                .iter()
+                .flat_map(|&m| planes.regions[m].triangles.iter().copied())
+                .collect();
+            triangles.sort_unstable();
+            let vertices = vertices_of(mesh, &triangles);
+            let area = members.iter().map(|&m| planes.regions[m].area).sum();
+            surfaces.push(StripSurface {
+                strips: members,
+                triangles,
+                vertices,
+                area,
+                cylinder: cyl,
+            });
+        }
+    }
+    surfaces.sort_by(|a, b| {
+        b.area
+            .total_cmp(&a.area)
+            .then(a.strips[0].cmp(&b.strips[0]))
+    });
+    surfaces
+}
+
+/// Whether `points`, seen along `axis`, lie within `tolerance` of one circle of radius up to
+/// `max_radius` (algebraic circle fit in the plane across the axis).
+fn on_one_circle(points: &[Vec3], axis: Vec3, tolerance: f64, max_radius: f64) -> bool {
+    let Some(&origin) = points.first() else {
+        return false;
+    };
+    let helper = if axis[0].abs() < 0.9 {
+        [1.0, 0.0, 0.0]
+    } else {
+        [0.0, 1.0, 0.0]
+    };
+    let Some(u) = crate::math::normalize(cross(axis, helper)) else {
+        return false;
+    };
+    let v = cross(axis, u);
+    let flat: Vec<[f64; 2]> = points
+        .iter()
+        .map(|&p| {
+            let d = sub(p, origin);
+            [dot(d, u), dot(d, v)]
+        })
+        .collect();
+    // x² + y² + D x + E y + F = 0, least squares over (D, E, F).
+    let (mut ata, mut atb) = (vec![0.0; 9], vec![0.0; 3]);
+    for &[x, y] in &flat {
+        let row = [x, y, 1.0];
+        for i in 0..3 {
+            for j in 0..3 {
+                ata[3 * i + j] += row[i] * row[j];
+            }
+            atb[i] -= row[i] * (x * x + y * y);
+        }
+    }
+    let Some(sol) = crate::math::solve_dense(ata, atb) else {
+        return false;
+    };
+    let (cx, cy) = (-sol[0] / 2.0, -sol[1] / 2.0);
+    let r2 = cx * cx + cy * cy - sol[2];
+    if r2.is_nan() || r2 <= 0.0 || r2.sqrt() > max_radius {
+        return false;
+    }
+    let r = r2.sqrt();
+    flat.iter()
+        .all(|&[x, y]| ((x - cx).hypot(y - cy) - r).abs() <= tolerance)
 }

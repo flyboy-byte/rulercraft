@@ -3,13 +3,16 @@
   "milestone": "R1",
   "title": "MCP server exposing the same commands to Claude",
   "spec": "mcp",
-  "status": "planned",
+  "status": "verified",
   "depends_on": [
     "cli.commands",
     "fit.plane"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/18",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Ready for Logan review. Local stdio integration passes; real-client and real-scan runs remain for the checkpoint."
 }
