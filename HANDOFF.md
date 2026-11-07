@@ -1,37 +1,18 @@
 # Handoff
 
-Last updated 2026-11-07, Codex. Consolidation and integration audit are finished.
+Last updated 2026-11-07, Claude. State: main a98c50c + this PR; 106 tests (~1 s), CI green, no open PRs, roadmap 29%.
 
-## State
-
-- #26 corpus, #27 local references, #28 projects, #29 3MF, #31 thickness and #32 integration audit
-  are MERGED with merge commits. Main's integration audit has 105 passing Rust tests and both private
-  scan checks pass in release. All41 fixed corpus dimensions/relations pass through MCP. Docs updated.
-- Audit fixes: near overflow/underflow, subnormal facing direction, tilted-axis distance, oversized
-  reference integer errors. Math-range and clipping-cap findings remain open; src/math/ untouched.
-- Final small follow-up #33, codex/cli-import-limits, is READY for review; not merged.
-  CLI now checks declared file size before allocation and reuses bounded reads. Sparse2GiB+1 file
-  tested under512MiB child address-space cap gives byte-limit error instead of out-of-memory.
-  Deliberate off-by-one metadata guard failed that regression and was restored. Full local gate passes.
-  No dependencies, CI/workflow changes or math edits. Check hosted CI before merging.
-- User reported13% remaining and asked whether work was done. Do not infer a request for further
-  feature work from this handoff. The persistent continuing goal is still active and may trigger
-  automatic continuations; user must pause it to prevent those.
-
-## Remaining
-
-math.range finding: huge-vector angle45 instead of30 and subnormal normalization NaN/infinity.
-Clipping still reaches10 rounds on the real scan. Undo/redo and segmentation/project/thickness MCP
-front ends remain unfinished. R1 physical/published-dimension acceptance is not complete.
-
-## Resumption / machine
-
-Worktree /tmp/rulercraft-io, branch codex/cli-import-limits. Original checkout belongs to paused Claude.
-Fetch main, inspect live PRs and run plan.py next immediately before any future authorized claim.
-Build cache moved off full /tmp to /home/logan/.cache/rulercraft-codex-target; target is an excluded
-symlink. Private scan/reference/driver/notes stay ignored. Raw logs /tmp/checkpoint-*.log and
-/tmp/cli-limits-*.log. Local gate: fmt, clippy, workspace tests, Python tests, plan render/check pass.
-
-Do not use local codex/mcp-server: abandoned unpushed merge of closed/unnecessary #23.
-Correct MCP is merged main / codex/mcp-server-refresh. Do not apply old MCP stashes.
-Duplicates graph #8 and measure #15 closed. No expected answers or tolerances loosened.
+- Shipped: readers (STL/PLY/OBJ/3MF), mesh graph, selection, plane/sphere/cylinder fits, relations,
+  thickness, command layer, CLI (`rulercraft info|fit`), MCP stdio server (`rulercraft-mcp`: open/info,
+  select, fit, measure, undo/redo, guide), project file, local-only reference numbers, known-design
+  corpus (CLI and MCP), segment_planes / segment_cylinders / join_strips (library only), R1 integration audit.
+- R1 is ~82%. Left: Logan's exit run (real downloaded STL, compare hole sizes with the real design);
+  segmentation + project tools on the CLI/MCP (`rulercraft segment`); `math.range` (ready); the clipping
+  decision (docs/findings/2026-11-07-clipping-on-real-scans.md).
+- history.undo (#34) was merged before Codex's wrong-value run and report; status is `implemented`, one run owed.
+- join_strips is for tessellated CAD meshes; on scans use segment_cylinders (spec has the limits).
+- After R1: R2 `cad.solidcraft` (SolidCraft MCP bridge; the Tangency Labs path), then compare.deviation,
+  fit.robust, engine.library. Run `python3 tools/plan.py next` immediately before claiming.
+- Habits: claim by draft PR; light review then merge commits; every rule needs a wrong-value run a test
+  fails on, or it goes; render generated plan files, never hand-merge them (take main's HANDOFF on conflict).
+- Local only: fixtures/private (vase scan, never commit), local/NOTES.md (real-scan numbers, checkpoint log).
