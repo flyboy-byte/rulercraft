@@ -1,0 +1,12 @@
+{
+  "id": "mcp.thickness",
+  "milestone": "R3",
+  "title": "Directional wall thickness over MCP",
+  "spec": "measure",
+  "status": "in-progress",
+  "depends_on": ["measure.thickness", "mcp.server"],
+  "owner": "Codex",
+  "pr": null,
+  "verified_by": [],
+  "left": "Expose bounded directional wall-thickness samples through MCP."
+}
