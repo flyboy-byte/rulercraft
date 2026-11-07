@@ -3,12 +3,15 @@
   "milestone": "R1",
   "title": "Welded vertices, faces, normals, adjacency, components",
   "spec": "mesh-model",
-  "status": "in-progress",
+  "status": "verified",
   "depends_on": [
     "io.stl"
   ],
   "owner": "Codex",
-  "pr": null,
-  "verified_by": [],
-  "left": "Normals, adjacency, components, boundaries and creases with known-answer checks."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/8",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Ready for Logan review. Known-design corpus check awaits corpus.known."
 }

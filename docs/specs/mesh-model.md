@@ -16,3 +16,20 @@ The in-memory mesh every other feature uses, built once after import.
 
 Checks: a cube has 8 vertices, 18 edges, 12 triangles, 1 component, 0 boundary loops, 12 crease
 edges at 30°; a single open square has one boundary loop of 4 edges.
+
+## API details (2026-11-07)
+
+- `MeshGraph::build(mesh, limits)` preserves the mesh's vertex and triangle ids; MeshBuilder is
+  responsible for welding at import. Limits cap input vertices and triangles (50 million each by
+  default). Non-finite positions, invalid indices and repeated triangle corners refuse with the
+  vertex or triangle id. Zero-area triangles remain in topology but have no triangle normal.
+- Edges are sorted undirected vertex pairs; incident triangles and vertex neighbours are sorted.
+  Components include isolated vertices and list vertex and triangle ids. Component order follows
+  the lowest vertex id. Normals use f64 arithmetic on the mesh's millimetre positions.
+- Boundary edges are exposed separately. A boundary component is reported as a loop only when
+  every vertex has boundary degree two; branched boundary components remain visible as edges.
+  Each loop lists vertices without repeating its start. Closure means no boundary edges, even
+  when a mesh is non-manifold. Non-manifold edges are counted, not refused.
+- `crease_edges(angle)` accepts finite radians from 0 through pi; the convenience default is
+  pi/6 (30 degrees). Only edges with exactly two nonzero triangle normals qualify, using strict
+  greater-than comparison. Reversed winding can therefore create a crease; no winding repair.
