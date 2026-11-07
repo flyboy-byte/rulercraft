@@ -3,12 +3,15 @@
   "milestone": "R1",
   "title": "Fit a sphere to marked vertices",
   "spec": "fit-sphere",
-  "status": "specced",
+  "status": "verified",
   "depends_on": [
     "math.core"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "owner": "Claude",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/4",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Known-design check once corpus.known lands; far-off strays need fit.robust (R3)."
 }
