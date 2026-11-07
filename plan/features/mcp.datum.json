@@ -3,10 +3,16 @@
   "milestone": "R3",
   "title": "Build a datum frame from three selected planes over MCP",
   "spec": "alignment",
-  "status": "in-progress",
-  "depends_on": ["align.icp", "mcp.server"],
+  "status": "verified",
+  "depends_on": [
+    "align.icp",
+    "mcp.server"
+  ],
   "owner": "Codex",
-  "pr": null,
-  "verified_by": [],
-  "left": "Expose the existing three-plane datum frame over MCP and verify it through stdio."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/51",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "CLI exposure and plane-line-point datums remain separate work."
 }
