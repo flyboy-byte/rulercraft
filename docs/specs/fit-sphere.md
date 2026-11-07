@@ -7,6 +7,10 @@ Status: R1 spec. Feature: `fit.sphere`.
 - Method: algebraic least-squares sphere for a start, then geometric refinement (minimise distance to
   the surface, Gauss-Newton or Levenberg-Marquardt), with the same clipping loop as planes.
 - Clipping loop as for planes (fit-plane.md), on the radial residual |p − centre| − radius.
+- Limit: clipping removes points somewhat off the surface (scan spikes, a little of a neighbouring face).
+  A few points far from the surface can pull the least-squares sphere until they sit closer to it than
+  the good points, and then clipping cannot find them. Robust seeding is `fit.robust` (R3); until then,
+  mark the surface without far-off points.
 - Output: centre, radius, diameter, sigma (RMS radial residual), form error (max minus min residual),
   min/max residual, points used/offered, rounds, and coverage as a cap angle in degrees: the largest
   angle between the points' mean direction from the centre and any kept point's direction (90° is a

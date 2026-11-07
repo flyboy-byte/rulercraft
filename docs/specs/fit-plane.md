@@ -10,6 +10,8 @@ Status: R1 spec. Features: `fit.plane`, later `fit.robust`.
 - Clipping loop: fit all offered points; then keep every offered point within k·sigma of the current
   plane and refit; stop when the kept set no longer changes, sigma is 0, or after 10 rounds. If a round
   would keep fewer than 3 points, the previous fit stands.
+- Limit: as for spheres (fit-sphere.md), clipping handles points somewhat off the face, not a few points
+  far away with enough leverage to tilt the whole fit; that is `fit.robust` (R3).
 - Output: centre (centroid of the kept points), unit normal, an in-plane basis (u along the direction
   the kept points spread most, v = normal × u), the span of the kept points along u and v (max minus
   min, mm), sigma (RMS signed distance of the kept points), form error (max minus min signed distance
