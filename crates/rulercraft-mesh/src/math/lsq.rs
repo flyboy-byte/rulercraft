@@ -13,6 +13,9 @@ pub struct LmOptions {
     pub step_tolerance: f64,
     /// Stop when the cost improves by less than this fraction.
     pub cost_tolerance: f64,
+    /// Stop when the residual is this close to orthogonal to every Jacobian column (the largest
+    /// |cos| between them). Scale-free: it reads the same for a part in mm or in inches.
+    pub gradient_tolerance: f64,
 }
 
 impl Default for LmOptions {
@@ -21,6 +24,7 @@ impl Default for LmOptions {
             max_iterations: 200,
             step_tolerance: 1e-12,
             cost_tolerance: 1e-15,
+            gradient_tolerance: 1e-10,
         }
     }
 }
@@ -117,7 +121,8 @@ where
                 }
             }
         }
-        if cost == 0.0 || jtr.iter().all(|g| *g == 0.0) {
+        let orthogonality = max_cosine(&jtj, &jtr, cost, n);
+        if cost == 0.0 || orthogonality <= options.gradient_tolerance {
             return Some(LmReport {
                 x,
                 cost,
@@ -167,11 +172,13 @@ where
         } else {
             lambda *= 10.0;
             if lambda > 1e16 {
+                // No step lowers the cost any more. That is the optimum, to working precision, when
+                // the residual is (nearly) orthogonal to the Jacobian; otherwise it is a real stall.
                 return Some(LmReport {
                     x,
                     cost,
                     iterations: iteration,
-                    converged: false,
+                    converged: orthogonality <= 1e-6,
                 });
             }
         }
@@ -182,4 +189,22 @@ where
         iterations: options.max_iterations,
         converged: false,
     })
+}
+
+/// The largest |cos| between the residual vector and a Jacobian column: |(Jᵀr)ⱼ| / (‖Jⱼ‖ ‖r‖).
+fn max_cosine(jtj: &[f64], jtr: &[f64], cost: f64, n: usize) -> f64 {
+    let r = cost.sqrt();
+    if r == 0.0 {
+        return 0.0;
+    }
+    (0..n)
+        .map(|j| {
+            let col = jtj[j * n + j].sqrt();
+            if col == 0.0 {
+                0.0
+            } else {
+                jtr[j].abs() / (col * r)
+            }
+        })
+        .fold(0.0, f64::max)
 }

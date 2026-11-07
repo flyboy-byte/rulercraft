@@ -137,3 +137,16 @@ fn refusals_say_what_is_wrong() {
             .starts_with("line 2:")
     );
 }
+
+#[test]
+fn a_coordinate_that_overflows_after_unit_conversion_is_refused() {
+    let big = binary(
+        &[[[3.0e38, 0.0, 0.0], [1.0, 0.0, 0.0], [0.0, 1.0, 0.0]]],
+        b"",
+    );
+    assert!(read(&big).is_ok(), "fine in millimetres");
+    assert_eq!(
+        read_stl(&big, Unit::In, Limits::default()),
+        Err(ReadError::NotFinite { triangle: 1 })
+    );
+}

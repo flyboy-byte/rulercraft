@@ -1,0 +1,18 @@
+{
+  "id": "segment.planes",
+  "milestone": "R1",
+  "title": "Grow flat regions over neighbouring triangles (a mesh's faces, named automatically)",
+  "spec": "segmentation",
+  "status": "verified",
+  "depends_on": [
+    "mesh.graph",
+    "fit.plane"
+  ],
+  "owner": "Claude",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/22",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "CLI/MCP exposure (`rulercraft segment`) once mcp.server lands; real-scan check at checkpoint.r1-mcp."
+}

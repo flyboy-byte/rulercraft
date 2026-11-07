@@ -107,6 +107,10 @@ impl MeshBuilder {
             } else {
                 (f64::from(p[k]) * self.scale) as f32
             };
+            // A finite coordinate can still overflow f32 once converted (1e38 in inches).
+            if !v.is_finite() {
+                return None;
+            }
             q[k] = v + 0.0; // -0 becomes 0
         }
         let key = q.map(f32::to_bits);

@@ -1,12 +1,12 @@
 {
-  "id": "segment.surfaces",
+  "id": "segment.strips",
   "milestone": "R1",
-  "title": "Split a mesh into planar and round regions automatically",
+  "title": "Join the flat strips a faceted round surface breaks into back into one surface",
   "spec": "segmentation",
   "status": "planned",
   "depends_on": [
-    "fit.plane",
-    "fit.cylinder"
+    "segment.planes",
+    "segment.cylinders"
   ],
   "owner": null,
   "pr": null,
