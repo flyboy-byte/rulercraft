@@ -3,12 +3,15 @@
   "milestone": "R1",
   "title": "Read OBJ (geometry only; materials later)",
   "spec": "mesh-import",
-  "status": "specced",
+  "status": "verified",
   "depends_on": [
     "io.stl"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/5",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Ready for Logan review. Known-design corpus block awaits corpus.known."
 }

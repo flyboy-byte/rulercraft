@@ -26,7 +26,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `fit.sphere` Fit a sphere to marked vertices | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/4 | Known-design check once corpus.known lands; far-off strays need fit.robust (R3). |
 | `history.undo` Undo and redo for every command | planned | - | unclaimed | Everything. |
 | `io.3mf` Read 3MF (zip + model XML) | specced | - | unclaimed | Everything; zip/deflate reader is pre-approved (D-006). |
-| `io.obj` Read OBJ (geometry only; materials later) | specced | - | unclaimed | Everything. |
+| `io.obj` Read OBJ (geometry only; materials later) | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/5 | Ready for Logan review. Known-design corpus block awaits corpus.known. |
 | `io.ply` Read PLY (ASCII, binary LE/BE) | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/2 | Ready for Logan review. Known-design corpus check awaits corpus.known. |
 | `io.stl` Read ASCII and binary STL | implemented | math, wrong-value | Claude | Known-design check once corpus.known lands. |
 | `math.core` Small linear algebra: vectors, 3x3 eigen, covariance, least squares | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/1 | Nothing for R1; grows when a fit needs more. |

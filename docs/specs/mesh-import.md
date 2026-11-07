@@ -54,7 +54,21 @@ Status: R1 spec. Features: `io.stl`, `io.ply`, `io.obj`, `io.3mf`.
 - ImportLimits bounds bytes, source vertices (default 50 million), and candidate triangles
   (default 50 million, including dropped degenerates). List lengths are checked against remaining
   input before allocation. Non-finite positions and unit conversion overflow are refused.
-- The dispatcher currently supports STL and PLY. Its limits apply to STL bytes and triangles;
+- The dispatcher supports STL, PLY and OBJ. Its limits apply to STL bytes and triangles;
   the vertex cap is checked on the STL result. The existing read_stl API remains available.
 
 PLY description: https://sites.cc.gatech.edu/projects/large_models/ply.html (format description only).
+
+## OBJ (2026-11-07)
+
+- Geometry-only text reader: `v x y z` (optional weight must be 1), `f` polygons, comments
+  beginning with #, LF/CRLF, and backslash line continuations. Vertex colors are not supported.
+- Face corners accept v, v/vt, v//vn or v/vt/vn. Position indices are positive one-based or
+  negative relative to vertices already declared; zero, forward and out-of-range references refuse.
+  Texture/normal indices must be nonzero integers but their targets are ignored in this geometry pass.
+- `vt`, `vn`, `vp`, `o`, `g`, `s`, `mtllib`, `usemtl`, `l`, `p` are ignored. Other statements
+  refuse with a line number; curves and surfaces are not polygon geometry.
+- Faces need at least three corners; ordered fans do not repair concave polygons. All source
+  positions, including unused ones, are validated and retained through MeshBuilder. Limits count
+  source vertices and candidate triangles, including degenerates. Invalid text and numeric data,
+  unsupported weights and unit overflow refuse with a line number (byte offset for invalid UTF-8).

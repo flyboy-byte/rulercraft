@@ -22,6 +22,5 @@ Overall roadmap progress: **10%** (details in ROADMAP-PROGRESS.md).
 - `cli.commands` (R1): rulercraft CLI: info, fit, measure, save, open
 - `corpus.known` (R1): Test meshes with known design dimensions (our designs committed, downloads local)
 - `io.3mf` (R1): Read 3MF (zip + model XML)
-- `io.obj` (R1): Read OBJ (geometry only; materials later)
 - `mesh.graph` (R1): Welded vertices, faces, normals, adjacency, components
 - `reference.local` (R1): Optional local reference numbers from another program (gitignored)
