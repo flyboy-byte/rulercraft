@@ -488,3 +488,69 @@ fn reverse_returns_a_recipe_guesses_and_symmetry_for_known_shapes() {
         "{g}"
     );
 }
+
+/// A 2 x 4 x 6 box with a vertex at each face centre, so its normal rays have exact answers.
+fn thickness_box() -> String {
+    let mut positions = Vec::new();
+    for i in 0..8 {
+        positions.push([
+            (i & 1) as f64 * 2.0,
+            ((i >> 1) & 1) as f64 * 4.0,
+            ((i >> 2) & 1) as f64 * 6.0,
+        ]);
+    }
+    let quads = [
+        [0, 2, 3, 1],
+        [4, 5, 7, 6],
+        [0, 1, 5, 4],
+        [2, 6, 7, 3],
+        [0, 4, 6, 2],
+        [1, 3, 7, 5],
+    ];
+    let mut faces = Vec::new();
+    for q in quads {
+        let center =
+            [0, 1, 2].map(|axis| q.iter().map(|i| positions[*i as usize][axis]).sum::<f64>() / 4.0);
+        let id = positions.len() as u32;
+        positions.push(center);
+        for i in 0..4 {
+            faces.push([id, q[i], q[(i + 1) % 4]]);
+        }
+    }
+    ply(&positions, &faces)
+}
+
+#[test]
+fn thickness_tool_measures_a_known_wall_and_pages_results() {
+    let dir = std::env::temp_dir().join(format!("rulercraft-thickness-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let path = dir.join("box.ply");
+    std::fs::write(&path, thickness_box()).unwrap();
+    let mut c = Client::new();
+    let selection = json!({"in_box":[[1.0,2.0,6.0],[1.0,2.0,6.0]]});
+    assert_eq!(
+        c.call("thickness", json!({"selection":selection}))["isError"],
+        true
+    );
+    c.data("mesh.open", json!({"path":path}));
+    let v = c.data("thickness", json!({"selection":selection}));
+    assert_eq!(v["total"], 1);
+    assert_eq!(v["returned"], 1);
+    assert!((v["samples"][0]["distance"].as_f64().unwrap() - 6.0).abs() < 1e-10);
+    let short = c.data(
+        "thickness",
+        json!({"selection":selection,"max_distance":1.0}),
+    );
+    assert!(short["samples"][0]["distance"].is_null());
+    let page = c.data("thickness", json!({"offset":0,"limit":2}));
+    assert_eq!(page["total"], 14);
+    assert_eq!(page["returned"], 2);
+    assert_eq!(page["truncated"], true);
+    assert_eq!(c.call("thickness", json!({"limit":1025}))["isError"], true);
+    assert_eq!(
+        c.call("thickness", json!({"max_distance":0.0}))["isError"],
+        true
+    );
+    assert_eq!(c.data("mesh.info", json!({}))["vertices"], 14);
+    std::fs::remove_dir_all(dir).unwrap();
+}
