@@ -71,3 +71,17 @@ builds and CI fast.
 Use the pre-approved official Rust MCP SDK `rmcp` (Apache-2.0) with stdio/server/macros/schema
 features, plus its Tokio runtime (MIT), Serde (MIT OR Apache-2.0) and existing serde_json
 (MIT OR Apache-2.0). No network transport is enabled. Engine crates remain independent of MCP.
+
+## D-008 Project JSON serialization (2026-11-07)
+
+**Decision.** `project.file` uses serde (derive) and serde_json (float_roundtrip), both
+MIT OR Apache-2.0, pre-approved by D-006. Source bytes are embedded in version 1 JSON, avoiding a new
+hashing or archive dependency. Exact float round trips keep unchanged cached fits from being reported
+as changed solely by JSON parsing.
+
+## D-009 3MF archive reader (2026-11-07)
+
+**Decision.** `io.3mf` uses zip 2.6 (MIT), default features off with deflate enabled, as pre-approved by
+D-006. Stored/deflated model and relationship parts are read in memory with byte caps, never extracted.
+The core geometry XML subset is implemented here without another dependency. zip's Rust 1.73 minimum
+fits the workspace's declared 1.85 minimum; no minimum-version change.

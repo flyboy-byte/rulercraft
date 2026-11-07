@@ -1,0 +1,67 @@
+{
+  "license": "MIT OR Apache-2.0",
+  "unit": "mm",
+  "tolerance_mm": 1e-05,
+  "tolerance_reason": "f32 coordinate quantization below 4e-6 mm plus solver roundoff; fixed before measurement",
+  "bounds": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      40,
+      20,
+      20
+    ]
+  ],
+  "fits": [
+    {
+      "id": "left",
+      "kind": "plane",
+      "box": [
+        [
+          7.9,
+          -1,
+          7.9
+        ],
+        [
+          8.1,
+          21,
+          21
+        ]
+      ],
+      "near": null,
+      "expected": {
+        "center.0": 8
+      }
+    },
+    {
+      "id": "right",
+      "kind": "plane",
+      "box": [
+        [
+          31.9,
+          -1,
+          7.9
+        ],
+        [
+          32.1,
+          21,
+          21
+        ]
+      ],
+      "near": null,
+      "expected": {
+        "center.0": 32
+      }
+    }
+  ],
+  "relations": [
+    {
+      "first": "left",
+      "second": "right",
+      "distance": 24
+    }
+  ]
+}

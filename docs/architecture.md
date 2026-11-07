@@ -18,14 +18,14 @@ changes the pattern.
 ```
 mesh.rs        Mesh, MeshBuilder, Unit, Bounds            (exists)
 stl.rs         STL reader                                  (exists)
-io/            ply.rs, obj.rs, threemf.rs, and a read_mesh(name, bytes, unit, limits) dispatcher
+io/            ply.rs, obj.rs, threemf.rs (exists), and a read_mesh(name, bytes, unit, limits) dispatcher
 graph.rs       MeshGraph: normals, adjacency, components, boundaries, creases  (mesh.graph)
 select.rs      box / near / facing / explicit selections   (select.region)
 math/          small linear algebra: Vec3 helpers, 3x3 symmetric eigen, small least squares
 fit/           plane.rs, sphere.rs, cylinder.rs, shared clipping loop
 measure.rs     relations between elements                  (measure.relations)
 segment.rs     automatic surface regions                   (segment.surfaces)
-project.rs     project file                                (project.file)
+project.rs     embedded-source JSON project, named recipes and refit-on-open (exists)                                (project.file)
 commands.rs    the command layer: name -> typed input -> typed output, undo  (cli.commands, history.undo)
 ```
 
@@ -57,3 +57,10 @@ symmetric eigen solver and small least squares are all R1 needs).
 
 Import dispatch uses `io::ImportLimits` (also exported at the crate root) with byte, source-vertex
 and candidate-triangle caps. The original STL-only `Limits` API remains available.
+
+Project persistence uses serde/serde_json for typed recipes and results. Project::decode always
+reimports source bytes and reruns commands::fit; saved results only detect changes. The CLI owns
+filesystem reads and atomic project writes; the engine still accepts bytes only.
+
+3MF uses zip for bounded in-memory package reads and a private XML geometry-subset reader. Its
+model unit overrides the caller unit; build/component transforms flatten through MeshBuilder.

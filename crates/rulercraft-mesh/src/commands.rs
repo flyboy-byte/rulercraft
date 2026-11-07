@@ -13,7 +13,7 @@ use crate::select::{SelectError, facing, in_box, near};
 use std::fmt;
 
 /// Which vertices a command works on. Every given filter applies; none means the whole mesh.
-#[derive(Debug, Clone, Default, PartialEq)]
+#[derive(Debug, Clone, Default, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct Selection {
     /// Inclusive box (min, max), mm.
     pub in_box: Option<(Vec3, Vec3)>,
@@ -24,7 +24,7 @@ pub struct Selection {
 }
 
 /// What to fit.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum FitKind {
     /// A plane.
     Plane,
@@ -35,7 +35,7 @@ pub enum FitKind {
 }
 
 /// A fit command.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct FitRequest {
     /// Element kind.
     pub kind: FitKind,
@@ -48,7 +48,7 @@ pub struct FitRequest {
 }
 
 /// A fitted element.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub enum Fitted {
     /// A plane.
     Plane(PlaneFit),
@@ -59,7 +59,7 @@ pub enum Fitted {
 }
 
 /// The result of a fit command.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct FitOutcome {
     /// Vertices the selection picked.
     pub selected: usize,

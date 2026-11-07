@@ -66,3 +66,39 @@ fn info_reads_obj_by_extension() {
     );
     std::fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn info_reads_threemf_and_uses_model_units() {
+    let path = std::env::temp_dir().join(format!("rulercraft-3mf-{}.3mf", std::process::id()));
+    let script = r#"
+import sys, zipfile
+with zipfile.ZipFile(sys.argv[1], 'w', compression=zipfile.ZIP_DEFLATED) as z:
+    z.writestr('_rels/.rels', '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships"><Relationship Id="r" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel" Target="/3D/a.model"/></Relationships>')
+    z.writestr('3D/a.model', '<model xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02" unit="centimeter"><resources><object id="1"><mesh><vertices><vertex x="0" y="0" z="0"/><vertex x="2" y="0" z="0"/><vertex x="0" y="3" z="0"/></vertices><triangles><triangle v1="0" v2="1" v3="2"/></triangles></mesh></object></resources><build><item objectid="1"/></build></model>')
+"#;
+    assert!(
+        Command::new("python3")
+            .args(["-c", script])
+            .arg(&path)
+            .status()
+            .unwrap()
+            .success()
+    );
+    let out = Command::new(env!("CARGO_BIN_EXE_rulercraft"))
+        .arg("info")
+        .arg(&path)
+        .args(["--units", "m"])
+        .output()
+        .unwrap();
+    assert!(
+        out.status.success(),
+        "{}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let v: serde_json::Value = serde_json::from_slice(&out.stdout).unwrap();
+    assert_eq!(v["format"], "3mf");
+    assert_eq!(v["vertices"], 3);
+    assert_eq!(v["triangles"], 1);
+    assert_eq!(v["bounds"]["max"], serde_json::json!([20, 30, 0]));
+    std::fs::remove_file(path).unwrap();
+}

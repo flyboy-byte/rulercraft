@@ -1,0 +1,107 @@
+{
+  "license": "MIT OR Apache-2.0",
+  "unit": "mm",
+  "tolerance_mm": 1e-05,
+  "tolerance_reason": "f32 coordinate quantization below 4e-6 mm plus solver roundoff; fixed before measurement",
+  "bounds": [
+    [
+      0,
+      0,
+      0
+    ],
+    [
+      60,
+      30,
+      10
+    ]
+  ],
+  "fits": [
+    {
+      "id": "small",
+      "kind": "cylinder",
+      "box": [
+        [
+          8.4,
+          13.4,
+          1
+        ],
+        [
+          11.6,
+          16.6,
+          9
+        ]
+      ],
+      "near": null,
+      "expected": {
+        "radius": 1.5,
+        "diameter": 3.0,
+        "length": 6,
+        "axis_point.0": 10,
+        "axis_point.1": 15,
+        "axis_point.2": 5
+      }
+    },
+    {
+      "id": "medium",
+      "kind": "cylinder",
+      "box": [
+        [
+          27.4,
+          12.4,
+          1
+        ],
+        [
+          32.6,
+          17.6,
+          9
+        ]
+      ],
+      "near": null,
+      "expected": {
+        "radius": 2.5,
+        "diameter": 5.0,
+        "length": 6,
+        "axis_point.0": 30,
+        "axis_point.1": 15,
+        "axis_point.2": 5
+      }
+    },
+    {
+      "id": "large",
+      "kind": "cylinder",
+      "box": [
+        [
+          45.9,
+          10.9,
+          1
+        ],
+        [
+          54.1,
+          19.1,
+          9
+        ]
+      ],
+      "near": null,
+      "expected": {
+        "radius": 4,
+        "diameter": 8,
+        "length": 6,
+        "axis_point.0": 50,
+        "axis_point.1": 15,
+        "axis_point.2": 5
+      }
+    }
+  ],
+  "relations": [
+    {
+      "first": "small",
+      "second": "medium",
+      "distance": 20
+    },
+    {
+      "first": "medium",
+      "second": "large",
+      "distance": 20
+    }
+  ]
+}
