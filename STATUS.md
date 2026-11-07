@@ -8,21 +8,24 @@ Overall roadmap progress: **14%** (details in ROADMAP-PROGRESS.md).
 | --- | ---: |
 | planned | 15 |
 | specced | 3 |
-| in-progress | 1 |
+| in-progress | 0 |
 | implemented | 2 |
-| verified | 7 |
+| verified | 8 |
 | done | 0 |
 
 ## In progress
 
-- `fit.cylinder` (Codex): Cylinder axis start, geometric refinement, clipping and known-answer checks.
+- none
 
 ## Ready to claim
 
 - `cli.commands` (R1): rulercraft CLI: info, fit, measure, save, open
 - `compare.deviation` (R3): Mesh-to-mesh deviation map and statistics
 - `corpus.known` (R1): Test meshes with known design dimensions (our designs committed, downloads local)
+- `fit.robust` (R3): Robust fits on noisy scans (RANSAC seeding, noise estimation)
 - `io.3mf` (R1): Read 3MF (zip + model XML)
+- `measure.relations` (R1): Distances and angles between fitted elements
 - `measure.thickness` (R3): Wall thickness
 - `project.file` (R1): Save and reopen a RulerCraft project (own JSON format)
 - `reference.local` (R1): Optional local reference numbers from another program (gitignored)
+- `segment.surfaces` (R1): Split a mesh into planar and round regions automatically
