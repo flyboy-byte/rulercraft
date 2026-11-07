@@ -10,5 +10,5 @@
   "owner": "Codex",
   "pr": "https://github.com/flyboy-byte/rulercraft/pull/34",
   "verified_by": [],
-  "left": "Implement session undo/redo for successful MCP mesh.open calls with source fingerprint validation; add stdio regression coverage."
+  "left": "Work in progress on #34: MCP session undo/redo for mesh.open, history.info and stdio tests. Focused stdio test passes after implementation; full gates, deliberate wrong-value run, final PR report and ready-for-review status remain."
 }

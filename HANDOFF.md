@@ -1,44 +1,21 @@
 # Handoff
 
-Last updated 2026-11-07, Codex. Integration consolidated and audited at Logan's request.
+Last updated 2026-11-07, Codex. Stop point after Logan objected to continuing beyond the finished #33 work.
 
-## Shipped and verified
+## Current state
 
-- #18 MCP and #25 strips / #30 MCP checkpoint were merged before this audit.
-- #26 corpus, #27 local references, #28 project JSON, #29 3MF and #31 wall thickness are MERGED,
-  merge commits only. Logan authorized consolidation in this session after the earlier no-merge rule.
-  This is session authorization, not a general change to AGENTS.md/PROCESS.md.
-- Checkpoint #32: current docs and findings, hostile 3MF/project bytes, invariance and real-scan run.
-  Fixed near-query overflow/underflow, subnormal facing direction, tilted-axis spacing, oversized local
-  reference integer traceback. Genuine tilted axes use closest infinite-line distance; numerical
-  parallel cutoff 1e-12 preserves analytically parallel fits. Existing known-answer tolerances unchanged.
-- Latest full gate: fmt/clippy/workspace tests/plan render+check pass; 105 Rust tests, 2 existing ignored
-  scan checks. Both ignored checks separately PASS in release on private data. Python 7 tests, 1 skip
-  for standalone CLI-fixture case (cargo supplies the binary and runs it). Local reference capture passes.
-- MCP corpus: all 41 fixed dimensions/relations pass. Private scan 412755 vertices/825506 triangles;
-  CLI/MCP base plane sigma0.0930818265,5969points, agree within1e-8. Imports0.13-0.35s, MCP fit0.003s.
-  Scan plane segmentation0.93s, strip joining2.41s. Raw logs /tmp/checkpoint-*.log; private driver/notes local/.
+- Worktree: `/tmp/rulercraft-io`, branch `codex/history-undo`.
+- PR #33 `cli.import-limits` is ready, open, and its hosted `gate` passed on head `67e548948e9fee5a8df0e1673a5373f18439b5e6`. It is not merged.
+- Draft PR #34 `history.undo` is open: https://github.com/flyboy-byte/rulercraft/pull/34. Keep it draft; work is incomplete.
+- #34 defines session-scoped history in `docs/specs/commands.md`; the MCP server tracks successful `mesh.open` calls, exposes `history.info`, `history.undo`, `history.redo`, and reloads source files after checking a per-process fingerprint. Stdio coverage tests undo/redo, changed-source refusal without state change, undo to empty, and redo-branch clearing.
+- Focused command passed after formatting: `cargo test -p rulercraft-mcp --test stdio -- --nocapture` (1 passed, 0.04s). `python3 tools/plan.py render` and `check` passed.
+- Full fmt check, clippy, workspace tests and Python tests have not run for #34. The deliberate wrong-value run, final PR report, and marking #34 ready are not done. Do not merge.
+- The usage helper `/home/logan/.agents/skills/claude-usage/scripts/claude_usage.py` failed with `UnboundLocalError`; no fresh reading was obtained. Logan previously reported 13% remaining.
 
-## Remaining work and cautions
+## Next
 
-- Read docs/findings/2026-11-07-math-extreme-directions.md and plan/features/math.range.json.
-  Public angle helper returns45deg instead of30 for huge finite vectors; normalization of a subnormal
-  vector can return NaN/infinity. Caller-facing selection fixed, but src/math/ untouched per lane rule.
-- Clipping-cap finding reproduced/re-dated, not silently changed. Sigma3 reaches10rounds on the scan.
-- R1 is NOT complete: published-dimension/printed-caliper acceptance and undo/redo remain.
-  Engine segmentation, project operations and thickness still lack MCP front ends. No CAD bridge yet.
-- User reported13% usage remaining: this run is wrapping the checkpoint, not starting new features.
+Resume only if Logan asks to continue. First inspect the current branch, PR #34 and working tree. If continuing #34, review the history semantics and memory/source-change behavior, finish the required verification and report, then mark ready only if all gates pass. No other feature is claimed by this handoff.
 
-## Resumption and machine state
+## Prior context
 
-Worktree /tmp/rulercraft-io, branch codex/checkpoint-r1-exit. Check #32's live CI/merge state first,
-then fetch main, read instructions and run tools/plan.py next immediately before any claim.
-README, ROADMAP, implementation plan and generated status reflect the combined state.
-Original ~/projects/rulercraft checkout belongs to Claude (paused); it was not switched or edited.
-Build cache filled /tmp: only this worktree's target moved to
-/home/logan/.cache/rulercraft-codex-target; target is a locally excluded symlink. No source/data removed.
-
-Scratch trap: local codex/mcp-server contains an abandoned unpushed merge of closed/unnecessary #23.
-Do not push or use it or apply old MCP stashes. Correct MCP is main / codex/mcp-server-refresh.
-Graph #8 and measure #15 were duplicates, closed; use merged APIs. Wrong-value mutations all restored:
-latest doubled skew-axis separation (6 vs3), failed as required. No expected values/tolerances loosened.
+PRs #26, #27, #28, #29, #31 and #32 were merged as merge commits during the earlier consolidation authorized by Logan. #23 and duplicate #15 remain closed. Local `codex/mcp-server` contains an abandoned merge; don't use it. Original checkout belongs to the paused Claude session. Private scan and scratch artifacts remain ignored under `fixtures/private/` and `local/`.
