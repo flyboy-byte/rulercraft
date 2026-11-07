@@ -179,3 +179,46 @@ fn bad_input_is_refused_plainly() {
     );
     let _ = cross([0.; 3], [0.; 3]);
 }
+
+#[test]
+fn three_planes_give_the_part_its_datum_frame() {
+    // The L part has faces on x=0, y=0, z=0. Fix a frame from those three faces after moving the part.
+    let t = turned(0.9, [30., -12., 5.]);
+    let r = |v: Vec3| {
+        [
+            dot(t.rotation[0], v),
+            dot(t.rotation[1], v),
+            dot(t.rotation[2], v),
+        ]
+    };
+    let plane = |p: Vec3, n: Vec3| (t.apply(p), r(n));
+    let d = rulercraft_mesh::align::datum_frame(
+        plane([5., 5., 0.], [0., 0., 1.]),
+        plane([0., 5., 5.], [1., 0., 0.]),
+        plane([5., 0., 5.], [0., 1., 0.]),
+    )
+    .unwrap();
+    for &p in &part().positions {
+        let p = p.map(f64::from);
+        let back = d.apply(t.apply(p));
+        assert!(
+            sub3(back, p).iter().all(|c| c.abs() < 1e-6),
+            "{back:?} vs {p:?}"
+        );
+    }
+}
+
+#[test]
+fn bad_datums_are_refused() {
+    use rulercraft_mesh::align::datum_frame;
+    let z = ([0., 0., 0.], [0., 0., 1.]);
+    let x = ([0., 0., 0.], [1., 0., 0.]);
+    let y = ([0., 0., 0.], [0., 1., 0.]);
+    assert!(datum_frame(z, ([0., 0., 5.], [0., 0., 1.]), y).is_err()); // parallel
+    assert!(datum_frame(z, x, ([0., 0., 0.], [0.5f64.sqrt(), 0.0, 0.5f64.sqrt()])).is_err()); // not independent
+    assert!(datum_frame(z, ([0.; 3], [0.; 3]), y).is_err());
+    // 5 degrees off parallel with a perfectly good third plane: still refused.
+    let (s5, c5) = 5f64.to_radians().sin_cos();
+    assert!(datum_frame(z, ([0.; 3], [s5, 0., c5]), y).is_err());
+    assert!(datum_frame(z, x, y).is_ok());
+}
