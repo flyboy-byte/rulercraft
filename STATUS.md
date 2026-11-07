@@ -7,15 +7,15 @@ Overall roadmap progress: **10%** (details in ROADMAP-PROGRESS.md).
 | Status | Features |
 | --- | ---: |
 | planned | 15 |
-| specced | 7 |
-| in-progress | 0 |
+| specced | 6 |
+| in-progress | 1 |
 | implemented | 2 |
 | verified | 4 |
 | done | 0 |
 
 ## In progress
 
-- none
+- `mesh.graph` (Codex): Normals, adjacency, components, boundaries and creases with known-answer checks.
 
 ## Ready to claim
 
@@ -23,5 +23,4 @@ Overall roadmap progress: **10%** (details in ROADMAP-PROGRESS.md).
 - `corpus.known` (R1): Test meshes with known design dimensions (our designs committed, downloads local)
 - `io.3mf` (R1): Read 3MF (zip + model XML)
 - `io.obj` (R1): Read OBJ (geometry only; materials later)
-- `mesh.graph` (R1): Welded vertices, faces, normals, adjacency, components
 - `reference.local` (R1): Optional local reference numbers from another program (gitignored)

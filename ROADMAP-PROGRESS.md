@@ -8,14 +8,14 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 
 | Milestone | Progress | % | Weight | Exit condition |
 | --- | --- | ---: | ---: | --- |
-| R1 Clean meshes: open, fit, measure, over CLI and MCP | `███░░░░░░░` | 32% | 30 | Logan downloads an STL from a model-sharing site, asks Claude over MCP for its hole diameters and face distances, and they match the design dimensions. |
+| R1 Clean meshes: open, fit, measure, over CLI and MCP | `███░░░░░░░` | 33% | 30 | Logan downloads an STL from a model-sharing site, asks Claude over MCP for its hole diameters and face distances, and they match the design dimensions. |
 | R2 Mesh to editable CAD through SolidCraft | `░░░░░░░░░░` | 0% | 20 | A simple prismatic downloaded part is rebuilt as a SolidCraft model whose deviation from the STL is under 0.05 mm. |
 | R3 Noisy scans: robust fits, deviation, alignment, thickness | `░░░░░░░░░░` | 0% | 20 | A real scan (a public sample scan or a phone scan) gives stable fits and a deviation report against its CAD. |
 | R4 Reverse-engineering workflows with AI | `░░░░░░░░░░` | 0% | 15 | Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft. |
 | R5 Reusable engine | `░░░░░░░░░░` | 0% | 10 | Another project depends on rulercraft-mesh from crates.io or git and builds in Wasm. |
 | R6 Photos to mesh (research) | `░░░░░░░░░░` | 0% | 5 | A written go/no-go with a prototype on photos of one object. |
 
-## R1: Clean meshes: open, fit, measure, over CLI and MCP (32%)
+## R1: Clean meshes: open, fit, measure, over CLI and MCP (33%)
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
@@ -32,7 +32,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `math.core` Small linear algebra: vectors, 3x3 eigen, covariance, least squares | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/1 | Nothing for R1; grows when a fit needs more. |
 | `mcp.server` MCP server exposing the same commands to Claude | planned | - | unclaimed | Everything. |
 | `measure.relations` Distances and angles between fitted elements | specced | - | unclaimed | Everything. |
-| `mesh.graph` Welded vertices, faces, normals, adjacency, components | specced | - | unclaimed | Everything. |
+| `mesh.graph` Welded vertices, faces, normals, adjacency, components | in-progress | - | Codex | Normals, adjacency, components, boundaries and creases with known-answer checks. |
 | `project.file` Save and reopen a RulerCraft project (own JSON format) | planned | - | unclaimed | Everything. |
 | `reference.local` Optional local reference numbers from another program (gitignored) | planned | - | unclaimed | Skip-when-absent test helper and the local capture notes. |
 | `repo.skeleton` Workspace, docs, plan tool and fast CI | implemented | - | Claude | Done when hosted CI is green on main. |

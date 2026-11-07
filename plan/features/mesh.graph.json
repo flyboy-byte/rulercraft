@@ -3,12 +3,12 @@
   "milestone": "R1",
   "title": "Welded vertices, faces, normals, adjacency, components",
   "spec": "mesh-model",
-  "status": "specced",
+  "status": "in-progress",
   "depends_on": [
     "io.stl"
   ],
-  "owner": null,
+  "owner": "Codex",
   "pr": null,
   "verified_by": [],
-  "left": "Everything."
+  "left": "Normals, adjacency, components, boundaries and creases with known-answer checks."
 }
