@@ -9,12 +9,14 @@ use rmcp::{
 use rulercraft_mesh::{
     ImportLimits, Mesh, Unit,
     align::{IcpOptions, Rigid, align_icp},
+    cad::recipe,
     commands::{self, FitKind, FitRequest, Fitted, Selection},
     deviation::{deviation, patches},
     fit::{Clip, RobustOptions, fit_plane_robust},
     graph::MeshGraph,
     measure::{Element, relate},
     read_mesh,
+    reverse::{Hole, PatternOptions, design_guesses, hole_patterns, symmetry_planes},
     segment::{join_strips, segment_cylinders, segment_planes},
 };
 use serde::Deserialize;
@@ -24,7 +26,7 @@ use std::{
     io::Read,
     sync::{Arc, Mutex},
 };
-const GUIDE: &str = "Open a local STL, PLY, OBJ or 3MF with mesh.open (file unit defaults to mm; 3MF model units win), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
+const GUIDE: &str = "Open a local STL, PLY, OBJ or 3MF with mesh.open (file unit defaults to mm; 3MF model units win), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The reverse tool returns a CAD recipe, hole patterns and symmetry for the open mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
 #[derive(Debug, Clone, Copy, Hash, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 enum FileUnit {
@@ -254,6 +256,55 @@ impl Loaded {
             }
         };
         Ok((json!({"selected":out.selected,"fit":value}), element))
+    }
+    /// Planes and cylinders found automatically, turned into a CAD recipe, hole patterns, design-value
+    /// guesses and mirror symmetry. Lists are capped at 50 features, largest first.
+    fn reverse(&self) -> Result<Value, String> {
+        const CAP: usize = 50;
+        let planes = segment_planes(&self.mesh, &self.graph, Default::default());
+        let cyls = segment_cylinders(&self.mesh, &self.graph, Default::default());
+        let mut by_area: Vec<_> = planes.regions.iter().collect();
+        by_area.sort_by(|a, b| b.area.total_cmp(&a.area));
+        let named_planes: Vec<_> = by_area
+            .iter()
+            .take(CAP)
+            .enumerate()
+            .map(|(i, r)| (format!("plane{i}"), r.plane.clone()))
+            .collect();
+        let mut by_area: Vec<_> = cyls.regions.iter().collect();
+        by_area.sort_by(|a, b| b.area.total_cmp(&a.area));
+        let named_cyls: Vec<_> = by_area
+            .iter()
+            .take(CAP)
+            .enumerate()
+            .map(|(i, r)| (format!("cylinder{i}"), r.cylinder.clone()))
+            .collect();
+        let holes: Vec<Hole> = named_cyls
+            .iter()
+            .map(|(n, c)| Hole {
+                name: n.clone(),
+                point: c.axis_point,
+                axis: c.axis,
+                diameter: c.diameter,
+            })
+            .collect();
+        let guesses: Vec<Value> = named_cyls.iter().map(|(n, c)| json!({"name":n,"measured_diameter":c.diameter,"guesses":design_guesses(c.diameter, 0.05)})).collect();
+        let symmetry = if self.mesh.positions.len() <= 200_000 {
+            match symmetry_planes(&self.mesh, 0.05) {
+                Ok(v) => json!(v),
+                Err(e) => json!({"unavailable": e.to_string()}),
+            }
+        } else {
+            json!({"unavailable":"mesh has more than 200000 vertices"})
+        };
+        Ok(json!({
+            "planes_found": planes.regions.len(),
+            "cylinders_found": cyls.regions.len(),
+            "recipe": recipe(&named_planes, &named_cyls),
+            "hole_patterns": hole_patterns(&holes, PatternOptions::default()),
+            "design_value_guesses": guesses,
+            "symmetry": symmetry,
+        }))
     }
     fn segment(&self, kind: SegmentKind) -> Value {
         let (regions, unassigned) = match kind {
@@ -509,6 +560,12 @@ impl MeshServer {
     fn segment(&self, Parameters(args): Parameters<SegmentArgs>) -> CallToolResult {
         let kind = args.kind.unwrap_or(SegmentKind::Cylinders);
         self.with_mesh(|m| Ok(m.segment(kind)))
+    }
+    #[tool(
+        description = "Reverse-engineer the open mesh: find planes and cylinders, then return a CAD build recipe (base face, holes placed in its frame), hole patterns, round-number guesses for diameters and mirror symmetry. Guesses carry their evidence; check them before building."
+    )]
+    fn reverse(&self) -> CallToolResult {
+        self.with_mesh(|m| m.reverse())
     }
     #[tool(
         description = "Compare the current mesh with a reference mesh file: signed distance statistics in mm (positive is outside the reference) and the largest out-of-tolerance patches. Optionally aligns first with ICP. Does not change the open mesh."

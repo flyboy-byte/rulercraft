@@ -416,3 +416,45 @@ fn robust_plane_fit_ignores_far_outliers_the_plain_fit_follows() {
     );
     assert_eq!(bad["isError"], true);
 }
+
+#[test]
+fn reverse_returns_a_recipe_guesses_and_symmetry_for_known_shapes() {
+    let dir = std::env::temp_dir().join(format!("rulercraft-mcp-rev-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let (cube_path, tube_path) = (dir.join("cube.ply"), dir.join("tube.ply"));
+    std::fs::write(&cube_path, cube()).unwrap();
+    std::fs::write(&tube_path, tube(32)).unwrap();
+    let mut c = Client::new();
+    assert_eq!(c.call("reverse", json!({}))["isError"], true); // nothing open yet
+    c.data("mesh.open", json!({"path":cube_path}));
+    let r = c.data("reverse", json!({}));
+    assert_eq!(r["planes_found"], 6, "{r}");
+    let steps = r["recipe"]["steps"].as_array().unwrap();
+    assert_eq!(steps[0]["step"], "base");
+    assert_eq!(steps[0]["size"], json!([20.0, 20.0]));
+    assert_eq!(
+        steps
+            .iter()
+            .filter(|s| s["step"] == "parallel_face")
+            .count(),
+        1
+    );
+    assert_eq!(steps.iter().filter(|s| s["step"] == "unplaced").count(), 4);
+    assert_eq!(r["symmetry"].as_array().unwrap().len(), 3);
+    c.data("mesh.open", json!({"path":tube_path}));
+    let r = c.data("reverse", json!({}));
+    assert_eq!(r["cylinders_found"], 1, "{r}");
+    let g = &r["design_value_guesses"][0];
+    assert!(
+        (g["measured_diameter"].as_f64().unwrap() - 12.0).abs() < 1e-3,
+        "{g}"
+    );
+    assert!(
+        g["guesses"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|x| x["basis"] == "whole mm" && x["value"] == 12.0),
+        "{g}"
+    );
+}
