@@ -39,7 +39,7 @@ they match the design dimensions.
 | `project.file` | M | Own JSON format (docs/specs/project-file.md): version, mesh path and hash, elements with their recipe (selection, settings) and last result; reopen refits and reports changes. serde pre-approved |
 | `history.undo` | S | Once commands exist: every successful command one undo step, failed ones change nothing |
 | `reference.local` | S | A test helper that loads `fixtures/private/reference/<mesh>.json` and skips with a printed reason when absent |
-| STL overflow fix | S | The STL reader should refuse a coordinate that overflows f32 after unit conversion, as the PLY/OBJ path already does (found in review 2026-11-07) |
+| ~~STL overflow fix~~ | S | DONE 2026-11-07: the shared mesh builder refuses a coordinate that overflows f32 after unit conversion, for every reader |
 
 ## R2: mesh to editable CAD through SolidCraft
 
