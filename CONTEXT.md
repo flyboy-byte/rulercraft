@@ -48,6 +48,7 @@ workflows, R5 a reusable engine others can adopt, R6 photos to mesh. See ROADMAP
 | How a feature gets done, verification budget | PROCESS.md |
 | Where code goes, patterns, dependencies | docs/architecture.md |
 | Milestones and what is left | ROADMAP.md |
+| Build order, lanes, PR contents and sizes | docs/implementation-plan.md |
 | Current state | STATUS.md (generated), HANDOFF.md (last session's note) |
 | What each feature must do | docs/specs/ |
 | Committed test meshes and their known answers | docs/test-corpus.md, fixtures/ |

@@ -7,6 +7,7 @@
   python3 tools/plan.py next     # ready, unclaimed features first
 """
 import json
+import subprocess
 import sys
 from pathlib import Path
 
@@ -105,9 +106,31 @@ def render_progress(roadmap, features):
     return "\n".join(out) + "\n"
 
 
-def ready(features):
+def open_pr_claims():
+    """Feature ids claimed by open PRs (title starts with `<id>:`), keyed to "#N author".
+
+    A claim lives on the claimer's branch until it merges, so main's feature files cannot show it;
+    open PR titles can. Empty when `gh` is unavailable or offline.
+    """
+    try:
+        out = subprocess.run(["gh", "pr", "list", "--state", "open", "--json", "number,title,author"],
+                             cwd=ROOT, capture_output=True, text=True, timeout=20)
+    except (OSError, subprocess.SubprocessError):
+        return {}
+    if out.returncode != 0:
+        return {}
+    claims = {}
+    for pr in json.loads(out.stdout or "[]"):
+        fid = pr["title"].split(":", 1)[0].strip()
+        claims[fid] = f"#{pr['number']} {pr['author']['login']}"
+    return claims
+
+
+def ready(features, claims=None):
     by_id = {f["id"]: f for f in features}
+    claims = claims or {}
     return [f for f in features if f["status"] in {"planned", "specced"} and not f["owner"]
+            and f["id"] not in claims
             and all(by_id[d]["status"] in DONEISH for d in f["depends_on"])]
 
 
@@ -149,15 +172,18 @@ def main(argv):
             if "--strict" in sys.argv:
                 return 1
     elif cmd == "next":
-        r = ready(features)
+        claims = open_pr_claims()
+        r = ready(features, claims)
         print("Ready and unclaimed:" if r else "Nothing ready and unclaimed.")
         for f in r:
             print(f"  {f['id']:20} {f['milestone']}  {f['title']}")
-        claimed = [f for f in features if f["status"] == "in-progress"]
+        known = {f["id"] for f in features}
+        claimed = {f["id"]: f"{f['owner']} {f['pr'] or ''}".strip() for f in features if f["status"] == "in-progress"}
+        claimed.update({k: v for k, v in claims.items() if k in known})
         if claimed:
-            print("In progress:")
-            for f in claimed:
-                print(f"  {f['id']:20} {f['owner']} {f['pr'] or ''}")
+            print("Claimed (open PRs and in-progress features; do not start these):")
+            for fid, who in sorted(claimed.items()):
+                print(f"  {fid:20} {who}")
     else:
         print(__doc__)
         return 2
