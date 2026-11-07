@@ -19,7 +19,6 @@ Overall roadmap progress: **30%** (details in ROADMAP-PROGRESS.md).
 
 ## Ready to claim
 
-- `cad.solidcraft` (R2): Rebuild fitted features as a SolidCraft model over its MCP
 - `compare.deviation` (R3): Mesh-to-mesh deviation map and statistics
 - `engine.library` (R5): Stable library API, docs, crates.io, Wasm build
 - `fit.robust` (R3): Robust fits on noisy scans (RANSAC seeding, noise estimation)
