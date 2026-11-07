@@ -8,14 +8,14 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 
 | Milestone | Progress | % | Weight | Exit condition |
 | --- | --- | ---: | ---: | --- |
-| R1 Clean meshes: open, fit, measure, over CLI and MCP | `████████░░` | 84% | 30 | Logan downloads an STL from a model-sharing site, asks Claude over MCP for its hole diameters and face distances, and they match the design dimensions. |
+| R1 Clean meshes: open, fit, measure, over CLI and MCP | `█████████░` | 86% | 30 | Logan downloads an STL from a model-sharing site, asks Claude over MCP for its hole diameters and face distances, and they match the design dimensions. |
 | R2 Mesh to editable CAD through SolidCraft | `░░░░░░░░░░` | 0% | 20 | A simple prismatic downloaded part is rebuilt as a SolidCraft model whose deviation from the STL is under 0.05 mm. |
 | R3 Noisy scans: robust fits, deviation, alignment, thickness | `██░░░░░░░░` | 22% | 20 | A real scan (a public sample scan or a phone scan) gives stable fits and a deviation report against its CAD. |
 | R4 Reverse-engineering workflows with AI | `░░░░░░░░░░` | 0% | 15 | Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft. |
 | R5 Reusable engine | `░░░░░░░░░░` | 0% | 10 | Another project depends on rulercraft-mesh from crates.io or git and builds in Wasm. |
 | R6 Photos to mesh (research) | `░░░░░░░░░░` | 0% | 5 | A written go/no-go with a prototype on photos of one object. |
 
-## R1: Clean meshes: open, fit, measure, over CLI and MCP (84%)
+## R1: Clean meshes: open, fit, measure, over CLI and MCP (86%)
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
@@ -32,7 +32,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `io.ply` Read PLY (ASCII, binary LE/BE) | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/2 | Ready for Logan review. Known-design corpus check awaits corpus.known. |
 | `io.stl` Read ASCII and binary STL | implemented | math, wrong-value | Claude | Known-design check once corpus.known lands. |
 | `math.core` Small linear algebra: vectors, 3x3 eigen, covariance, least squares | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/1 | Nothing for R1; grows when a fit needs more. |
-| `math.range` Stable public math helpers for extreme finite directions | planned | - | unclaimed | Confirmed in docs/findings/2026-11-07-math-extreme-directions.md; route to the math lane. |
+| `math.range` Stable public math helpers for extreme finite directions | in-progress | - | Codex https://github.com/flyboy-byte/rulercraft/pull/39 | Implement stable public vector normalization and angles for extreme finite directions. |
 | `mcp.server` MCP server exposing the same commands to Claude | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/18 | Ready for Logan review. Local stdio integration passes; real-client and real-scan runs remain for the checkpoint. |
 | `measure.relations` Distances and angles between fitted elements | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/16 | Exposed over MCP with mcp.server; known-design check with corpus.known. |
 | `mesh.graph` Welded vertices, faces, normals, adjacency, components | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/7 | Nothing for R1. |
