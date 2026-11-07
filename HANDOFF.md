@@ -9,7 +9,7 @@ Last updated 2026-11-07, Claude. Read AGENTS.md first (it outranks this), then P
   compare, undo/redo, guide), project file, local reference numbers, known-design corpus,
   segmentation (planes, cylinders, joined strips), `math.range`, and the library pieces below.
 - Library only so far (no CLI/MCP yet): `cad::recipe` (cad.solidcraft, `implemented`), `fit_plane_robust`
-  (fit.robust, plane only, `implemented`), `reverse::hole_patterns` and `design_guesses` (re.features,
+  (fit.robust, `verified`), `reverse::hole_patterns` and `design_guesses` (re.features,
   `implemented`), `align::datum_frame` (verified), `deviation::patches` (verified). `align_icp` and
   `deviation` are reachable through the MCP `compare` tool.
 
@@ -17,7 +17,7 @@ Last updated 2026-11-07, Claude. Read AGENTS.md first (it outranks this), then P
 - cad.solidcraft: one replay of a recipe against a live SolidCraft server (SolidCraft is not built on
   this machine; mind the disk guard before building it).
 - cad.check needs SolidCore projection (optional cargo feature, D-002).
-- fit.robust for spheres and cylinders; re.features grid patterns; plane-line-point
+- re.features grid patterns; plane-line-point
   datums; CLI/MCP commands for recipe, robust fit, patterns and datum frame.
 - R1 exit: Logan's run on a real downloaded STL (compare hole sizes with the real design), and the
   clipping decision (docs/findings/2026-11-07-clipping-on-real-scans.md).
