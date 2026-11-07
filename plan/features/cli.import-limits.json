@@ -1,0 +1,14 @@
+{
+  "id": "cli.import-limits",
+  "milestone": "R1",
+  "title": "Enforce mesh byte limits before CLI allocation",
+  "spec": "mesh-import",
+  "status": "planned",
+  "depends_on": [
+    "cli.commands"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "CLI load currently reads the whole source before applying engine byte limits."
+}
