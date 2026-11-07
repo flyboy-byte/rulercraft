@@ -3,16 +3,16 @@
   "milestone": "R1",
   "title": "Fit a cylinder to marked vertices",
   "spec": "fit-cylinder",
-  "status": "in-progress",
+  "status": "verified",
   "depends_on": [
     "math.core",
     "mesh.graph"
   ],
   "owner": "Codex",
-  "pr": "https://github.com/flyboy-byte/rulercraft/pull/10",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/23",
   "verified_by": [
     "math",
     "wrong-value"
   ],
-  "left": "Fix stationary symmetric tube being refused as stalled; found by MCP stdio test."
+  "left": "Stationary stall fix checked locally; MCP stdio confirmation follows on PR #18."
 }

@@ -319,48 +319,52 @@ fn solve(
         }
     }
     let (_, a, u, v, start) = best.ok_or(NO_AXIS)?;
-    let report = levenberg_marquardt(
-        &start,
-        local.len(),
-        LmOptions {
-            max_iterations: lim.max_iterations,
-            ..Default::default()
-        },
-        |x, res, jac| {
-            let raw = add(a, add(scale(u, x[0]), scale(v, x[1])));
-            let len = length(raw);
-            let Some(axis) = normalize(raw) else {
-                return false;
-            };
-            if !x[4].is_finite() || x[4] <= 0. {
+    let mut evaluate = |x: &[f64], res: &mut [f64], jac: Option<&mut [f64]>| {
+        let raw = add(a, add(scale(u, x[0]), scale(v, x[1])));
+        let len = length(raw);
+        let Some(axis) = normalize(raw) else {
+            return false;
+        };
+        if !x[4].is_finite() || x[4] <= 0. {
+            return false;
+        }
+        let center = add(scale(u, x[2]), scale(v, x[3]));
+        let mut jac = jac;
+        let du = scale(sub(u, scale(axis, dot(axis, u))), 1. / len);
+        let dv = scale(sub(v, scale(axis, dot(axis, v))), 1. / len);
+        for (i, &p) in local.iter().enumerate() {
+            let d = sub(p, center);
+            let h = dot(d, axis);
+            let q = sub(d, scale(axis, h));
+            let rho = length(q);
+            if rho == 0. || !rho.is_finite() {
                 return false;
             }
-            let center = add(scale(u, x[2]), scale(v, x[3]));
-            let mut jac = jac;
-            let du = scale(sub(u, scale(axis, dot(axis, u))), 1. / len);
-            let dv = scale(sub(v, scale(axis, dot(axis, v))), 1. / len);
-            for (i, &p) in local.iter().enumerate() {
-                let d = sub(p, center);
-                let h = dot(d, axis);
-                let q = sub(d, scale(axis, h));
-                let rho = length(q);
-                if rho == 0. || !rho.is_finite() {
-                    return false;
-                }
-                res[i] = rho - x[4];
-                if let Some(j) = jac.as_deref_mut() {
-                    j[i * 5] = -h * dot(d, du) / rho;
-                    j[i * 5 + 1] = -h * dot(d, dv) / rho;
-                    j[i * 5 + 2] = -dot(q, u) / rho;
-                    j[i * 5 + 3] = -dot(q, v) / rho;
-                    j[i * 5 + 4] = -1.;
-                }
+            res[i] = rho - x[4];
+            if let Some(j) = jac.as_deref_mut() {
+                j[i * 5] = -h * dot(d, du) / rho;
+                j[i * 5 + 1] = -h * dot(d, dv) / rho;
+                j[i * 5 + 2] = -dot(q, u) / rho;
+                j[i * 5 + 3] = -dot(q, v) / rho;
+                j[i * 5 + 4] = -1.;
             }
-            true
-        },
-    )
-    .ok_or(FitError::Degenerate("the cylinder fit did not converge"))?;
-    if !report.converged {
+        }
+        true
+    };
+    let options = LmOptions {
+        max_iterations: lim.max_iterations,
+        ..Default::default()
+    };
+    let report = levenberg_marquardt(&start, local.len(), options, &mut evaluate)
+        .ok_or(FitError::Degenerate("the cylinder fit did not converge"))?;
+    if !report.converged
+        && !stationary(
+            &report.x,
+            local.len(),
+            options.step_tolerance,
+            &mut evaluate,
+        )
+    {
         return Err(FitError::Degenerate(
             "the cylinder fit reached its iteration limit or stalled",
         ));
@@ -376,4 +380,35 @@ fn solve(
         c: center,
         r: x[4],
     })
+}
+
+// Cost can stop improving at a minimum even when the last accepted step was not small.
+// Verify the undamped Gauss-Newton step against the solver's unchanged step criterion.
+fn stationary(
+    x: &[f64],
+    n: usize,
+    tolerance: f64,
+    mut evaluate: impl FnMut(&[f64], &mut [f64], Option<&mut [f64]>) -> bool,
+) -> bool {
+    let mut residuals = vec![0.; n];
+    let mut jacobian = vec![0.; n * 5];
+    if !evaluate(x, &mut residuals, Some(&mut jacobian)) {
+        return false;
+    }
+    let mut h = vec![0.; 25];
+    let mut g = vec![0.; 5];
+    for (row, r) in jacobian.chunks_exact(5).zip(residuals) {
+        for i in 0..5 {
+            g[i] -= row[i] * r;
+            for j in 0..5 {
+                h[i * 5 + j] += row[i] * row[j];
+            }
+        }
+    }
+    let Some(step) = solve_dense(h, g) else {
+        return false;
+    };
+    let step_norm = step.iter().map(|v| v * v).sum::<f64>().sqrt();
+    let x_norm = x.iter().map(|v| v * v).sum::<f64>().sqrt();
+    step_norm <= tolerance * (x_norm + tolerance)
 }

@@ -1,26 +1,19 @@
 # Handoff
 
-Rewritten (not appended) at the end of every session that leaves work open. Last: 2026-11-07, Claude.
+Last updated 2026-11-07, Codex.
 
-## State (main after #16)
-
-- Readers: STL, PLY, OBJ (`read_mesh` by extension). Mesh graph: normals, edges, components,
-  boundaries, creases. Selection: box, near, facing, explicit, thinned.
-- Fits: plane, sphere (optional held diameter), cylinder (Codex). Relations between fitted elements:
-  plane/plane, centre/plane, centre/centre, axis/plane, axis/axis (hole spacing), centre/axis.
-- Command layer `rulercraft_mesh::commands` shared by front ends; CLI `rulercraft info` and
-  `rulercraft fit <plane|sphere|cylinder>` with box/near/facing selections, JSON out.
-- Process notes from 2026-11-07: light review then merge; stale generated files are a note, not a
-  failure; `plan.py next` shows claims from open PR titles (two sessions once both built mesh.graph).
-
-## Next (docs/implementation-plan.md has the full order)
-
-1. `mcp.server`: the R1 critical path. New crate over `commands`, plus a measure command.
-2. `segment.surfaces` (split it first), `corpus.known` (generated parts with exact answers), `io.3mf`,
-   `project.file`.
-3. STL overflow fix (small): refuse coordinates that overflow f32 after unit conversion.
-
-## Local only
-
-`local/NOTES.md` (gitignored) on Logan's machine says where local reference tools and the private test
-scan are.
+- PLY #2, OBJ #5 and cylinder #10 merged. Duplicate graph #8 and measurements #15 closed; use
+  main's graph #7 and measurements #16. Logan explicitly reassigned Codex to mcp.server.
+- mcp.server #18 on codex/mcp-server, /tmp/rulercraft-io. Implementation and stdio test are saved
+  in git stash named "mcp.server implementation and stdio test". Root Cargo.toml/Cargo.lock claimed.
+  SDK rmcp 3.9 Apache-2.0, Tokio MIT. Cold compile succeeded after ServerConfig API adjustment.
+- MCP stdio test found a cylinder refusal at a genuine minimum: radius 10.000000006470414,
+  cost 2.9601323829799404e-13, 96 points, solver stalled after 20 iterations. Separate fix #23,
+  codex/cylinder-stall, validates an undamped Gauss-Newton step at the existing 1e-12 solver
+  step tolerance. No math files or measurement tolerances changed. Local full gate green.
+- Fix regression covers the imported symmetric tube and refusal with one iteration on a tilted
+  start. Wrong-value run: diameter 2*r -> 3*r failed exact_tube_and_metadata; restored and green.
+- Next: push #23, return to codex/mcp-server, merge fix branch, restore stash, rerun stdio test.
+  Then finish MCP wrong-value run/full gate/report, mark #18 ready. Claude owns segment.surfaces.
+- Re-run plan.py next with GitHub access immediately before any new claim. Logan merges using
+  merge commits only. Generated plan conflicts: render, never hand-merge. Usage helper failed.

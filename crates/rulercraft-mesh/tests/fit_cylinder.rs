@@ -158,3 +158,55 @@ fn refinement_corrects_a_tilted_normal_start() {
     assert!((fit.axis[2] - 1.).abs() < 1e-6);
     assert!(fit.sigma < 1e-5);
 }
+
+#[test]
+fn symmetric_origin_tube_does_not_refuse_a_stationary_fit() {
+    let mut data = String::from(
+        "ply\nformat ascii 1.0\nelement vertex 96\nproperty float x\nproperty float y\nproperty float z\nelement face 128\nproperty list uchar int vertex_indices\nend_header\n",
+    );
+    for z in [0., 20., 40.] {
+        for i in 0..32 {
+            let a = i as f64 * std::f64::consts::TAU / 32.;
+            data += &format!("{} {} {}\n", 10. * a.cos(), 10. * a.sin(), z);
+        }
+    }
+    for ring in 0..2 {
+        for i in 0..32 {
+            let a = ring * 32 + i;
+            let b = ring * 32 + (i + 1) % 32;
+            data += &format!("3 {a} {b} {}\n3 {a} {} {}\n", b + 32, b + 32, a + 32);
+        }
+    }
+    let mesh = rulercraft_mesh::read_mesh(
+        "tube.ply",
+        data.as_bytes(),
+        rulercraft_mesh::Unit::Mm,
+        rulercraft_mesh::ImportLimits::default(),
+    )
+    .unwrap();
+    let n = rulercraft_mesh::graph::MeshGraph::build(&mesh).vertex_normals;
+    let ids: Vec<_> = (0..mesh.positions.len() as u32).collect();
+    let fit = fit_cylinder(&mesh.positions, Some(&n), &ids, CylinderOptions::default()).unwrap();
+    assert!((fit.radius - 10.).abs() < 1e-5); // unchanged spec tolerance for f32 positions
+    assert!((fit.axis[2] - 1.).abs() < 1e-6);
+    assert!((fit.length - 40.).abs() < 1e-5);
+    let mut tilted = n;
+    for normal in &mut tilted {
+        normal[2] = 0.1 * normal[0];
+    }
+    assert!(
+        fit_cylinder(
+            &mesh.positions,
+            Some(&tilted),
+            &ids,
+            CylinderOptions {
+                limits: CylinderLimits {
+                    max_iterations: 1,
+                    ..Default::default()
+                },
+                ..Default::default()
+            }
+        )
+        .is_err()
+    );
+}

@@ -47,3 +47,10 @@ coverage near 120°; a tilted axis (1,2,3) is recovered within 1e-4; a flat patc
 - Clipping stops when RMS is below sqrt(3) * f32 epsilon * maximum absolute input coordinate.
   Below that conservative coordinate quantization bound, repeated clipping would discard points
   according to f32 storage roundoff rather than surface error. Fit tolerances remain unchanged.
+
+### Stationary cost stalls (2026-11-07)
+
+A solver cost stall is accepted only if an independent undamped Gauss-Newton step at the returned
+parameters meets the solver's existing relative step criterion (1e-12). A singular step system or
+larger step still refuses. This handles a symmetric tube whose rounded residual cannot decrease;
+it does not change measurement tolerances or accept an arbitrary iteration-limit result.
