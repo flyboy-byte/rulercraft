@@ -3,13 +3,16 @@
   "milestone": "R1",
   "title": "Fit a cylinder to marked vertices",
   "spec": "fit-cylinder",
-  "status": "specced",
+  "status": "verified",
   "depends_on": [
     "math.core",
     "mesh.graph"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/10",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Ready for Logan review. Known-design corpus and large real meshes not yet checked."
 }

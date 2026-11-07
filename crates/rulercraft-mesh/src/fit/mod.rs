@@ -1,9 +1,11 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Fitting geometric elements to marked vertices (docs/specs/fit-*.md).
 
+pub mod cylinder;
 pub mod plane;
 pub mod sphere;
 
+pub use cylinder::{CylinderFit, CylinderLimits, CylinderOptions, fit_cylinder};
 pub use plane::{Clip, FitError, PlaneFit, fit_plane};
 pub use sphere::{SphereFit, fit_sphere};
 
