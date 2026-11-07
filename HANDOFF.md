@@ -1,22 +1,18 @@
 # Handoff
 
-Last updated 2026-11-07, Codex.
+Last updated 2026-11-07, Claude. State: main after #25 (segment.strips) and #18 (mcp.server).
 
-- PLY #2, OBJ #5 and cylinder #10 merged. Duplicate graph #8 and measurements #15 were closed;
-  use main's graph #7 and measurements #16. Logan assigned Codex to mcp.server next.
-- MCP #18: /tmp/rulercraft-io, local branch codex/mcp-server-refresh tracks remote
-  codex/mcp-server. Ready after pushing implementation/report. Merged current main (through #24),
-  including solver fix #19; raw stdio test now passes without any #23 code.
-- Closed #23 at Logan's direction: #19 resolves the symmetric tube stall. The MCP branch contains
-  no cylinder or math changes. The abandoned prerequisite stays on its own unmerged branch.
-- New rulercraft-mcp binary: mesh.open/info, select with capped pages, plane/sphere/cylinder fit,
-  measure by fitting two selections, guide and typed JSON schemas. One mesh per process, failed
-  opens preserve state. rmcp 3.9 Apache-2.0; Tokio MIT; serde/serde_json MIT OR Apache-2.0.
-- Last raw result: fmt/clippy/workspace tests/plan render+check and 3 plan tests pass. 78 Rust tests
-  pass, one existing ignored; stdio scenario 0.02 s. Wrong-value run: triangle summary +1 caused
-  stdio cube check to fail (13 vs 12); restored and green. Full log /tmp/mcp-server-gate.log.
-- Real-client/real-scan MCP runs remain for the scheduled checkpoint. No saving/history or network
-  transport yet. Claude owns segmentation. Original checkout belongs to Claude; leave it alone.
-- Logan requested continuing small unclaimed features until usage stops the run. Re-run
-  tools/plan.py next with GitHub access immediately before claiming. Logan merges using merge
-  commits; render generated plan conflicts, never hand-merge. Usage helper failed before data.
+- Shipped today: STL/PLY/OBJ readers, mesh graph, selection, plane/sphere/cylinder fits, relations,
+  command layer, CLI (`rulercraft info|fit`), MCP stdio server (`rulercraft-mcp`: mesh.open/info, select,
+  fit, measure, guide), segment_planes, segment_cylinders, join_strips. 87 tests, about 1 s.
+- checkpoint.r1-mcp done: the MCP server driven end to end on the private vase scan matches the CLI to 15
+  digits and survives bad input (numbers in local/NOTES.md). Strips invariance (turn, move, rescale
+  0.1x-25.4x) and empty/degenerate meshes added to tests/segment_strips.rs.
+- join_strips is meant for tessellated CAD meshes. On a scan it takes 1.5 s but reports about 2,000 small
+  low-coverage patches; use segment_cylinders there. Noise near half the 0.2 mm limit splits a surface
+  (known limit, docs/specs/segmentation.md).
+- Not on the CLI/MCP yet: segmentation (`rulercraft segment`). Open decision: docs/findings/2026-11-07-clipping-on-real-scans.md.
+- Next ready features (run `python3 tools/plan.py next` immediately before claiming): corpus.known,
+  io.3mf, project.file, reference.local, history.undo. Then checkpoint.r1-exit and Logan's R1 exit run.
+- Habits: light review then merge commits; claim by draft PR; every rule needs a wrong-value run a test fails
+  on, or it goes; render generated plan files, never hand-merge them.
