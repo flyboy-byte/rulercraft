@@ -3,13 +3,13 @@
   "milestone": "R1",
   "title": "Fit a cylinder to marked vertices",
   "spec": "fit-cylinder",
-  "status": "specced",
+  "status": "in-progress",
   "depends_on": [
     "math.core",
     "mesh.graph"
   ],
-  "owner": null,
+  "owner": "Codex",
   "pr": null,
   "verified_by": [],
-  "left": "Everything."
+  "left": "Cylinder axis start, geometric refinement, clipping and known-answer checks."
 }
