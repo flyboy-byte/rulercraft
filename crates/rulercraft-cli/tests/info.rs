@@ -30,3 +30,21 @@ fn info_prints_summary_and_refuses_cleanly() {
     assert!(String::from_utf8_lossy(&out.stderr).contains("no triangles"));
     std::fs::remove_dir_all(&dir).unwrap();
 }
+
+#[test]
+fn info_reads_ply_by_extension() {
+    let path = std::env::temp_dir().join(format!("rulercraft-ply-{}.PLY", std::process::id()));
+    std::fs::write(&path, b"ply\nformat ascii 1.0\nelement vertex 3\nproperty float x\nproperty float y\nproperty float z\nelement face 1\nproperty list uchar int vertex_indices\nend_header\n0 0 0\n2 0 0\n0 3 0\n3 0 1 2\n").unwrap();
+    let out = Command::new(env!("CARGO_BIN_EXE_rulercraft"))
+        .arg("info")
+        .arg(&path)
+        .args(["--units", "cm"])
+        .output()
+        .unwrap();
+    assert!(out.status.success());
+    assert_eq!(
+        String::from_utf8(out.stdout).unwrap().trim(),
+        r#"{"format":"ply","vertices":3,"triangles":1,"degenerate_dropped":0,"bounds":{"min":[0,0,0],"max":[20,30,0]}}"#
+    );
+    std::fs::remove_file(path).unwrap();
+}

@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! `rulercraft`: the command-line front end (docs/specs/commands.md).
 
-use rulercraft_mesh::{Limits, Unit, read_stl};
+use rulercraft_mesh::{ImportLimits, Unit, read_mesh};
 use std::process::ExitCode;
 
-const USAGE: &str = "Usage: rulercraft info <mesh.stl> [--units mm|cm|m|in]";
+const USAGE: &str = "Usage: rulercraft info <mesh.stl|mesh.ply> [--units mm|cm|m|in]";
 
 fn number(v: f32) -> String {
     format!("{v}")
@@ -24,15 +24,14 @@ fn run(args: &[String]) -> Result<String, String> {
         }
         _ => return Err(USAGE.into()),
     };
-    if !path.to_ascii_lowercase().ends_with(".stl") {
-        return Err(format!("{path}: only .stl is supported so far"));
-    }
+    let format = rulercraft_mesh::io::format_name(path).map_err(|e| e.to_string())?;
     let bytes = std::fs::read(path).map_err(|e| format!("{path}: {e}"))?;
-    let mesh = read_stl(&bytes, unit, Limits::default()).map_err(|e| format!("{path}: {e}"))?;
+    let mesh = read_mesh(path, &bytes, unit, ImportLimits::default())
+        .map_err(|e| format!("{path}: {e}"))?;
     let b = mesh.bounds().ok_or("empty mesh")?;
     let xyz = |p: [f32; 3]| format!("[{},{},{}]", number(p[0]), number(p[1]), number(p[2]));
     Ok(format!(
-        "{{\"format\":\"stl\",\"vertices\":{},\"triangles\":{},\"degenerate_dropped\":{},\"bounds\":{{\"min\":{},\"max\":{}}}}}",
+        "{{\"format\":\"{format}\",\"vertices\":{},\"triangles\":{},\"degenerate_dropped\":{},\"bounds\":{{\"min\":{},\"max\":{}}}}}",
         mesh.positions.len(),
         mesh.triangles.len(),
         mesh.degenerate_dropped,

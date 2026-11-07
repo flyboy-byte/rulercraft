@@ -1,24 +1,13 @@
 # Handoff
 
-Rewritten (not appended) at the end of every session that leaves work open. Last: 2026-11-06, Claude.
+Last updated 2026-11-07, Codex.
 
-## State
-
-- Set up 2026-11-06: docs, plan, plan tool, architecture, Rust workspace, fast CI (about 1 minute).
-  Nothing is claimed; no feature work is in progress.
-- Done: `io.stl` (ASCII and binary STL, math and wrong-value checks) and `rulercraft info <file.stl>`.
-
-## Starting a session
-
-1. Read AGENTS.md, PROCESS.md, docs/architecture.md, then this file.
-2. `gh pr list` and `python3 tools/plan.py next`.
-3. Claim one ready feature with a draft PR, read its spec, write the checks, build it, report.
-
-Ready now, independent of each other: `math.core`, `mesh.graph`, `io.ply`, `io.obj`, `io.3mf`,
-`corpus.known`, `reference.local`. After `math.core`: `fit.plane`, `fit.sphere`. After `mesh.graph`:
-`select.region`, `fit.cylinder` (also needs `math.core`).
-
-## Local only
-
-`local/NOTES.md` (gitignored) on Logan's machine says where local reference tools and the private test
-scan are.
+- `io.ply`: verified, PR #2, branch `codex/io-ply`, isolated worktree `/tmp/rulercraft-io`.
+  ASCII / binary LE / binary BE through MeshBuilder; extension dispatcher and CLI info.
+  Last raw result: fmt and clippy pass; 11 tests pass; plan render/check pass (28 features).
+  Wrong-value run: fan third corner changed from k+1 to k, cube check failed; restored and green.
+- Next: `io.obj`, a separate PR stacked on #2 until Logan merges PLY. Follow mesh-import spec.
+- Claude owns `math.core`, PR #1; original checkout has its uncommitted math work. Do not touch it.
+- Logan merges with merge commits. After merges regenerate STATUS.md / ROADMAP-PROGRESS.md;
+  never hand-merge generated files. Retarget stacked OBJ PR to main once #2 merges.
+- Known-design corpus checks remain pending `corpus.known`; no dependencies added.
