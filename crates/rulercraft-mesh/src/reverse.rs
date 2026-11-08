@@ -119,6 +119,7 @@ pub fn hole_patterns(holes: &[Hole], options: PatternOptions) -> Vec<Pattern> {
         if used[i]
             || normalize(holes[i].axis).is_none()
             || !holes[i].diameter.is_finite()
+            || holes[i].diameter <= 0.0
             || holes[i].point.iter().any(|v| !v.is_finite())
         {
             continue;
@@ -127,6 +128,8 @@ pub fn hole_patterns(holes: &[Hole], options: PatternOptions) -> Vec<Pattern> {
             .filter(|&j| {
                 !used[j]
                     && holes[j].point.iter().all(|v| v.is_finite())
+                    && holes[j].diameter.is_finite()
+                    && holes[j].diameter > 0.0
                     && (holes[j].diameter - holes[i].diameter).abs() <= options.diameter_tolerance
                     && parallel(holes[j].axis, holes[i].axis, options.axis_tolerance_deg)
             })

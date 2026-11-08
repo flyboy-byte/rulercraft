@@ -402,3 +402,39 @@ fn nonfinite_axis_points_do_not_hide_valid_hole_patterns() {
         assert!(!members.iter().any(|name| name == "bad"));
     }
 }
+
+#[test]
+fn nonpositive_diameters_do_not_form_patterns() {
+    for diameter in [0.0, -1.0] {
+        let holes = vec![
+            hole("a", [0.0, 0.0, 0.0], diameter),
+            hole("b", [10.0, 0.0, 0.0], diameter),
+            hole("c", [20.0, 0.0, 0.0], diameter),
+        ];
+        assert!(hole_patterns(&holes, PatternOptions::default()).is_empty());
+    }
+    let holes = vec![
+        hole("a", [0.0, 0.0, 0.0], 0.01),
+        hole("b", [10.0, 0.0, 0.0], 0.01),
+        hole("c", [20.0, 0.0, 0.0], 0.01),
+        hole("bad", [30.0, 0.0, 0.0], 0.0),
+    ];
+    let patterns = hole_patterns(&holes, PatternOptions::default());
+    let [Pattern::Line { members, .. }] = patterns.as_slice() else {
+        panic!("{patterns:?}")
+    };
+    assert_eq!(members.len(), 3);
+    assert!(!members.iter().any(|name| name == "bad"));
+    let holes = vec![
+        hole("bad", [30.0, 0.0, 0.0], 0.0),
+        hole("a", [0.0, 0.0, 0.0], 0.04),
+        hole("b", [10.0, 0.0, 0.0], 0.05),
+        hole("c", [20.0, 0.0, 0.0], 0.06),
+    ];
+    let patterns = hole_patterns(&holes, PatternOptions::default());
+    let [Pattern::Line { members, .. }] = patterns.as_slice() else {
+        panic!("{patterns:?}")
+    };
+    assert_eq!(members.len(), 3);
+    assert!(!members.iter().any(|name| name == "bad"));
+}
