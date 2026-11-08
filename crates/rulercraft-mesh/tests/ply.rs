@@ -164,3 +164,18 @@ fn skipped_lists_empty_mesh_and_overflow_refuse_cleanly() {
             .contains("no triangles")
     );
 }
+
+#[test]
+fn dispatch_requires_an_extension() {
+    for name in ["stl", "ply", "obj", "3mf", "part", "part."] {
+        assert!(rulercraft_mesh::io::format_name(name).is_err(), "{name}");
+    }
+    for (name, format) in [
+        ("part.STL", "stl"),
+        ("part.ply", "ply"),
+        ("part.Obj", "obj"),
+        ("part.3mf", "3mf"),
+    ] {
+        assert_eq!(rulercraft_mesh::io::format_name(name).unwrap(), format);
+    }
+}
