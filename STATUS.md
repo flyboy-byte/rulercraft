@@ -6,9 +6,9 @@ Overall roadmap progress: **57%** (details in ROADMAP-PROGRESS.md).
 
 | Status | Features |
 | --- | ---: |
-| planned | 41 |
+| planned | 40 |
 | specced | 0 |
-| in-progress | 1 |
+| in-progress | 2 |
 | implemented | 7 |
 | verified | 31 |
 | done | 0 |
@@ -16,6 +16,7 @@ Overall roadmap progress: **57%** (details in ROADMAP-PROGRESS.md).
 ## In progress
 
 - `engine.library` (claude): Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog.
+- `engine.parallel` (Claude): par::map (std threads, item order kept, sums on one thread) used by deviation, ICP pairing and symmetry; results bit-identical for 1/2/5/13 threads (tests/parallel.rs), sabotages fail. Measured 1.7x on 490k vertices vs 980k triangles with 12 threads: tree build and the stats sort are still serial, so the ignored speed test fails. Next: parallel tree build (split subtrees on threads), then thickness (after #71 lands) and segmentation.
 
 ## Ready to claim
 
@@ -23,7 +24,6 @@ Overall roadmap progress: **57%** (details in ROADMAP-PROGRESS.md).
 - `app.shell` (R7): Native app (egui/eframe): window, menus, files, settings, SolidCraft look
 - `cad.step` (R7): STEP export of measured features through SolidCraft
 - `engine.gpu` (R7): Optional GPU accelerators verified against the CPU reference
-- `engine.parallel` (R7): Multi-core deviation, ICP, thickness and segmentation with the standard library only
 - `engine.stream` (R7): Fast, bounded loading with progress and cancel
 - `fit.shapes` (R7): Cone, torus and circle fits
 - `gui.deviation` (R7): App: deviation colour map, hover and pin readings, extra and missing regions

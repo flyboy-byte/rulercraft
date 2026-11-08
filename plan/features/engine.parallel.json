@@ -3,12 +3,12 @@
   "milestone": "R7",
   "title": "Multi-core deviation, ICP, thickness and segmentation with the standard library only",
   "spec": "product-scope",
-  "status": "planned",
+  "status": "in-progress",
   "depends_on": [
     "engine.bvh"
   ],
-  "owner": null,
+  "owner": "Claude",
   "pr": null,
   "verified_by": [],
-  "left": "Everything. Exit: identical results for 1 and N threads (tested), measured speed-up on a large mesh."
+  "left": "par::map (std threads, item order kept, sums on one thread) used by deviation, ICP pairing and symmetry; results bit-identical for 1/2/5/13 threads (tests/parallel.rs), sabotages fail. Measured 1.7x on 490k vertices vs 980k triangles with 12 threads: tree build and the stats sort are still serial, so the ignored speed test fails. Next: parallel tree build (split subtrees on threads), then thickness (after #71 lands) and segmentation."
 }

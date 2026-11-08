@@ -42,6 +42,8 @@
 //! - Building: [`cad::recipe`] turns fitted features into plain CAD steps.
 //! - Saving: [`project`].
 //!
+//! Heavy per-vertex loops use every core ([`par`]); results are bit-for-bit the same for any thread count.
+//!
 //! Every public function refuses bad input with an error rather than panicking, and results are
 //! deterministic.
 
@@ -55,6 +57,7 @@ pub mod io;
 pub mod math;
 pub mod measure;
 pub mod mesh;
+pub mod par;
 pub mod project;
 pub mod reverse;
 pub mod segment;

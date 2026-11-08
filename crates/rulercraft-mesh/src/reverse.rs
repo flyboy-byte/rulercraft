@@ -416,11 +416,14 @@ pub fn symmetry_planes(
         .iter()
         .map(|&n| {
             let (mut sum2, mut max) = (0.0, 0.0f64);
-            for &p in &pts {
+            let gaps = crate::par::map(pts.len(), |i| {
+                let p = pts[i];
                 let off = dot(sub(p, cov.centroid), n);
                 let mirrored = sub(p, scale(n, 2.0 * off));
                 let (q, _) = tree.closest(mirrored);
-                let d = length(sub(mirrored, q));
+                length(sub(mirrored, q))
+            });
+            for d in gaps {
                 sum2 += d * d;
                 max = max.max(d);
             }
