@@ -39,9 +39,9 @@
     },
     {
       "id": "R7",
-      "title": "A tool people choose: the app, at parity and beyond",
+      "title": "v1: the native app for the SolidCraft community, at parity and beyond",
       "weight": 25,
-      "exit": "Logan, who uses the established scan-inspection apps, does a real job in the RulerCraft app (a dimensioned report, a deviation check against the design, an alignment) and finds nothing he needs missing."
+      "exit": "A SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own parts in the native app without help: inspect with a dimensioned report and a deviation check, rebuild a part in SolidCraft, let Claude measure while they watch, and use the engine from another program."
     }
   ]
 }

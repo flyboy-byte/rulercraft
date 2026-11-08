@@ -1,0 +1,15 @@
+{
+  "id": "app.viewport",
+  "milestone": "R7",
+  "title": "wgpu 3D viewport: indexed drawing, GPU picking, overlays, level of detail",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "app.shell",
+    "engine.bvh"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. P0 for drawing and picking; LOD in P1."
+}

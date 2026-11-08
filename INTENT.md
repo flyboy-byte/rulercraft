@@ -1,7 +1,7 @@
 # Intent
 
-Locked 2026-11-07 (D-010). This page changes only through a new numbered decision in DECISIONS.md that
-says `supersedes D-010`. Everything else (roadmap, features, specs) serves it.
+Locked 2026-11-07 (D-010; who-for and app updated by D-012). This page changes only through a new numbered
+decision in DECISIONS.md that says what it supersedes. What v1 means: docs/v1.md. Everything else (roadmap, features, specs) serves it.
 
 ## The promise
 
@@ -16,14 +16,15 @@ One open engine with several faces, all giving the same numbers:
 - a Rust library (and later a browser build),
 - a command line for scripts and batch checks,
 - an MCP server, so Claude and other agents can drive it,
-- a standalone app with a 3D view, for people who never touch an agent.
+- a native desktop app with a 3D view (egui and wgpu, SolidCraft's toolkit), for people who never touch an agent.
 
 The mesh half of a mesh-to-CAD loop. The CAD half is SolidCraft and its kernel SolidCore; the engine stays
 joinable with them as a library, a tool server or an embedded panel.
 
 ## Who it is for
 
-Makers and engineers checking prints and scans against a design; people reverse engineering a part; agents
+First, the SolidCraft community: people who design in SolidCraft and print or scan parts; they judge when v1 is
+finished. Then makers and engineers checking prints and scans against a design; people reverse engineering a part; agents
 that need measurements they can rely on; other programs that want an engine they are allowed to embed.
 
 ## Why people choose it

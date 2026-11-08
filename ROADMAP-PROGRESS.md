@@ -14,7 +14,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | R4 Reverse-engineering workflows with AI | `█████████░` | 90% | 15 | Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft. |
 | R5 Reusable engine | `█░░░░░░░░░` | 10% | 10 | Another project depends on rulercraft-mesh from crates.io or git, and the engine builds for Wasm and runs the app in a browser with nothing to install. |
 | R6 Photos to mesh (research) | `░░░░░░░░░░` | 0% | 5 | A written go/no-go with a prototype on photos of one object. |
-| R7 A tool people choose: the app, at parity and beyond | `░░░░░░░░░░` | 3% | 25 | Logan, who uses the established scan-inspection apps, does a real job in the RulerCraft app (a dimensioned report, a deviation check against the design, an alignment) and finds nothing he needs missing. |
+| R7 v1: the native app for the SolidCraft community, at parity and beyond | `░░░░░░░░░░` | 2% | 25 | A SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own parts in the native app without help: inspect with a dimensioned report and a deviation check, rebuild a part in SolidCraft, let Claude measure while they watch, and use the engine from another program. |
 
 ## R1: Clean meshes: open, fit, measure, over CLI and MCP (88%)
 
@@ -85,11 +85,17 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | --- | --- | --- | --- | --- |
 | `photo.mesh` Photos to mesh (photogrammetry / AI shape guessing), research | planned | - | unclaimed | Research first; any library must pass the licence rules (no copyleft). |
 
-## R7: A tool people choose: the app, at parity and beyond (3%)
+## R7: v1: the native app for the SolidCraft community, at parity and beyond (2%)
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
 | `align.auto` Auto-align a part from its own faces; guided three-plane datum applied to a mesh | planned | - | unclaimed | Everything. Exit: a rotated and moved copy aligns back within 0.01 mm. |
+| `app.agent-session` The app shares its open document with Claude over MCP; agent steps visible and undoable | planned | - | unclaimed | Everything. P4. |
+| `app.parity` Native app does what the browser prototype does, with the same numbers | planned | - | unclaimed | Everything. P0 exit. |
+| `app.release` Installers for Linux, Windows and macOS | planned | - | unclaimed | Everything. P5; publishing needs Logan's yes. |
+| `app.shell` Native app (egui/eframe): window, menus, files, settings, SolidCraft look | planned | - | unclaimed | Everything. P0. |
+| `app.solidcraft-send` Send the recipe to SolidCraft (over its MCP) so an editable part appears | planned | - | unclaimed | Everything. P3; needs SolidCraft running. |
+| `app.viewport` wgpu 3D viewport: indexed drawing, GPU picking, overlays, level of detail | planned | - | unclaimed | Everything. P0 for drawing and picking; LOD in P1. |
 | `cad.step` STEP export of measured features through SolidCraft | planned | - | unclaimed | Everything; needs SolidCraft running. |
 | `engine.bvh` Shared spatial index for closest point, ray casts, thickness, ICP and picking | planned | - | unclaimed | Everything. Exit: same numbers as today on the corpus, and a 5-million-triangle query set many times faster than the per-call trees. |
 | `engine.gpu` Optional GPU accelerators verified against the CPU reference | planned | - | unclaimed | Everything. Needs a dependency approval for native GPU compute; browser paths need none. |
@@ -104,12 +110,12 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `gui.projects` App: save and reopen a project, undo and redo | planned | - | unclaimed | Everything. |
 | `gui.report` App: measurement report (CSV) and screenshot export | planned | - | unclaimed | Everything. |
 | `gui.sections` App: section and outline views | planned | - | unclaimed | Everything. |
-| `gui.theme` App: adopt SolidCraft's visual design, light and dark, with a NOTICE | planned | - | unclaimed | Everything. |
+| `gui.theme` App: adopt SolidCraft's theme (same toolkit), light and dark, with a NOTICE | planned | - | unclaimed | Everything. |
 | `gui.thickness` App: wall thickness map | planned | - | unclaimed | Everything. |
-| `gui.viewer` Standalone GUI: 3D view, brush selection, fits, measure, segments | implemented | - | claude | Recipe/deviation/thickness views, undo, saving projects from the page, point-to-point ruler, big-mesh performance, a SolidCraft-panel trial. No native window (needs a dependency; ask first). |
+| `gui.viewer` Standalone GUI: 3D view, brush selection, fits, measure, segments | implemented | - | claude | Kept as a prototype and test harness (D-012); new app work goes to the native app. |
 | `gui.web` App as a static page running the engine in the browser | planned | - | unclaimed | Everything. Needs a Wasm toolchain installed; a small glue tool would be a dependency to approve. |
 | `measure.constructs` Points, lines and planes built from fits; dimensions between them with nominal and tolerance | planned | - | unclaimed | Everything. Exit: known parts give dimension lists equal to the CLI's numbers, with pass/fail against tolerance. |
 | `measure.gdt` Form and position checks: flatness, parallelism, perpendicularity, coaxiality and similar | planned | - | unclaimed | Everything beyond flatness (form error exists on every fit). |
 | `mesh.clean` Mesh clean-up: hole fill, bad triangle removal, reduction | planned | - | unclaimed | Everything. Exit: clean-up never moves a surviving vertex more than a stated amount. |
 | `section.cut` Sections across a feature and the part's widest outline, measured in 2D | planned | - | unclaimed | Everything. Exit: sections of known solids give the known outline lengths. |
-| `ui.egui` Optional egui panel crate on SolidCraft's own stack | planned | - | unclaimed | Only if Logan wants it; needs a dependency approval (egui, wgpu). |
+| `ui.egui` rulercraft-ui: panels and viewport as a library a host can show | planned | - | unclaimed | Everything. Dependencies approved by D-012; built as part of the native app. |

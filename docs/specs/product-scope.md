@@ -1,6 +1,7 @@
 # Product scope: a tool people choose
 
-Status: *Scoping (2026-11-07)*. Features: the R7 group (`fit.shapes`, `measure.constructs`, `measure.gdt`,
+Status: *Scoping (2026-11-07)*. What v1 means and the phase order now live in docs/v1.md (D-012); this page keeps the
+capability detail. Features: the R7 group (`fit.shapes`, `measure.constructs`, `measure.gdt`,
 `align.auto`, `section.cut`, `mesh.clean`, `engine.wasm`, `cad.step`, `gui.*`). Serves INTENT.md.
 
 Established browser-based scan-inspection apps already do a lot, free, with nothing to install. To be chosen

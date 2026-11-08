@@ -6,7 +6,7 @@ Overall roadmap progress: **60%** (details in ROADMAP-PROGRESS.md).
 
 | Status | Features |
 | --- | ---: |
-| planned | 26 |
+| planned | 32 |
 | specced | 0 |
 | in-progress | 1 |
 | implemented | 6 |
@@ -20,6 +20,7 @@ Overall roadmap progress: **60%** (details in ROADMAP-PROGRESS.md).
 ## Ready to claim
 
 - `align.auto` (R7): Auto-align a part from its own faces; guided three-plane datum applied to a mesh
+- `app.shell` (R7): Native app (egui/eframe): window, menus, files, settings, SolidCraft look
 - `cad.step` (R7): STEP export of measured features through SolidCraft
 - `engine.bvh` (R7): Shared spatial index for closest point, ray casts, thickness, ICP and picking
 - `engine.stream` (R7): Fast, bounded loading with progress and cancel
@@ -27,9 +28,7 @@ Overall roadmap progress: **60%** (details in ROADMAP-PROGRESS.md).
 - `gui.deviation` (R7): App: deviation colour map, hover and pin readings, extra and missing regions
 - `gui.embed` (R7): App: embeddable page with a small postMessage interface for any host
 - `gui.projects` (R7): App: save and reopen a project, undo and redo
-- `gui.theme` (R7): App: adopt SolidCraft's visual design, light and dark, with a NOTICE
 - `gui.thickness` (R7): App: wall thickness map
 - `measure.constructs` (R7): Points, lines and planes built from fits; dimensions between them with nominal and tolerance
 - `mesh.clean` (R7): Mesh clean-up: hole fill, bad triangle removal, reduction
 - `section.cut` (R7): Sections across a feature and the part's widest outline, measured in 2D
-- `ui.egui` (R7): Optional egui panel crate on SolidCraft's own stack

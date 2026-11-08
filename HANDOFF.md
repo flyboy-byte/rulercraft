@@ -13,6 +13,11 @@ Last updated 2026-11-07, Claude. Read AGENTS.md first (it outranks this), then P
   `implemented`), `align::datum_frame` (verified), `deviation::patches` (verified). `align_icp` and
   `deviation` are reachable through the MCP `compare` tool.
 
+## v1 (D-012) — read docs/v1.md
+- Logan chose: all four jobs, native desktop app (egui/eframe/egui-wgpu/wgpu at SolidCraft's versions, approved), SolidCraft
+  community judges done, credit pacing open. Phases P0–P5 in docs/v1.md; P0 is next (native shell + viewport + parity).
+- The browser viewer (rulercraft-gui) is now a prototype/test harness.
+
 ## Intent and scope (D-010)
 - INTENT.md is locked (changes only by a superseding decision). We compete: milestone R7 and
   docs/specs/product-scope.md list the everyday-job gaps (constructions, tolerances, deviation map, alignment,
