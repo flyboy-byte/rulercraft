@@ -16,11 +16,12 @@ use rulercraft_mesh::{
     graph::MeshGraph,
     measure::{
         Element, relate,
-        thickness::{ThicknessOptions, wall_thickness},
+        thickness::{ThicknessOptions, wall_thickness_indexed},
     },
     read_mesh,
     reverse::{Hole, PatternOptions, design_guesses, hole_patterns, symmetry_planes},
     segment::{join_strips, segment_cylinders, segment_planes},
+    spatial::Bvh,
 };
 use serde::Deserialize;
 use serde_json::{Value, json};
@@ -215,6 +216,8 @@ struct Loaded {
     format: &'static str,
     mesh: Mesh,
     graph: MeshGraph,
+    /// Spatial index, built the first time a query needs it and kept while this mesh is open.
+    tree: std::sync::OnceLock<Bvh>,
 }
 struct OpenStep {
     args: OpenArgs,
@@ -444,6 +447,7 @@ impl MeshServer {
             format,
             mesh,
             graph,
+            tree: std::sync::OnceLock::new(),
         };
         Ok((loaded, source_fingerprint))
     }
@@ -596,8 +600,15 @@ impl MeshServer {
                 }
                 options.max_distance = max_distance;
             }
-            let samples = wall_thickness(&m.mesh, &m.graph.vertex_normals, &page, options)
-                .map_err(|e| e.to_string())?;
+            let tree = m.tree.get_or_init(|| Bvh::new(&m.mesh));
+            let samples = wall_thickness_indexed(
+                &m.mesh,
+                Some(tree),
+                &m.graph.vertex_normals,
+                &page,
+                options,
+            )
+            .map_err(|e| e.to_string())?;
             let samples: Vec<_> = samples
                 .iter()
                 .map(|s| json!({"vertex":s.vertex,"distance":s.distance}))

@@ -141,3 +141,35 @@ fn a_ray_just_past_the_opposite_walls_edge_still_counts() {
     let s = wall_thickness(&m, &normals, &[3], Default::default()).unwrap();
     assert_eq!(s[0].distance, Some(5.0));
 }
+
+#[test]
+fn a_reused_tree_gives_the_same_samples_and_a_foreign_one_is_refused() {
+    use rulercraft_mesh::measure::thickness::wall_thickness_indexed;
+    use rulercraft_mesh::spatial::Bvh;
+    let m = Mesh {
+        positions: vec![[0., 0., 0.], [0., 10., 0.], [10., 0., 0.], [2., 2., 5.]],
+        triangles: vec![[0, 1, 2]],
+        degenerate_dropped: 0,
+    };
+    let normals = [[0., 0., 1.]; 4];
+    let tree = Bvh::new(&m);
+    let fresh = wall_thickness(&m, &normals, &[3], Default::default()).unwrap();
+    let reused =
+        wall_thickness_indexed(&m, Some(&tree), &normals, &[3], Default::default()).unwrap();
+    assert_eq!(fresh, reused);
+    assert_eq!(reused[0].distance, Some(5.0));
+    let other = Mesh {
+        triangles: vec![[0, 1, 2], [0, 2, 1]],
+        ..m.clone()
+    };
+    assert!(
+        wall_thickness_indexed(
+            &m,
+            Some(&Bvh::new(&other)),
+            &normals,
+            &[3],
+            Default::default()
+        )
+        .is_err()
+    );
+}

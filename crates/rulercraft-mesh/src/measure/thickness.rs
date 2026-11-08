@@ -76,6 +76,19 @@ pub fn wall_thickness(
     selection: &[u32],
     options: ThicknessOptions,
 ) -> Result<Vec<ThicknessSample>, ThicknessError> {
+    wall_thickness_indexed(mesh, None, outward_normals, selection, options)
+}
+
+/// [`wall_thickness`] with a tree the caller already built for `mesh` (for example once per open mesh,
+/// reused across pages). `tree` must have been built from this same `mesh`; with `None` one is built.
+/// Fails when the tree's triangle count does not match the mesh.
+pub fn wall_thickness_indexed(
+    mesh: &Mesh,
+    tree: Option<&Bvh>,
+    outward_normals: &[[f32; 3]],
+    selection: &[u32],
+    options: ThicknessOptions,
+) -> Result<Vec<ThicknessSample>, ThicknessError> {
     if !options.max_distance.is_finite()
         || !options.exclusion.is_finite()
         || options.exclusion <= 0.
@@ -107,7 +120,17 @@ pub fn wall_thickness(
             return Err(error(format!("triangle {i}: vertex index out of range")));
         }
     }
-    let tree = Bvh::new(mesh);
+    if tree.is_some_and(|t| t.len() != mesh.triangles.len()) {
+        return Err(error("the spatial index was built from a different mesh"));
+    }
+    let built;
+    let tree = match tree {
+        Some(t) => t,
+        None => {
+            built = Bvh::new(mesh);
+            &built
+        }
+    };
     // The hit test accepts points up to 1e-12 (in barycentric terms) outside a triangle; widening every
     // box by far more than that, scaled to the part, keeps the tree from skipping any such hit.
     let reach = mesh
