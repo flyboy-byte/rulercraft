@@ -292,3 +292,38 @@ fn the_tree_is_many_times_faster_on_five_million_triangles() {
     assert!(per_brute / per_tree > 100.0);
     let _ = add([0.0; 3], [0.0; 3]);
 }
+
+#[test]
+fn parallel_rays_on_box_edges_hit_with_either_sign_of_zero() {
+    let mesh = Mesh {
+        positions: vec![[0.0, 0.0, 1.0], [1.0, 0.0, 1.0], [0.0, 1.0, 1.0]],
+        triangles: vec![[0, 1, 2]],
+        degenerate_dropped: 0,
+    };
+    let tree = Bvh::new(&mesh);
+    for x in [0.0, 1.0] {
+        let o = [x, 0.0, 0.0];
+        for zero in [0.0, -0.0] {
+            let d = [zero, 0.0, 1.0];
+            assert_eq!(
+                tree.ray_nearest(o, d, 0.0, 2.0, 0.0, |_, c| ray_hit(o, d, c)),
+                Some((1.0, 0)),
+                "x={x}, sign={}",
+                zero.is_sign_negative()
+            );
+        }
+    }
+    // A nonzero subnormal can have an infinite reciprocal; it still enters the box.
+    let o = [1.0, 0.0, 0.0];
+    let d = [-1e-320, 0.0, 1.0];
+    assert_eq!(
+        tree.ray_nearest(o, d, 0.0, 2.0, 0.0, |_, c| ray_hit(o, d, c)),
+        Some((1.0, 0))
+    );
+    let o = [-0.01, 0.0, 0.0];
+    let d = [-0.0, 0.0, 1.0];
+    assert_eq!(
+        tree.ray_nearest(o, d, 0.0, 2.0, 0.0, |_, c| ray_hit(o, d, c)),
+        None
+    );
+}
