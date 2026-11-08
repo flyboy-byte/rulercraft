@@ -139,7 +139,9 @@ pub fn wall_thickness_indexed(
         .flat_map(|p| p.iter().map(|v| f64::from(v.abs())))
         .fold(0.0, f64::max);
     let pad = 1e-9 * (1.0 + reach);
-    let mut samples = Vec::with_capacity(selection.len());
+    // Check every selected vertex first, in order, so the first bad one is the error reported; then cast
+    // the rays on all cores. Each ray is independent, so the samples do not depend on the thread count.
+    let mut rays = Vec::with_capacity(selection.len());
     for &vertex in selection {
         let index = vertex as usize;
         let origin = mesh
@@ -156,6 +158,10 @@ pub fn wall_thickness_indexed(
                     "vertex {vertex}: normal must be finite and nonzero"
                 ))
             })?;
+        rays.push((vertex, origin, direction));
+    }
+    let samples = crate::par::map(rays.len(), |k| {
+        let (vertex, origin, direction) = rays[k];
         let nearest = tree
             .ray_nearest(
                 origin,
@@ -171,10 +177,10 @@ pub fn wall_thickness_indexed(
                 },
             )
             .map(|(distance, _)| distance);
-        samples.push(ThicknessSample {
+        ThicknessSample {
             vertex,
             distance: nearest,
-        });
-    }
+        }
+    });
     Ok(samples)
 }

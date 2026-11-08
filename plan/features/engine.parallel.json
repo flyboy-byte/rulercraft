@@ -1,14 +1,17 @@
 {
   "id": "engine.parallel",
   "milestone": "R7",
-  "title": "Multi-core deviation, ICP, thickness and segmentation with the standard library only",
+  "title": "Multi-core deviation, ICP, symmetry, thickness and tree build with the standard library only",
   "spec": "product-scope",
-  "status": "in-progress",
+  "status": "verified",
   "depends_on": [
     "engine.bvh"
   ],
   "owner": "Claude",
-  "pr": null,
-  "verified_by": [],
-  "left": "par::map (std threads, item order kept, sums on one thread) used by deviation, ICP pairing and symmetry; results bit-identical for 1/2/5/13 threads (tests/parallel.rs), sabotages fail. Measured 1.7x on 490k vertices vs 980k triangles with 12 threads: tree build and the stats sort are still serial, so the ignored speed test fails. Next: parallel tree build (split subtrees on threads), then thickness (after #71 lands) and segmentation."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/73",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Done 2026-11-08: par::map (std threads, item order kept, sums on one thread); tree build splits subtrees over threads with the same node layout for any count; deviation, ICP pairing, symmetry and thickness rays use it. Bit-identical for 1/2/3/5/8/12/13 threads (tests/parallel.rs). 490k vertices vs 980k triangles, 12 threads: 4.6x (ignored speed test, release). Not parallelised on purpose: segmentation (region growing depends on seed order, so threads would change results). Later: parallel statistics sort if it ever shows in a profile."
 }

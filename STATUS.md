@@ -8,15 +8,14 @@ Overall roadmap progress: **59%** (details in ROADMAP-PROGRESS.md).
 | --- | ---: |
 | planned | 39 |
 | specced | 0 |
-| in-progress | 2 |
+| in-progress | 1 |
 | implemented | 9 |
-| verified | 33 |
+| verified | 34 |
 | done | 0 |
 
 ## In progress
 
 - `engine.library` (claude): Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog.
-- `engine.parallel` (Claude): par::map (std threads, item order kept, sums on one thread) used by deviation, ICP pairing and symmetry; results bit-identical for 1/2/5/13 threads (tests/parallel.rs), sabotages fail. Measured 1.7x on 490k vertices vs 980k triangles with 12 threads: tree build and the stats sort are still serial, so the ignored speed test fails. Next: parallel tree build (split subtrees on threads), then thickness (after #71 lands) and segmentation.
 
 ## Ready to claim
 

@@ -39,6 +39,71 @@ pub struct Closest {
 
 /// Largest triangle count in a leaf.
 const LEAF: usize = 4;
+/// Fewest triangles in a subtree worth handing to another thread.
+const PAR_BUILD: usize = 32_768;
+
+/// Builds the subtree over `order` (whose first entry is position `lo` of the whole order) and returns
+/// its nodes in depth-first order, root first, children numbered within the returned list. Subtrees may
+/// be built on up to `threads` threads; the nodes are the same for any count.
+fn build(tris: &[[Vec3; 3]], order: &mut [usize], lo: usize, threads: usize) -> Vec<Node> {
+    let n = order.len();
+    let (mut mn, mut mx) = ([f64::MAX; 3], [f64::MIN; 3]);
+    for &i in order.iter() {
+        for p in tris[i] {
+            for k in 0..3 {
+                mn[k] = mn[k].min(p[k]);
+                mx[k] = mx[k].max(p[k]);
+            }
+        }
+    }
+    if n <= LEAF {
+        return vec![Node {
+            min: mn,
+            max: mx,
+            kind: Kind::Leaf(lo, lo + n),
+        }];
+    }
+    let axis = (0..3)
+        .max_by(|&a, &b| (mx[a] - mn[a]).total_cmp(&(mx[b] - mn[b])))
+        .unwrap_or(0);
+    let centre = |i: usize| tris[i][0][axis] + tris[i][1][axis] + tris[i][2][axis];
+    let mid = n / 2;
+    // Median split; ties broken by triangle number so the tree never depends on sort details.
+    order.select_nth_unstable_by(mid, |&a, &b| {
+        centre(a).total_cmp(&centre(b)).then(a.cmp(&b))
+    });
+    let (left, right) = order.split_at_mut(mid);
+    let (mut l, mut r) = if threads > 1 && n >= PAR_BUILD {
+        let right_threads = threads - threads / 2;
+        std::thread::scope(|s| {
+            let h = s.spawn(move || build(tris, right, lo + mid, right_threads));
+            let l = build(tris, left, lo, threads / 2);
+            match h.join() {
+                Ok(r) => (l, r),
+                Err(e) => std::panic::resume_unwind(e),
+            }
+        })
+    } else {
+        (build(tris, left, lo, 1), build(tris, right, lo + mid, 1))
+    };
+    let (lo_off, ro_off) = (1, 1 + l.len());
+    for (nodes, off) in [(&mut l, lo_off), (&mut r, ro_off)] {
+        for node in nodes.iter_mut() {
+            if let Kind::Inner(a, b) = node.kind {
+                node.kind = Kind::Inner(a + off, b + off);
+            }
+        }
+    }
+    let mut out = Vec::with_capacity(1 + l.len() + r.len());
+    out.push(Node {
+        min: mn,
+        max: mx,
+        kind: Kind::Inner(lo_off, ro_off),
+    });
+    out.extend(l);
+    out.extend(r);
+    out
+}
 
 fn box_dist2(p: Vec3, lo: Vec3, hi: Vec3) -> f64 {
     (0..3)
@@ -103,16 +168,17 @@ impl Bvh {
             .iter()
             .map(|t| t.map(|i| mesh.positions[i as usize].map(f64::from)))
             .collect();
-        let mut t = Bvh {
-            order: (0..tris.len()).collect(),
-            tris,
-            nodes: vec![],
+        let mut order: Vec<usize> = (0..tris.len()).collect();
+        let nodes = if tris.is_empty() {
+            vec![]
+        } else {
+            build(&tris, &mut order, 0, crate::par::threads())
         };
-        let n = t.order.len();
-        if n > 0 {
-            t.node(0, n);
-        }
-        t
+        Bvh { tris, order, nodes }
+    }
+    /// Number of tree nodes (leaves and inner).
+    pub fn node_count(&self) -> usize {
+        self.nodes.len()
     }
     /// Number of triangles indexed.
     pub fn len(&self) -> usize {
@@ -126,40 +192,6 @@ impl Bvh {
     pub fn triangle(&self, t: usize) -> [Vec3; 3] {
         self.tris[t]
     }
-    fn node(&mut self, lo: usize, hi: usize) -> usize {
-        let (mut mn, mut mx) = ([f64::MAX; 3], [f64::MIN; 3]);
-        for &i in &self.order[lo..hi] {
-            for p in self.tris[i] {
-                for k in 0..3 {
-                    mn[k] = mn[k].min(p[k]);
-                    mx[k] = mx[k].max(p[k]);
-                }
-            }
-        }
-        let id = self.nodes.len();
-        self.nodes.push(Node {
-            min: mn,
-            max: mx,
-            kind: Kind::Leaf(lo, hi),
-        });
-        if hi - lo > LEAF {
-            let axis = (0..3)
-                .max_by(|&a, &b| (mx[a] - mn[a]).total_cmp(&(mx[b] - mn[b])))
-                .unwrap_or(0);
-            let tris = &self.tris;
-            let centre = |i: usize| tris[i][0][axis] + tris[i][1][axis] + tris[i][2][axis];
-            let mid = lo + (hi - lo) / 2;
-            // Median split; ties broken by triangle number so the tree never depends on sort details.
-            self.order[lo..hi].select_nth_unstable_by(mid - lo, |&a, &b| {
-                centre(a).total_cmp(&centre(b)).then(a.cmp(&b))
-            });
-            let l = self.node(lo, mid);
-            let r = self.node(mid, hi);
-            self.nodes[id].kind = Kind::Inner(l, r);
-        }
-        id
-    }
-
     /// The closest point on the surface to `p`, or None for an empty tree.
     pub fn closest(&self, p: Vec3) -> Option<Closest> {
         if self.nodes.is_empty() {

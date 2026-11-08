@@ -4,8 +4,11 @@
 use rulercraft_mesh::Mesh;
 use rulercraft_mesh::align::{IcpOptions, Rigid, align_icp};
 use rulercraft_mesh::deviation::deviation;
+use rulercraft_mesh::graph::MeshGraph;
+use rulercraft_mesh::measure::thickness::{ThicknessOptions, wall_thickness};
 use rulercraft_mesh::par;
 use rulercraft_mesh::reverse::symmetry_planes;
+use rulercraft_mesh::spatial::Bvh;
 
 /// A closed ellipsoid with three different radii and a bump, about 2 * n * n triangles. The bump
 /// stops it sliding under ICP and breaks its mirror symmetry along x.
@@ -121,6 +124,44 @@ fn deviation_icp_and_symmetry_are_identical_for_one_and_many_threads() {
         (t[0] + 0.4).abs() < 0.05 && (t[1] - 0.3).abs() < 0.05 && (t[2] + 0.2).abs() < 0.05,
         "{i1:?}"
     );
+}
+
+#[test]
+fn the_tree_and_thickness_do_not_depend_on_the_thread_count() {
+    // More triangles than one subtree is worth a thread, so the build really splits.
+    let m = blob(230, [0.0; 3]);
+    assert!(m.triangles.len() > 80_000);
+    let graph = MeshGraph::build(&m);
+    let sel: Vec<u32> = (0..m.positions.len() as u32).step_by(37).collect();
+    assert!(sel.len() > 1_000, "enough rays to split over threads");
+    let run = |k: usize| {
+        par::with_threads(k, || {
+            let tree = Bvh::new(&m);
+            let probes: Vec<_> = (0..300)
+                .map(|i| {
+                    let f = f64::from(i);
+                    let p = [
+                        40.0 * (f * 0.7).sin(),
+                        30.0 * (f * 1.3).cos(),
+                        20.0 * (f * 0.37).sin(),
+                    ];
+                    let c = tree.closest(p).unwrap();
+                    (c.point.map(f64::to_bits), c.triangle, c.distance2.to_bits())
+                })
+                .collect::<Vec<_>>();
+            let options = ThicknessOptions {
+                max_triangle_tests: usize::MAX,
+                ..ThicknessOptions::default()
+            };
+            let t = wall_thickness(&m, &graph.vertex_normals, &sel, options).unwrap();
+            (tree.node_count(), probes, t)
+        })
+    };
+    let one = run(1);
+    assert!(one.2.iter().any(|s| s.distance.is_some()), "some rays hit");
+    for k in [2, 3, 8, 12] {
+        assert_eq!(run(k), one, "{k} threads");
+    }
 }
 
 /// Speed check, run by hand in release: `cargo test --release -p rulercraft-mesh --test parallel --
