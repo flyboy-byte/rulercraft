@@ -67,7 +67,9 @@ to each other directly. Everything they need to know is in the repo:
   are touched by one open PR at a time; say so in the PR body.
 - **HANDOFF.md** is rewritten (not appended) at the end of every session that leaves work open:
   what is in progress, where (branch, PR), the last raw result, the next step. It is the message
-  from the last session to the next, whichever model it is.
+  from the last session to the next, whichever model it is. Keep its standing sections (read first, where
+  things stand, next, owed by Logan) and change what moved; a feature PR does not replace it with notes about
+  that PR, which belong in the PR body.
 - **Findings** that affect other work go in `docs/findings/YYYY-MM-DD-slug.md`, one file each, never
   edited by another session except to add a dated reply.
 - Another model's output (code, review, finding) is input to verify, not fact.
