@@ -133,7 +133,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
-| `verify.agreement` Library, CLI, MCP and app give identical numbers (later native/Wasm, CPU/GPU) | implemented | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/86 | Known hole-block plane and three cylinder fits agree across library, CLI, MCP and browser prototype. Other operations, units, future native app, CPU/GPU and native/Wasm comparisons remain. |
+| `verify.agreement` Library, CLI, MCP and app give identical numbers (later native/Wasm, CPU/GPU) | implemented | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/95 | Known hole-block plane and three cylinder fits agree across library, CLI, MCP and browser prototype. Signed plane deviation agrees across library, CLI and MCP. Other operations, units, future native app, CPU/GPU and native/Wasm comparisons remain. |
 | `verify.fuzz` Fuzzing every reader and the command layer | planned | - | unclaimed | Everything. A harness with a library dependency needs Logan's yes. |
 | `verify.mutants` Mutation testing of the engine; each survivor becomes a test or a deleted rule | planned | - | unclaimed | Everything. Tool, not a dependency. |
 | `verify.nightly` Scheduled nightly tier in CI (property tests, corpus, agreement, benchmarks) | planned | - | unclaimed | Everything. Touches .github/workflows (hot file). |

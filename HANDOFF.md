@@ -1,10 +1,9 @@
 # Handoff
 
-Last updated 2026-11-07, Codex. Main includes #81–#83 and #85–#90 and #92: hole-pattern validation, bounded and faster imports, CLI thickness and deviation, cross-interface plane verification, large-range pattern handling, version reporting, and closed boundary-loop filtering.
+Last updated 2026-11-07, Codex. Main includes #81–#83 and #85–#94: hole-pattern validation, bounded and faster imports, CLI thickness and deviation, cross-interface plane verification, large-range pattern handling, version reporting, and closed boundary-loop filtering.
 
 ## Open right now
-- #91 (Codex, ready): finite mean diameters for large hole patterns; branch `codex/pattern-mean`, worktree `/tmp/rulercraft-pattern-mean`. Full workspace tests, format, clippy and plan checks passed on commit `7f5f1ff` after incorporating #88. Next: check hosted CI and review the current head.
-- #93 (Codex, ready): require an extension for mesh format dispatch; branch `codex/import-audit`, worktree `/tmp/rulercraft-import-audit`. Full workspace tests, format, clippy and plan checks passed on `0025713`; a deliberate return to the old dispatch failed the new test. Next: check hosted CI and review the current head.
+- #95 (Codex, ready): compare signed plane deviation across the library, CLI and MCP; branch `codex/deviation-agreement`, worktree `/tmp/rulercraft-deviation-agreement`. Full workspace tests, format, clippy and plan checks pass; deliberate wrong mean values caused the CLI and MCP checks to fail. Next: check hosted CI and review the current head.
 - #73 (Claude, draft): engine.parallel. `par::map` is bit-identical for any thread count and used by deviation, ICP, symmetry. Its speed test was still below target; check the PR for current state before touching related files.
 - Build output: `/tmp` is a 7.5 GB tmpfs and filled up once. Put build output in a separate directory under `$HOME/.cache`.
 
