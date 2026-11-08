@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Marking the vertices a fit runs on (docs/specs/selection.md).
 
-use crate::math::{Vec3, dot, length, normalize};
+use crate::math::{Vec3, angle_between, length, normalize};
 use std::fmt;
 
 /// Why a selection could not be made. `Display` gives a message a user can act on.
@@ -116,7 +116,6 @@ pub fn facing(
     if !(within > 0.0 && within <= std::f64::consts::PI) {
         return Err(SelectError::BadAngle);
     }
-    let limit = within.cos();
     let mut out = Vec::with_capacity(selection.len());
     for &i in selection {
         let n = normals.get(i as usize).ok_or(SelectError::NoSuchVertex {
@@ -124,9 +123,7 @@ pub fn facing(
             count: normals.len(),
         })?;
         let n = n.map(f64::from);
-        if let Some(n) = normalize(n)
-            && dot(n, d) >= limit - 1e-12
-        {
+        if angle_between(n, d).is_some_and(|angle| angle <= within) {
             out.push(i);
         }
     }

@@ -153,3 +153,24 @@ fn finite_extreme_queries_do_not_square_to_infinity_or_zero() {
         [0]
     );
 }
+
+#[test]
+fn facing_respects_very_small_angles_and_includes_boundary() {
+    // For [x, 0, 1], atan(x) is its angle from +z. These known directions
+    // lie well inside and outside a 1e-8 radian cone, even after f32 rounding.
+    let normals = [[0.0, 0.0, 1.0], [5e-9, 0.0, 1.0], [1e-7, 0.0, 1.0]];
+    assert_eq!(
+        facing(&[0, 1, 2], &normals, [0.0, 0.0, 1.0], 1e-8).unwrap(),
+        [0, 1]
+    );
+    assert_eq!(
+        facing(
+            &[0],
+            &[[1.0, 0.0, 0.0]],
+            [0.0, 0.0, 1.0],
+            std::f64::consts::FRAC_PI_2
+        )
+        .unwrap(),
+        [0]
+    );
+}
