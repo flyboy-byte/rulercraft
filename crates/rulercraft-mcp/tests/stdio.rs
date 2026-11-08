@@ -668,3 +668,45 @@ fn known_top_plane_agrees_between_mcp_and_library() {
     assert!((plane.center[2] - 10.0).abs() < 1e-5);
     assert!(plane.normal[2].abs() > 1.0 - 1e-10);
 }
+
+#[test]
+fn known_plane_deviation_agrees_between_mcp_and_library() {
+    use rulercraft_mesh::{Unit, read_mesh};
+    let dir = std::env::temp_dir().join(format!(
+        "rulercraft-mcp-deviation-agreement-{}",
+        std::process::id()
+    ));
+    std::fs::create_dir_all(&dir).unwrap();
+    let reference_path = dir.join("reference.ply");
+    let reference = ply(&[[0., 0., 0.], [10., 0., 0.], [0., 10., 0.]], &[[0, 1, 2]]);
+    std::fs::write(&reference_path, &reference).unwrap();
+    let reference_mesh = read_mesh(
+        "reference.ply",
+        reference.as_bytes(),
+        Unit::Mm,
+        Default::default(),
+    )
+    .unwrap();
+    let mut client = Client::new();
+    for z in [-1., 1.] {
+        let measured = ply(&[[0., 0., z], [10., 0., z], [0., 10., z]], &[[0, 1, 2]]);
+        let path = dir.join(if z < 0. { "below.ply" } else { "above.ply" });
+        std::fs::write(&path, &measured).unwrap();
+        let mesh = read_mesh(
+            "measured.ply",
+            measured.as_bytes(),
+            Unit::Mm,
+            Default::default(),
+        )
+        .unwrap();
+        let direct = rulercraft_mesh::deviation::deviation(&mesh, &reference_mesh, 0.1).unwrap();
+        assert_eq!(direct.distances, vec![z; 3]);
+        client.data("mesh.open", json!({"path":path}));
+        let output = client.data(
+            "compare",
+            json!({"reference":reference_path,"tolerance":0.1}),
+        );
+        assert_eq!(output["stats"], json!(direct.stats));
+    }
+    std::fs::remove_dir_all(dir).unwrap();
+}
