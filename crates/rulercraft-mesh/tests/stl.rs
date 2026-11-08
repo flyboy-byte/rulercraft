@@ -192,3 +192,37 @@ fn dispatcher_enforces_unique_vertex_limit_before_later_bad_data() {
         );
     }
 }
+
+#[test]
+fn ascii_triangle_limit_counts_degenerate_fan_candidates_before_later_input() {
+    let prefix = "solid t\nouter loop\nvertex 0 0 0\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\n";
+    let complete = format!("{prefix}endloop\nendsolid\n");
+    let bad_later = format!("{prefix}vertex NaN 0 0\nendloop\nendsolid\n");
+    let limits = |max_triangles| Limits {
+        max_triangles,
+        ..Default::default()
+    };
+    assert_eq!(
+        read_stl(bad_later.as_bytes(), Unit::Mm, limits(1)),
+        Err(ReadError::TooManyTriangles {
+            triangles: 2,
+            limit: 1
+        })
+    );
+    assert_eq!(
+        read_stl(complete.as_bytes(), Unit::Mm, limits(0)),
+        Err(ReadError::TooManyTriangles {
+            triangles: 1,
+            limit: 0
+        })
+    );
+    let mesh = read_stl(complete.as_bytes(), Unit::Mm, limits(2)).unwrap();
+    assert_eq!(
+        (
+            mesh.positions.len(),
+            mesh.triangles.len(),
+            mesh.degenerate_dropped
+        ),
+        (3, 1, 1)
+    );
+}
