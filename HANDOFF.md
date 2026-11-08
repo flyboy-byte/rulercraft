@@ -1,17 +1,19 @@
 # Handoff
 
-Last updated 2026-11-07 (late), Claude. 177 tests on main. Merged this stretch: #66 (OBJ memory bound), #67
-(verify.zoo first slice), #68 (engine.bvh: `spatial::Bvh`, 283x on 5.12 M triangles), #69 (narrow facing angles),
-#70 (MCP keeps one tree per open mesh; HANDOFF rule in AGENTS.md).
+Last updated 2026-11-07 (night), Claude. 188 tests on main. Merged since the last note: #71 (-0.0 ray fix in
+`spatial.rs`, Codex), #72 and #75 (shape zoo: noisy partial surfaces, robust sphere fits with outliers), #76
+(CLI refuses --within without --facing), #77 (PLY header memory bound), #78 (STL vertex limit enforced early),
+#79 (3MF reflection winding at extreme scales), #80 (CLI/library/browser agree on known holes).
 
 ## Open right now
-- #82 (Codex): PLY duplicate declaration checks no longer rescan the whole header; a 40,000-element rejection fell from 7.4 s to 0.09 s locally. Next: check hosted CI and review when Logan chooses; #77 also touches the PLY header.
-- #71 (Codex, draft): -0.0 ray direction components skip boxes when the origin is on a box face (bug in #68's
-  slab test; wall thickness always produces -0.0). Codex owns the fix; hand-trace is in the PR comments. Don't
-  touch `spatial.rs` until it lands.
-- #73 (Claude, draft): engine.parallel. `par::map`, bit-identical for any thread count, used by deviation, ICP,
-  symmetry. Only 1.7x on 12 threads because the tree build and the stats sort are serial; its ignored speed test
-  fails. Next: parallel tree build, then thickness (after #71) and segmentation.
+- #73 (Claude, **draft, paused**): engine.parallel. `par::map` is bit-identical for any thread count and used by
+  deviation, ICP, symmetry. Only 1.7x on 12 threads because tree build and the stats sort are serial, so its
+  ignored speed test fails. Next: parallel tree build, then thickness (`spatial.rs` is free again) and segmentation.
+- #81 (fix: invalid holes in patterns), #82 (perf: PLY header validation), #83 (perf: 3MF namespace copies): Codex,
+  unreviewed.
+- Merging Codex PRs: they overwrite HANDOFF.md and the generated STATUS/ROADMAP-PROGRESS files. Merge main into
+  the branch, `git checkout origin/main -- HANDOFF.md`, `python3 tools/plan.py render`, push, wait for CI on that
+  exact head, then merge. (In zsh, `set -- $p` does not split a string; use bash for polling loops.)
 - Build output: `/tmp` is a 7.5 GB tmpfs and filled up once. Build worktrees with
   `CARGO_TARGET_DIR=$HOME/.cache/rulercraft-claude-target` (or your own dir off /tmp).
 

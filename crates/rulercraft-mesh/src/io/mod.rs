@@ -69,18 +69,16 @@ pub fn read_mesh(
         "3mf" => threemf::read_threemf(bytes, limits),
         "obj" => obj::read_obj(bytes, unit, limits),
         _ => {
-            let m = crate::read_stl(
+            let m = crate::stl::read_stl_with_vertex_limit(
                 bytes,
                 unit,
                 crate::Limits {
                     max_bytes: limits.max_bytes,
                     max_triangles: limits.max_triangles,
                 },
+                limits.max_vertices,
             )
             .map_err(|e| ReadError(e.to_string()))?;
-            if m.positions.len() > limits.max_vertices {
-                return Err(ReadError("vertex limit exceeded".into()));
-            }
             Ok(m)
         }
     }
