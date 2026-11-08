@@ -74,3 +74,7 @@ Later slices add more shapes, partial surfaces, noise, outliers and seeded sweep
 
 The partial-surface slice adds 60-degree sphere caps and 120-degree cylinder arcs at three radii and three
 deterministic noise seeds, with radial noise bounded to 0.1% of radius. The fit allowance is 1% of radius.
+
+The first interface-agreement checks use the known hole-block design: its top plane and three holes are
+compared between the library, CLI, MCP and browser prototype. Other operations, units, and future native,
+Wasm and GPU interfaces remain to be checked.

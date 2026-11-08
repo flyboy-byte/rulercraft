@@ -1,0 +1,16 @@
+{
+  "id": "cli.version",
+  "milestone": "R5",
+  "title": "Report the CLI build version",
+  "spec": "commands",
+  "status": "implemented",
+  "depends_on": [
+    "cli.commands"
+  ],
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/90",
+  "verified_by": [
+    "wrong-value"
+  ],
+  "left": "Both version flags are checked against package metadata; a numeric geometry check is not applicable. The version does not identify an individual commit."
+}

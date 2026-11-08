@@ -21,4 +21,14 @@ vertices joined by a mesh edge and on the same side (outside or inside). Each pa
 side, mean signed distance and largest absolute distance. Largest first, ties by lowest vertex id. Vertices
 with a non-finite distance are never in a patch; a tolerance that is not a finite number of 0 or more is
 refused. Checks: two bumps and a touching opposite-side vertex give three patches in order; each refusal.
-Not done: CLI/MCP exposure.
+The MCP server exposes comparison and patches; the CLI exposes unaligned deviation as described below.
+
+## CLI unaligned deviation
+
+`rulercraft deviation <measured> <reference>` compares the meshes in their existing coordinates; it does
+not align them. Source units default to mm and can be set independently with `--units` and
+`--reference-units`. `--tolerance` is a nonnegative finite millimetre value (default 0.1). JSON returns
+global engine `stats`, `total`, `offset`, `returned`, `truncated`, and `samples` (vertex index and
+signed distance in mm). `--offset` defaults to 0 and `--limit` to 256, with a maximum of 1024.
+Statistics and engine work cover all measured vertices even when samples are paged; paging bounds output, not computation. The reference winding determines
+sign; the output states that no alignment was applied. Invalid inputs refuse cleanly.

@@ -54,6 +54,8 @@ Status: R1 spec. Features: `io.stl`, `io.ply`, `io.obj`, `io.3mf`.
 - ImportLimits bounds bytes, source vertices (default 50 million), and candidate triangles
   (default 50 million, including dropped degenerates). List lengths are checked against remaining
   input before allocation. Non-finite positions and unit conversion overflow are refused.
+- STL triangle limits count candidate triangles, including degenerate fan triangles, and stop ASCII
+  decoding as soon as the cap is exceeded.
 - The dispatcher supports STL, PLY and OBJ. Its limits apply to STL bytes and triangles;
   the vertex cap stops STL decoding when the merged vertex count exceeds the limit. The existing
   read_stl API remains available.

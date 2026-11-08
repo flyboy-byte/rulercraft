@@ -43,7 +43,7 @@ The selected indices are sorted; `offset` defaults to 0 and `limit` defaults to 
 Results contain `total`, `offset`, `returned`, `truncated` and `samples` (vertex id and distance, or
 null when there is no hit). The page is checked against the engine's 5 million triangle-test limit.
 `max_distance` may lower the engine default of 1,000,000 mm; invalid limits and selections are refused.
-The mesh is unchanged. CLI exposure and acceleration for dense scans remain separate work.
+The mesh is unchanged. Further acceleration for dense scans remains separate work.
 
 Axis-axis distances use the closest points on infinite lines, including small genuine tilts.
 For unit axes with cross-product magnitude <=1e-12, floating-point directional roundoff is treated
@@ -51,3 +51,13 @@ as parallel and the first axis point is measured to the second line. This numeri
 the earlier 1-degree parallel approximation for axes (checkpoint #32, 2026-11-07). Small nonparallel
 angles can place the closest points far outside the measured surface; the result is not spacing at a
 specified height. Plane-related near-parallel conventions retain their documented 1-degree threshold.
+
+### CLI directional thickness
+
+`rulercraft thickness <mesh>` uses the same selection filters as CLI fitting (`--box`, `--near`,
+`--facing`, `--within`), with `--units` for source coordinates. `--offset` defaults to 0 and
+`--limit` to 256, capped at 1024; `--max-distance` may lower the engine default of 1,000,000 mm.
+It returns JSON `total`, `offset`, `returned`, `truncated` and `samples`, each sample containing a
+vertex index and a distance in mm or null. The engine's triangle-test cap applies to the selected page.
+Invalid options and selections refuse with a message. Output states that samples follow inward vertex
+normals and require consistent outward winding; a missing hit is not a zero thickness.
