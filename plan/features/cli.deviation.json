@@ -1,0 +1,19 @@
+{
+  "id": "cli.deviation",
+  "milestone": "R3",
+  "title": "Mesh deviation from the CLI",
+  "spec": "deviation",
+  "status": "verified",
+  "depends_on": [
+    "compare.deviation",
+    "cli.commands"
+  ],
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/89",
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Optional alignment, patches and other CLI comparison workflows remain separate."
+}

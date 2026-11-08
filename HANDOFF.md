@@ -6,6 +6,7 @@ Last updated 2026-11-07 (night), Claude. 188 tests on main. Merged since the las
 #79 (3MF reflection winding at extreme scales), #80 (CLI/library/browser agree on known holes).
 
 ## Open right now
+- #89 (Codex): CLI unaligned signed deviation with independent source units and bounded sample output. The known-plane and wrong-value checks pass; next check CI and review when Logan chooses.
 - #73 (Claude, **draft, paused**): engine.parallel. `par::map` is bit-identical for any thread count and used by
   deviation, ICP, symmetry. Only 1.7x on 12 threads because tree build and the stats sort are serial, so its
   ignored speed test fails. Next: parallel tree build, then thickness (`spatial.rs` is free again) and segmentation.
