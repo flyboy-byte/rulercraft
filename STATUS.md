@@ -6,11 +6,11 @@ Overall roadmap progress: **59%** (details in ROADMAP-PROGRESS.md).
 
 | Status | Features |
 | --- | ---: |
-| planned | 40 |
+| planned | 39 |
 | specced | 0 |
 | in-progress | 1 |
 | implemented | 9 |
-| verified | 33 |
+| verified | 34 |
 | done | 0 |
 
 ## In progress
@@ -23,7 +23,6 @@ Overall roadmap progress: **59%** (details in ROADMAP-PROGRESS.md).
 - `app.shell` (R7): Native app (egui/eframe): window, menus, files, settings, SolidCraft look
 - `cad.step` (R7): STEP export of measured features through SolidCraft
 - `engine.gpu` (R7): Optional GPU accelerators verified against the CPU reference
-- `engine.parallel` (R7): Multi-core deviation, ICP, thickness and segmentation with the standard library only
 - `engine.stream` (R7): Fast, bounded loading with progress and cancel
 - `fit.shapes` (R7): Cone, torus and circle fits
 - `gui.deviation` (R7): App: deviation colour map, hover and pin readings, extra and missing regions
