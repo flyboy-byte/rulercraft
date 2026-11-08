@@ -63,7 +63,7 @@ The same engine has to stay fast and correct on multi-million-triangle scans. Wo
 
 | # | Work | Why | Feature |
 | --- | --- | --- | --- |
-| E1 | One spatial index (bounding-box tree) shared by closest-point, ray casts, thickness, ICP and picking | today each call builds its own tree; picking is a plain loop | `engine.bvh` |
+| E1 | One spatial index (bounding-box tree) shared by closest-point, ray casts, thickness, ICP and picking | was: each call built its own tree, thickness tested every triangle. Now `spatial::Bvh` (2026-11-07): exact, 283x faster closest point on 5.12 M triangles | `engine.bvh` |
 | E2 | Use all cores with the standard library's threads (no new dependency) for deviation, ICP, thickness and segmentation; results identical for any thread count | the heavy loops are independent per vertex | `engine.parallel` |
 | E3 | Fast, bounded loading: binary STL/PLY read in one pass, memory budget, progress and cancel | opening is the first thing a user waits for | `engine.stream` |
 | E4 | Level of detail: a reduced mesh for drawing, the full mesh for measuring | smooth view without touching accuracy | `gui.lod` (with `gui.perf`) |

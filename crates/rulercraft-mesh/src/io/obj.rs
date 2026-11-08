@@ -52,7 +52,9 @@ pub fn read_obj(bytes: &[u8], unit: Unit, limits: ImportLimits) -> Result<Mesh, 
             Some("f") => {
                 let mut face = Vec::new();
                 for word in words {
-                    let parts: Vec<_> = word.split('/').collect();
+                    // Four fields already prove the corner malformed; do not allocate
+                    // a field for every slash in an adversarial input.
+                    let parts: Vec<_> = word.split('/').take(4).collect();
                     let valid = match parts.as_slice() {
                         [_] => true,
                         [_, t] => !t.is_empty(),
