@@ -137,20 +137,23 @@ pub fn align_icp(
         let mut a = vec![0.0; 36];
         let mut b = vec![0.0; 6];
         let (mut sum2, mut n) = (0.0, 0usize);
-        for &p0 in &src {
-            let p = t.apply(p0);
+        // Pairing runs in parallel; the sums below are taken in scan order on one thread, so the
+        // result does not depend on the thread count.
+        let paired = crate::par::map(src.len(), |k| {
+            let p = t.apply(src[k]);
             let (q, normal) = tree.closest(p);
             let (Some(nu), d) = (normalize(normal), sub(q, p)) else {
-                continue;
+                return None;
             };
             if length(d) > options.max_pair_distance {
-                continue;
+                return None;
             }
-            let r = dot(nu, d);
+            let c = cross(p, nu);
+            Some(([c[0], c[1], c[2], nu[0], nu[1], nu[2]], dot(nu, d)))
+        });
+        for (row, r) in paired.into_iter().flatten() {
             sum2 += r * r;
             n += 1;
-            let c = cross(p, nu);
-            let row = [c[0], c[1], c[2], nu[0], nu[1], nu[2]];
             for i in 0..6 {
                 for j in 0..6 {
                     a[i * 6 + j] += row[i] * row[j];

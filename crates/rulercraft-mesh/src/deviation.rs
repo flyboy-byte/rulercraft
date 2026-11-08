@@ -135,17 +135,13 @@ pub fn deviation(
         ));
     }
     let tree = Reference::new(reference)?;
-    let distances: Vec<f64> = mesh
-        .positions
-        .iter()
-        .map(|&p| {
-            let p = v3(p);
-            let (q, n) = tree.closest(p);
-            let d = sub(p, q);
-            let side = if dot(d, n) < 0.0 { -1.0 } else { 1.0 };
-            side * length(d)
-        })
-        .collect();
+    let distances: Vec<f64> = crate::par::map(mesh.positions.len(), |i| {
+        let p = v3(mesh.positions[i]);
+        let (q, n) = tree.closest(p);
+        let d = sub(p, q);
+        let side = if dot(d, n) < 0.0 { -1.0 } else { 1.0 };
+        side * length(d)
+    });
     let count = distances.len();
     let mut abs: Vec<f64> = distances.iter().map(|d| d.abs()).collect();
     abs.sort_by(f64::total_cmp);

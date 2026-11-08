@@ -77,4 +77,4 @@ deterministic noise seeds, with radial noise bounded to 0.1% of radius. The fit 
 
 The first interface-agreement checks use the known hole-block design: its top plane and three holes are
 compared between the library, CLI, MCP and browser prototype. Other operations, units, and future native,
-Wasm and GPU interfaces remain to be checked.
+Wasm and GPU interfaces remain to be checked. Signed deviations of parallel planes 1 mm apart agree between the library, CLI and MCP; both signs are checked against the MCP and library, and the positive case against the CLI.
