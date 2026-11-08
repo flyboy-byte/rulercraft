@@ -150,3 +150,45 @@ fn a_coordinate_that_overflows_after_unit_conversion_is_refused() {
         Err(ReadError::NotFinite { triangle: 1 })
     );
 }
+
+#[test]
+fn dispatcher_enforces_unique_vertex_limit_before_later_bad_data() {
+    use rulercraft_mesh::{ImportLimits, read_mesh};
+    let original = cube();
+    let mut bad_later = original.clone();
+    bad_later.last_mut().unwrap()[2][0] = f32::NAN;
+    let limited = ImportLimits {
+        max_vertices: 3,
+        ..Default::default()
+    };
+    for (good, bad) in [
+        (ascii(&original), ascii(&bad_later)),
+        (binary(&original, b""), binary(&bad_later, b"")),
+    ] {
+        let error = read_mesh("cube.stl", &bad, Unit::Mm, limited)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("vertex limit"), "{error}");
+        let too_small = ImportLimits {
+            max_vertices: 7,
+            ..Default::default()
+        };
+        assert!(
+            read_mesh("cube.stl", &good, Unit::Mm, too_small)
+                .unwrap_err()
+                .to_string()
+                .contains("vertex limit")
+        );
+        let exact = ImportLimits {
+            max_vertices: 8,
+            ..Default::default()
+        };
+        assert_eq!(
+            read_mesh("cube.stl", &good, Unit::Mm, exact)
+                .unwrap()
+                .positions
+                .len(),
+            8
+        );
+    }
+}

@@ -45,6 +45,11 @@ pub enum ReadError {
         /// The limit.
         limit: usize,
     },
+    /// The merged vertex limit was exceeded.
+    TooManyVertices {
+        /// The maximum allowed vertices.
+        limit: usize,
+    },
     /// A binary file whose length does not match its triangle count.
     BinaryLength {
         /// Triangles the header claims.
@@ -79,6 +84,7 @@ impl fmt::Display for ReadError {
                     "the file has {triangles} triangles, over the {limit}-triangle limit"
                 )
             }
+            ReadError::TooManyVertices { limit } => write!(f, "vertex limit exceeded ({limit})"),
             ReadError::BinaryLength { claimed, bytes } => write!(
                 f,
                 "binary STL header claims {claimed} triangles ({} bytes) but the file is {bytes} bytes; it is truncated or not an STL",
@@ -99,6 +105,15 @@ impl std::error::Error for ReadError {}
 
 /// Reads an STL file given as bytes, in `unit`, into a millimetre mesh.
 pub fn read_stl(bytes: &[u8], unit: Unit, limits: Limits) -> Result<Mesh, ReadError> {
+    read_stl_with_vertex_limit(bytes, unit, limits, usize::MAX)
+}
+
+pub(crate) fn read_stl_with_vertex_limit(
+    bytes: &[u8],
+    unit: Unit,
+    limits: Limits,
+    max_vertices: usize,
+) -> Result<Mesh, ReadError> {
     if bytes.len() > limits.max_bytes {
         return Err(ReadError::TooLarge {
             bytes: bytes.len(),
@@ -106,9 +121,9 @@ pub fn read_stl(bytes: &[u8], unit: Unit, limits: Limits) -> Result<Mesh, ReadEr
         });
     }
     let mesh = if binary_length_matches(bytes) || !looks_ascii(bytes) {
-        read_binary(bytes, unit, limits)?
+        read_binary(bytes, unit, limits, max_vertices)?
     } else {
-        read_ascii(bytes, unit, limits)?
+        read_ascii(bytes, unit, limits, max_vertices)?
     };
     if mesh.triangles.is_empty() {
         return Err(ReadError::Empty);
@@ -131,7 +146,12 @@ fn looks_ascii(bytes: &[u8]) -> bool {
     bytes[start..].starts_with(b"solid")
 }
 
-fn read_binary(bytes: &[u8], unit: Unit, limits: Limits) -> Result<Mesh, ReadError> {
+fn read_binary(
+    bytes: &[u8],
+    unit: Unit,
+    limits: Limits,
+    max_vertices: usize,
+) -> Result<Mesh, ReadError> {
     if bytes.len() < 84 {
         return Err(if bytes.is_empty() {
             ReadError::Empty
@@ -164,13 +184,23 @@ fn read_binary(bytes: &[u8], unit: Unit, limits: Limits) -> Result<Mesh, ReadErr
             *slot = b
                 .vertex([f(o), f(o + 4), f(o + 8)])
                 .ok_or(ReadError::NotFinite { triangle: i + 1 })?;
+            if *slot as usize >= max_vertices {
+                return Err(ReadError::TooManyVertices {
+                    limit: max_vertices,
+                });
+            }
         }
         b.triangle(t);
     }
     Ok(b.finish())
 }
 
-fn read_ascii(bytes: &[u8], unit: Unit, limits: Limits) -> Result<Mesh, ReadError> {
+fn read_ascii(
+    bytes: &[u8],
+    unit: Unit,
+    limits: Limits,
+    max_vertices: usize,
+) -> Result<Mesh, ReadError> {
     let text = String::from_utf8_lossy(bytes);
     let mut b = MeshBuilder::new(unit);
     let mut corners: Vec<u32> = Vec::new();
@@ -208,6 +238,11 @@ fn read_ascii(bytes: &[u8], unit: Unit, limits: Limits) -> Result<Mesh, ReadErro
                 let id = b
                     .vertex(p)
                     .ok_or(ReadError::NotFinite { triangle: facets })?;
+                if id as usize >= max_vertices {
+                    return Err(ReadError::TooManyVertices {
+                        limit: max_vertices,
+                    });
+                }
                 corners.push(id);
             }
             "endloop" => {

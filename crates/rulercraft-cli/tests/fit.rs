@@ -198,3 +198,32 @@ fn cylinder_on_a_tube_gives_its_diameter() {
     assert!(f["axis"][2].as_f64().unwrap().abs() > 1.0 - 1e-9);
     assert!((f["length"].as_f64().unwrap() - 20.0).abs() < 1e-4, "{f}");
 }
+
+#[test]
+fn within_requires_a_facing_direction() {
+    let path = scratch("within-cube.stl", &cube());
+    let (code, out, err) = run(&["fit", "plane", path.to_str().unwrap(), "--within", "30"]);
+    assert_eq!(code, Some(2), "stdout={out} stderr={err}");
+    assert!(out.is_empty());
+    assert!(err.contains("--within requires --facing"), "{err}");
+    // Options can occur in either order when both are present.
+    let (code, _, err) = run(&[
+        "fit",
+        "plane",
+        path.to_str().unwrap(),
+        "--box",
+        "-1",
+        "-1",
+        "19",
+        "21",
+        "21",
+        "21",
+        "--within",
+        "90",
+        "--facing",
+        "0",
+        "0",
+        "1",
+    ]);
+    assert_eq!(code, Some(0), "{err}");
+}

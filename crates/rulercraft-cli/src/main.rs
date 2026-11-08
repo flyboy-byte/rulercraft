@@ -57,7 +57,7 @@ fn fit_request(kind: &str, rest: &[String]) -> Result<(Unit, FitRequest), String
     };
     let (mut unit, mut selection, mut clip, mut known) =
         (Unit::Mm, Selection::default(), Clip::Sigma(3), None);
-    let (mut facing, mut within) = (None, 30.0f64);
+    let (mut facing, mut within) = (None, None);
     let mut it = rest.iter();
     while let Some(flag) = it.next() {
         match flag.as_str() {
@@ -75,7 +75,7 @@ fn fit_request(kind: &str, rest: &[String]) -> Result<(Unit, FitRequest), String
                 selection.near = Some(([v[0], v[1], v[2]], v[3]));
             }
             "--facing" => facing = Some(numbers::<3>(flag, &mut it)?),
-            "--within" => within = numbers::<1>(flag, &mut it)?[0],
+            "--within" => within = Some(numbers::<1>(flag, &mut it)?[0]),
             "--sigma" => {
                 clip = match numbers::<1>(flag, &mut it)?[0] {
                     0.0 => Clip::None,
@@ -87,7 +87,10 @@ fn fit_request(kind: &str, rest: &[String]) -> Result<(Unit, FitRequest), String
             other => return Err(format!("unknown option `{other}`\n{USAGE}")),
         }
     }
-    selection.facing = facing.map(|d| (d, within.to_radians()));
+    if within.is_some() && facing.is_none() {
+        return Err("--within requires --facing".into());
+    }
+    selection.facing = facing.map(|d| (d, within.unwrap_or(30.0).to_radians()));
     let request = FitRequest {
         kind,
         selection,

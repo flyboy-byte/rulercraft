@@ -72,7 +72,9 @@ fn header(bytes: &[u8]) -> Result<(Encoding, Vec<Element>, usize, usize), ReadEr
         let text =
             std::str::from_utf8(&bytes[offset..end]).map_err(|_| error("header must be ASCII"))?;
         offset = end + 1;
-        let w: Vec<_> = text.split_whitespace().collect();
+        // Five tokens cover every supported directive; the sixth detects excess.
+        // Comments can be arbitrarily long and need no additional token entries.
+        let w: Vec<_> = text.split_whitespace().take(6).collect();
         if line == 1 {
             if w != ["ply"] {
                 return Err(error("expected ply header"));
