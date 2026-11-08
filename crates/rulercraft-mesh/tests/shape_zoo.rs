@@ -82,3 +82,79 @@ fn known_cylinders_at_multiple_sizes_and_densities() {
         }
     }
 }
+
+#[test]
+fn partial_surfaces_with_bounded_radial_noise() {
+    // The noise is bounded by 0.1% of the radius; a 1% error allowance is
+    // fixed in advance for fitting incomplete surfaces from quantized f32 points.
+    for radius in [1.0_f64, 10.0, 100.0] {
+        for seed in [1_u64, 7, 25] {
+            let mut state = seed;
+            let mut noise = || {
+                state = state
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1_442_695_040_888_963_407);
+                2.0 * ((state >> 11) as f64 / (1_u64 << 53) as f64) - 1.0
+            };
+            let center = [2.0 * radius, -3.0 * radius, radius];
+            let count = 256;
+            let mut sphere = Vec::new();
+            for i in 0..count {
+                // Uniform z on the cap within 60 degrees of +z.
+                let z = 1.0 - 0.5 * (i as f64 + 0.5) / count as f64;
+                let phi = i as f64 * PI * (3.0 - 5.0_f64.sqrt());
+                let radial = (1.0 - z * z).sqrt();
+                let r = radius * (1.0 + 0.001 * noise());
+                sphere.push(
+                    [
+                        center[0] + r * radial * phi.cos(),
+                        center[1] + r * radial * phi.sin(),
+                        center[2] + r * z,
+                    ]
+                    .map(|x| x as f32),
+                );
+            }
+            let ids: Vec<_> = (0..count as u32).collect();
+            let fit = fit_sphere(&sphere, &ids, Clip::None, None).unwrap();
+            assert!(
+                (fit.radius - radius).abs() < radius * 0.01,
+                "r={radius} seed={seed}: {fit:?}"
+            );
+            for (actual, expected) in fit.center.into_iter().zip(center) {
+                assert!(
+                    (actual - expected).abs() < radius * 0.01,
+                    "r={radius} seed={seed}: {fit:?}"
+                );
+            }
+            let mut tube = Vec::new();
+            let mut normals = Vec::new();
+            for height in [-2.0, 0.0, 2.0] {
+                for i in 0..64 {
+                    let angle = -PI / 3.0 + (2.0 * PI / 3.0) * i as f64 / 63.0;
+                    let normal = [angle.cos(), angle.sin(), 0.0];
+                    let r = radius * (1.0 + 0.001 * noise());
+                    tube.push(
+                        [
+                            center[0] + r * normal[0],
+                            center[1] + r * normal[1],
+                            center[2] + height * radius,
+                        ]
+                        .map(|x| x as f32),
+                    );
+                    normals.push(normal.map(|x| x as f32));
+                }
+            }
+            let ids: Vec<_> = (0..tube.len() as u32).collect();
+            let fit =
+                fit_cylinder(&tube, Some(&normals), &ids, CylinderOptions::default()).unwrap();
+            assert!(
+                (fit.radius - radius).abs() < radius * 0.01,
+                "r={radius} seed={seed}: {fit:?}"
+            );
+            assert!(
+                fit.axis[2].abs() > 0.9999,
+                "r={radius} seed={seed}: {fit:?}"
+            );
+        }
+    }
+}
