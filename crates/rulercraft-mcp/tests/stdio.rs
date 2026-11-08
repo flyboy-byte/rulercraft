@@ -623,3 +623,48 @@ fn known_hole_fits_agree_between_mcp_and_library() {
         assert!((cylinder.diameter - expected_diameter).abs() < 1e-5);
     }
 }
+
+#[test]
+fn known_top_plane_agrees_between_mcp_and_library() {
+    use rulercraft_mesh::commands::{FitKind, FitRequest, Fitted, Selection, fit};
+    use rulercraft_mesh::fit::Clip;
+    use rulercraft_mesh::graph::MeshGraph;
+    use rulercraft_mesh::{ImportLimits, Unit, read_mesh};
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/known/hole-block.stl");
+    let mesh = read_mesh(
+        "hole-block.stl",
+        &std::fs::read(&path).unwrap(),
+        Unit::Mm,
+        ImportLimits::default(),
+    )
+    .unwrap();
+    let graph = MeshGraph::build(&mesh);
+    let min = [-1.0, -1.0, 9.999];
+    let max = [61.0, 31.0, 10.001];
+    let request = FitRequest {
+        kind: FitKind::Plane,
+        selection: Selection {
+            in_box: Some((min, max)),
+            ..Default::default()
+        },
+        clip: Clip::None,
+        known_diameter: None,
+    };
+    let result = fit(&mesh, &graph, &request).unwrap();
+    let Fitted::Plane(plane) = result.fitted else {
+        panic!("expected plane")
+    };
+    let mut client = Client::new();
+    client.data("mesh.open", json!({"path":path}));
+    let output = client.data(
+        "fit",
+        json!({"kind":"plane", "selection":{"in_box":[min,max]}, "sigma":0}),
+    );
+    assert_eq!(output["selected"], result.selected);
+    assert_eq!(output["fit"]["center"], json!(plane.center));
+    assert_eq!(output["fit"]["normal"], json!(plane.normal));
+    assert_eq!(output["fit"]["sigma"].as_f64().unwrap(), plane.sigma);
+    assert!((plane.center[2] - 10.0).abs() < 1e-5);
+    assert!(plane.normal[2].abs() > 1.0 - 1e-10);
+}

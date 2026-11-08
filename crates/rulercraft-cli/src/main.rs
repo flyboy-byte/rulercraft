@@ -18,6 +18,7 @@ const USAGE: &str = "Usage:
   rulercraft project info <project.json>
   rulercraft info <mesh> [--units mm|cm|m|in]
   rulercraft segment <mesh> [--kind planes|cylinders|strips] [--units mm|cm|m|in]
+  rulercraft thickness <mesh> [selection options] [--offset N] [--limit N] [--max-distance MM]
   rulercraft fit <plane|sphere|cylinder> <mesh> [--units U] [--box X Y Z X Y Z] [--near X Y Z R]
                  [--facing DX DY DZ] [--within DEG] [--sigma 0|1|2|3] [--known-diameter D]
 Meshes: .stl .ply .obj .3mf. Lengths in mm (after --units), angles in degrees. Selection filters combine;
@@ -134,6 +135,75 @@ fn fit_command(args: &[String]) -> Result<String, String> {
     Ok(json!({ "mesh": path, "selected": out.selected, "fit": fitted }).to_string())
 }
 
+fn thickness_command(args: &[String]) -> Result<String, String> {
+    use rulercraft_mesh::commands::select;
+    use rulercraft_mesh::measure::thickness::{ThicknessOptions, wall_thickness};
+
+    let [path, rest @ ..] = args else {
+        return Err(USAGE.into());
+    };
+    let (mut offset, mut limit) = (0usize, 256usize);
+    let mut options = ThicknessOptions::default();
+    let mut selection_args = Vec::new();
+    let mut it = rest.iter();
+    while let Some(flag) = it.next() {
+        match flag.as_str() {
+            "--offset" | "--limit" => {
+                let value = it
+                    .next()
+                    .and_then(|s| s.parse::<usize>().ok())
+                    .ok_or_else(|| format!("{flag} needs a nonnegative integer"))?;
+                if flag == "--offset" {
+                    offset = value;
+                } else {
+                    limit = value;
+                }
+            }
+            "--max-distance" => {
+                let value = numbers::<1>(flag, &mut it)?[0];
+                if !value.is_finite() || value > ThicknessOptions::default().max_distance {
+                    return Err("max_distance must be finite and at most 1000000 mm".into());
+                }
+                options.max_distance = value;
+            }
+            "--units" | "--box" | "--near" | "--facing" | "--within" => {
+                let count = match flag.as_str() {
+                    "--box" => 6,
+                    "--near" => 4,
+                    "--facing" => 3,
+                    _ => 1,
+                };
+                selection_args.push(flag.clone());
+                for _ in 0..count {
+                    selection_args.push(
+                        it.next()
+                            .ok_or_else(|| format!("{flag} needs {count} values"))?
+                            .clone(),
+                    );
+                }
+            }
+            other => return Err(format!("unknown thickness option `{other}`")),
+        }
+    }
+    if limit > 1024 {
+        return Err("thickness page limit must be at most 1024".into());
+    }
+    let (unit, request) = fit_request("plane", &selection_args)?;
+    let mesh = load(path, unit)?;
+    let graph = MeshGraph::build(&mesh);
+    let ids = select(&mesh, &graph, &request.selection).map_err(|e| e.to_string())?;
+    let page: Vec<_> = ids.iter().skip(offset).take(limit).copied().collect();
+    let samples =
+        wall_thickness(&mesh, &graph.vertex_normals, &page, options).map_err(|e| e.to_string())?;
+    let samples: Vec<_> = samples
+        .iter()
+        .map(|s| json!({"vertex":s.vertex,"distance":s.distance}))
+        .collect();
+    Ok(json!({"total":ids.len(),"offset":offset,"returned":page.len(),
+        "truncated":offset.saturating_add(page.len()) < ids.len(),"samples":samples,
+        "convention":"Directional distance along inward vertex normals; requires consistent outward winding. Null means no hit."}).to_string())
+}
+
 fn segment_command(args: &[String]) -> Result<String, String> {
     let [path, options @ ..] = args else {
         return Err(USAGE.into());
@@ -216,6 +286,9 @@ fn run(args: &[String]) -> Result<String, String> {
     }
     if command == "segment" {
         return segment_command(rest);
+    }
+    if command == "thickness" {
+        return thickness_command(rest);
     }
     let [path, rest @ ..] = rest else {
         return Err(USAGE.into());
