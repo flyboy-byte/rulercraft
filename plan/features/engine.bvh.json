@@ -3,13 +3,16 @@
   "milestone": "R7",
   "title": "Shared spatial index for closest point, ray casts, thickness, ICP and picking",
   "spec": "product-scope",
-  "status": "planned",
+  "status": "verified",
   "depends_on": [
     "compare.deviation",
     "measure.thickness"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything. Exit: same numbers as today on the corpus, and a 5-million-triangle query set many times faster than the per-call trees."
+  "owner": "Claude",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/66",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "spatial::Bvh is shared by deviation, ICP, symmetry and wall thickness; answers equal testing every triangle (tests/spatial.rs) and every earlier test is unchanged. 5.12 M triangles: 283x faster closest point (ignored speed test, release, 2026-11-07). Still owed: app picking uses it when app.viewport lands (the browser prototype keeps its JS loop); callers that run many queries on one mesh (MCP, app) should keep one tree per open mesh."
 }

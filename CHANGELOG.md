@@ -4,6 +4,8 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Engine: one shared spatial index (`spatial::Bvh`) for closest point and ray casts; wall thickness no longer tests
+  every triangle per ray. Results are unchanged.
 - Engine: STL/PLY/OBJ/3MF reading; plane, sphere, cylinder fits (also robust); relations; wall thickness; segmentation;
   deviation with patches; ICP and datum alignment; hole patterns, symmetry and design-value guesses; CAD recipe and
   coverage check.

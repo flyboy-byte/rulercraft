@@ -38,6 +38,7 @@
 //!   moving a scan onto a reference.
 //! - Finding features automatically: [`segment`] (planes, cylinders, joined strips) and [`reverse`] (hole
 //!   patterns, symmetry, round-number guesses).
+//! - Spatial queries: [`spatial::Bvh`], one tree for closest point and ray casts, built once.
 //! - Building: [`cad::recipe`] turns fitted features into plain CAD steps.
 //! - Saving: [`project`].
 //!
@@ -58,6 +59,7 @@ pub mod project;
 pub mod reverse;
 pub mod segment;
 pub mod select;
+pub mod spatial;
 pub mod stl;
 
 pub use mesh::{Bounds, Mesh, MeshBuilder, Unit};
