@@ -51,13 +51,35 @@ fn box_dist2(p: Vec3, lo: Vec3, hi: Vec3) -> f64 {
 
 /// Entry distance of the ray into the box, or None when it misses or enters beyond `t_max`. Boxes are
 /// widened by `pad` so that a triangle test with an edge allowance can never be pruned away.
-fn box_entry(origin: Vec3, inv: Vec3, lo: Vec3, hi: Vec3, pad: f64, t_max: f64) -> Option<f64> {
+fn box_entry(
+    origin: Vec3,
+    direction: Vec3,
+    inv: Vec3,
+    lo: Vec3,
+    hi: Vec3,
+    pad: f64,
+    t_max: f64,
+) -> Option<f64> {
     let (mut t0, mut t1) = (f64::NEG_INFINITY, t_max);
     for k in 0..3 {
         let (a, b) = (lo[k] - pad, hi[k] + pad);
-        // Parallel to this slab, `inv` is infinite: outside the slab both bounds land on the same side
-        // and the box is missed; inside, they span everything. A 0 * inf NaN is dropped by max/min.
-        let (mut ta, mut tb) = ((a - origin[k]) * inv[k], (b - origin[k]) * inv[k]);
+        // Parallel rays on either boundary are inside the slab for both signs of zero.
+        if direction[k] == 0.0 {
+            if origin[k] < a || origin[k] > b {
+                return None;
+            }
+            continue;
+        }
+        // A finite nonzero subnormal direction may also have an infinite reciprocal.
+        // Division retains the exact zero for an origin on a boundary in that case.
+        let (mut ta, mut tb) = if inv[k].is_infinite() {
+            (
+                (a - origin[k]) / direction[k],
+                (b - origin[k]) / direction[k],
+            )
+        } else {
+            ((a - origin[k]) * inv[k], (b - origin[k]) * inv[k])
+        };
         if ta > tb {
             std::mem::swap(&mut ta, &mut tb);
         }
@@ -211,7 +233,7 @@ impl Bvh {
         while let Some(n) = stack.pop() {
             let node = &self.nodes[n];
             let limit = best.map_or(t_max, |b| b.0);
-            if box_entry(origin, inv, node.min, node.max, pad, limit).is_none() {
+            if box_entry(origin, direction, inv, node.min, node.max, pad, limit).is_none() {
                 continue;
             }
             match node.kind {
@@ -229,6 +251,7 @@ impl Bvh {
                 Kind::Inner(l, r) => {
                     let el = box_entry(
                         origin,
+                        direction,
                         inv,
                         self.nodes[l].min,
                         self.nodes[l].max,
@@ -237,6 +260,7 @@ impl Bvh {
                     );
                     let er = box_entry(
                         origin,
+                        direction,
                         inv,
                         self.nodes[r].min,
                         self.nodes[r].max,
