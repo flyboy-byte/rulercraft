@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! `rulercraft`: the command-line front end (docs/specs/commands.md).
 
+mod deviation_cli;
+
 use rulercraft_mesh::commands::{FitKind, FitRequest, Fitted, Selection, fit};
 use rulercraft_mesh::fit::Clip;
 use rulercraft_mesh::graph::MeshGraph;
@@ -10,6 +12,8 @@ use serde_json::{Value, json};
 use std::process::ExitCode;
 
 const USAGE: &str = "Usage:
+  rulercraft --version
+  rulercraft deviation <measured> <reference> [--units U] [--reference-units U] [--tolerance MM] [--offset N] [--limit N]
   rulercraft project create <project.json> <mesh> [--units U]
   rulercraft project fit <project.json> <id> <plane|sphere|cylinder> [fit options]
   rulercraft project info <project.json>
@@ -272,6 +276,9 @@ fn run(args: &[String]) -> Result<String, String> {
     let [command, rest @ ..] = args else {
         return Err(USAGE.into());
     };
+    if command == "deviation" {
+        return deviation_cli::run(rest);
+    }
     if command == "project" {
         return project_command(rest);
     }
@@ -313,6 +320,10 @@ fn run(args: &[String]) -> Result<String, String> {
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if matches!(args.first().map(String::as_str), Some("-V" | "--version")) {
+        println!("rulercraft {}", env!("CARGO_PKG_VERSION"));
+        return ExitCode::SUCCESS;
+    }
     if matches!(args.first().map(String::as_str), Some("-h" | "--help")) {
         println!("{USAGE}");
         return ExitCode::SUCCESS;
