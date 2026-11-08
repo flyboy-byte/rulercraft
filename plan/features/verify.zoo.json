@@ -11,5 +11,5 @@
     "math",
     "wrong-value"
   ],
-  "left": "First slice covers exact full spheres and cylinders across sizes and densities; planes, boxes, other shapes, partial surfaces, noise, outliers and larger seeded sweeps remain."
+  "left": "Exact full spheres and cylinders plus noisy partial surfaces are covered across sizes and densities. Planes, boxes, other shapes, outliers and larger seeded sweeps remain."
 }
