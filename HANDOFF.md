@@ -1,55 +1,47 @@
 # Handoff
 
-Last updated 2026-11-07, Claude. Read AGENTS.md first (it outranks this), then PROCESS.md.
+Last updated 2026-11-07, Claude. main at the merge of #64 plus this note. No open PRs. 165 tests pass (about a
+second, plus a Node check of the viewer's geometry when node exists). Overall plan 55% (new milestones R7, R8 added
+today, so the percentage fell; that is expected).
 
-## State
-- All feature PRs are merged; check `gh pr list` and `python3 tools/plan.py next` before starting.
-- Shipped this day: readers (STL/PLY/OBJ/3MF), graph, selection, plane/sphere/cylinder fits, relations,
-  thickness, CLI (`info`, `fit`, `segment`), MCP server (open, info, select, fit, measure, segment,
-  compare, undo/redo, guide), project file, local reference numbers, known-design corpus,
-  segmentation (planes, cylinders, joined strips), `math.range`, and the library pieces below.
-- Library only so far (no CLI/MCP yet): `cad::recipe` (cad.solidcraft, `implemented`), `fit_plane_robust`
-  (fit.robust, `verified`), `reverse::hole_patterns` and `design_guesses` (re.features,
-  `implemented`), `align::datum_frame` (verified), `deviation::patches` (verified). `align_icp` and
-  `deviation` are reachable through the MCP `compare` tool.
+## Read first
+INTENT.md (locked; changes only by a superseding decision), AGENTS.md (outranks the rest), docs/v1.md (what v1 means,
+phases P0–P5), docs/where-to-help.md (how to pick work). The roadmap is a map, not a limit (D-013).
 
-## v1 (D-012) — read docs/v1.md
-- Logan chose: all four jobs, native desktop app (egui/eframe/egui-wgpu/wgpu at SolidCraft's versions, approved), SolidCraft
-  community judges done, credit pacing open. Phases P0–P5 in docs/v1.md; P0 is next (native shell + viewport + parity).
-- The browser viewer (rulercraft-gui) is now a prototype/test harness.
+## Find something to work on
+`python3 tools/plan.py needs`, pick what helps the app most for its size, say what and why in one line, claim it with a
+draft PR (feature id, or an area tag: fix:, improve:, perf:, test:, docs:), work in your own git worktree.
 
-## Intent and scope (D-010)
-- INTENT.md is locked (changes only by a superseding decision). We compete: milestone R7 and
-  docs/specs/product-scope.md list the everyday-job gaps (constructions, tolerances, deviation map, alignment,
-  sections, reports, projects, big meshes, browser build) in slice order. Overall % fell to ~61 because R7 is new.
-- Never name the other apps in this repository; keep specs in our own words.
+## Where things stand
+- Engine (library): readers STL/PLY/OBJ/3MF; plane/sphere/cylinder fits plus robust versions; relations; thickness;
+  segmentation (planes, cylinders, joined strips); deviation and patches; ICP and datum frame; hole patterns (line,
+  circle, grid), symmetry, design-value guesses; CAD recipe and coverage check (`cad::check`).
+- Faces: CLI (info, fit, segment, project), MCP (open, info, select, fit incl. robust, measure, segment, compare,
+  reverse, datum, thickness, undo/redo, guide), browser app prototype `rulercraft-gui` (D-009; now a prototype per D-012).
+- Decisions today: D-009 GUI, D-010 intent locked, D-011 SolidCraft look / GPU as verified accelerator / host-agnostic
+  embedding, D-012 v1 = all four jobs, native egui+wgpu app (deps approved for app crates only), SolidCraft community
+  judges done, D-013 open improvement + verification at scale.
+- Docs added today: INTENT.md, docs/v1.md, docs/specs/product-scope.md, docs/specs/gui.md, docs/specs/verification.md,
+  docs/specs/scan-sources.md, docs/distribution.md, docs/where-to-help.md, CHANGELOG.md, issue forms.
 
-## Look, GPU, embedding (D-011)
-- UI look comes from SolidCraft (MIT OR Apache-2.0, egui + wgpu, has gpu/render/mcp crates), never from a copyleft app.
-- GPU is an accelerator verified against the CPU reference; native wgpu needs Logan's approval (new dependency).
-- SolidCraft's plugin mechanism is undecided (its issue #1221 proposes sandboxed Wasm plugins calling `run(command, args)` JSON, same as MCP). Do `engine.wasm` + `engine.command-api`; stay host-agnostic (library, MCP, recipe JSON, postMessage page).
-- Large-mesh plan: engine.bvh, engine.parallel, engine.stream, gui.lod, engine.gpu (product-scope.md).
+## Next, if nobody says otherwise
+- P0 of docs/v1.md: native app shell (`app.shell`) and wgpu viewport with SolidCraft's theme (SolidCraft: ~/solidcraft,
+  MIT OR Apache-2.0, egui/eframe 0.36, wgpu 30, theme in crates/ui-egui/src/theme.rs), then parity with the prototype.
+- Engine: `engine.bvh` (shared spatial index) unblocks speed work; `engine.command-api` fits SolidCraft's plugin idea.
+- Verification: `verify.zoo` then `verify.regress` (R8); a break-it session any time (prompt in verification.md).
 
-## GUI (D-009)
-- `rulercraft-gui` is the standalone app: std-only server plus hand-written WebGL (docs/specs/gui.md). First slice
-  works (open, look, mark, fit, measure, find regions); it was checked by hand in headless Chrome and the server by
-  tests. Next slices are listed in the spec's "Not done". Keep it a thin client over the engine and embeddable, so
-  it can also be a panel in SolidCraft.
-
-## Owed
-- cad.solidcraft: one replay of a recipe against a live SolidCraft server (SolidCraft is not built on
-  this machine; mind the disk guard before building it).
-- cad.check needs SolidCore projection (optional cargo feature, D-002).
-- re.features grid patterns; plane-line-point
-  datums; CLI/MCP commands for recipe, robust fit, patterns and datum frame.
-- R1 exit: Logan's run on a real downloaded STL (compare hole sizes with the real design), and the
-  clipping decision (docs/findings/2026-11-07-clipping-on-real-scans.md).
-- engine.library (R5) is in progress (docs, doctest, prelude, API page done); publishing needs Logan.
+## Owed and waiting on Logan
+- R1 exit: a real downloaded STL whose published dimensions match. Clipping decision:
+  docs/findings/2026-11-07-clipping-on-real-scans.md (still open).
+- cad.solidcraft live replay and R2 exit need SolidCraft running. cad.check's exact version needs SolidCore.
+- Publishing (installers, crates.io), Wasm toolchain (`rustup` is not installed), signing and a name check
+  (docs/distribution.md).
 
 ## Habits that held up
-- Claim by draft PR titled `<feature id>: ...`; re-run `plan.py next` right before claiming.
-- Every rule gets a wrong-value run that a test fails on, or the rule is deleted.
-- Codex and Claude share one checkout: do your work in `git worktree add /tmp/<name>`, never switch
-  branches in `~/projects/rulercraft`. A commit made there once landed on Codex's branch.
-- Merge commits only. A merge conflict in generated files: merge main, `python3 tools/plan.py render`.
-- Local only, never committed: fixtures/private (vase scan) and local/NOTES.md.
+- Claude and Codex share ~/projects/rulercraft: never switch branches there; `git worktree add /tmp/<name> -b <branch>
+  origin/main`, remove it after merging.
+- Every rule gets a wrong-value run a test fails on, or the rule goes (several were caught today and either tested or removed).
+- Merge commits only; wait for CI on the exact head commit before merging; on generated-file conflicts merge main and
+  `python3 tools/plan.py render`; take main's HANDOFF.
+- Never name other apps in the repo. SolidCraft's plugin design (its issue #1221) is a discussion, not a decision.
+- Local only, never committed: fixtures/private (vase scan), local/NOTES.md.
