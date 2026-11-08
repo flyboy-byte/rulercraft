@@ -59,6 +59,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
 | `align.icp` Align a scan to a reference (datums, ICP) | verified | math, wrong-value | claude https://github.com/flyboy-byte/rulercraft/pull/45 | Plane-line-point datums, and CLI/MCP exposure. |
+| `cli.thickness` Directional wall thickness from the CLI | verified | math, known-design, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/87 | Dense-scan acceleration beyond the current engine work cap remains separate. |
 | `compare.deviation` Mesh-to-mesh deviation map and statistics | verified | math, wrong-value | claude https://github.com/flyboy-byte/rulercraft/pull/41 | CLI/MCP exposure. |
 | `fit.robust` Robust fits on noisy scans (RANSAC seeding, noise estimation) | verified | math, wrong-value | claude https://github.com/flyboy-byte/rulercraft/pull/55 | CLI exposure, and MCP robust for spheres and cylinders. |
 | `mcp.datum` Build a datum frame from three selected planes over MCP | verified | math, wrong-value | Codex https://github.com/flyboy-byte/rulercraft/pull/51 | CLI exposure and plane-line-point datums remain separate work. |
