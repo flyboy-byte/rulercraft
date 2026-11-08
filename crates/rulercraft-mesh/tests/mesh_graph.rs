@@ -163,3 +163,40 @@ fn pieces_non_manifold_edges_zero_area_and_unused_vertices() {
         "zero-area triangles make no creases"
     );
 }
+
+#[test]
+fn nonmanifold_open_chains_are_not_reported_as_closed_loops() {
+    // Three triangles share edge 0-1. Their six boundary edges form one closed
+    // four-edge loop and one leftover open chain; 0-1 is not a boundary edge.
+    let mesh = Mesh {
+        positions: vec![
+            [0., 0., 0.],
+            [1., 0., 0.],
+            [0., 1., 0.],
+            [0., -1., 0.],
+            [0., 0., 1.],
+        ],
+        triangles: vec![[0, 1, 2], [1, 0, 3], [0, 1, 4]],
+        degenerate_dropped: 0,
+    };
+    let graph = MeshGraph::build(&mesh);
+    assert_eq!(graph.non_manifold_edges(), 1);
+    assert_eq!(graph.edges.iter().filter(|e| e.t1.is_none()).count(), 6);
+    let loops = graph.boundary_loops();
+    assert_eq!(loops.len(), 1, "{loops:?}");
+    assert_eq!(loops[0].len(), 4);
+    for pair in loops[0]
+        .iter()
+        .copied()
+        .zip(loops[0].iter().copied().cycle().skip(1))
+        .take(loops[0].len())
+    {
+        assert!(
+            graph
+                .edges
+                .iter()
+                .any(|e| e.t1.is_none() && (e.a, e.b) == (pair.0.min(pair.1), pair.0.max(pair.1))),
+            "missing closing edge: {pair:?}"
+        );
+    }
+}
