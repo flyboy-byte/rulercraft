@@ -19,6 +19,12 @@ Last updated 2026-11-07, Claude. Read AGENTS.md first (it outranks this), then P
   sections, reports, projects, big meshes, browser build) in slice order. Overall % fell to ~61 because R7 is new.
 - Never name the other apps in this repository; keep specs in our own words.
 
+## Look, GPU, embedding (D-011)
+- UI look comes from SolidCraft (MIT OR Apache-2.0, egui + wgpu, has gpu/render/mcp crates), never from a copyleft app.
+- GPU is an accelerator verified against the CPU reference; native wgpu needs Logan's approval (new dependency).
+- SolidCraft's plugin mechanism is unknown: stay host-agnostic (library, MCP, recipe JSON, postMessage page).
+- Large-mesh plan: engine.bvh, engine.parallel, engine.stream, gui.lod, engine.gpu (product-scope.md).
+
 ## GUI (D-009)
 - `rulercraft-gui` is the standalone app: std-only server plus hand-written WebGL (docs/specs/gui.md). First slice
   works (open, look, mark, fit, measure, find regions); it was checked by hand in headless Chrome and the server by

@@ -56,6 +56,32 @@ Each slice ends in something Logan can do and check. Slices are independent wher
    (`fit.shapes`, `mesh.clean`)
 7. **CAD out** (T8): STEP of the measured features through SolidCraft, from the app. (`cad.step`)
 
+## Large meshes, a deeper engine, and GPU (2026-11-07, D-011)
+
+The same engine has to stay fast and correct on multi-million-triangle scans. Work, in order of payoff:
+
+| # | Work | Why | Feature |
+| --- | --- | --- | --- |
+| E1 | One spatial index (bounding-box tree) shared by closest-point, ray casts, thickness, ICP and picking | today each call builds its own tree; picking is a plain loop | `engine.bvh` |
+| E2 | Use all cores with the standard library's threads (no new dependency) for deviation, ICP, thickness and segmentation; results identical for any thread count | the heavy loops are independent per vertex | `engine.parallel` |
+| E3 | Fast, bounded loading: binary STL/PLY read in one pass, memory budget, progress and cancel | opening is the first thing a user waits for | `engine.stream` |
+| E4 | Level of detail: a reduced mesh for drawing, the full mesh for measuring | smooth view without touching accuracy | `gui.lod` (with `gui.perf`) |
+| E5 | GPU accelerators: closest point and deviation, thickness rays, ICP sums, ID-buffer picking, indexed drawing | order-of-magnitude gains on the heaviest jobs | `engine.gpu` |
+| E6 | Numerical care at scale: huge coordinates, near-degenerate triangles, repeatable results across machines | a wrong number is worse than a slow one | part of each, tested |
+
+Rules: the CPU result is the truth and a GPU path must agree within a stated tolerance on the corpus (a
+wrong-value run must make it fail); speed targets are set after measuring a baseline on a real large mesh
+(Logan's local scans) and then written here; nothing slows or loosens an accuracy test.
+
+## Look and embedding (D-011)
+
+- **Look:** adopt SolidCraft's visual design (`gui.theme`), so the app feels like family; follow its light and dark
+  behaviour; record what was adopted in a NOTICE. Never copy styling from a copyleft app.
+- **Embedding:** SolidCraft's plugin mechanism is unknown (for its maintainers to decide). We keep every
+  hand-off host-agnostic: library, MCP, recipe JSON, an embeddable page with a small `postMessage` interface
+  (`gui.embed`: open mesh bytes, read measurements, send a recipe), and optionally an egui panel crate on its own
+  stack (`ui.egui`, needs a dependency approval). We build against none of them until asked.
+
 ## Quality bar (applies to every slice)
 
 - Numbers equal the engine's, which equal known answers (D-003); a wrong-value run for every rule.

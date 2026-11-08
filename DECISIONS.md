@@ -126,3 +126,25 @@ through SolidCraft; the everyday measuring job still has to match what people al
 **Limits.** Independence (D-001) is unchanged: new code and our own wording, MIT OR Apache-2.0, no outside
 product named in this repository. R7's exit is judged by Logan on a real job; until R1's real-scan exit passes,
 claims of accuracy stay modest.
+
+## D-011 Look from SolidCraft, GPU as an accelerator, host-agnostic embedding (2026-11-07)
+
+**Decision.**
+1. **Look.** The app takes its visual design (colour tokens, spacing, type, light and dark) from SolidCraft,
+   which is MIT OR Apache-2.0 and so reusable with the notices its licence asks for. Styling is never taken
+   from a copyleft application. The work is the feature `gui.theme`; it records what it adopted in a NOTICE.
+2. **GPU.** The CPU engine is the reference and the truth. GPU paths are optional accelerators behind the
+   same API, and each must match the CPU result within a stated tolerance on the corpus before it ships. In
+   the browser they use WebGL2/WebGPU from the page (no Rust dependency). Native GPU compute would use wgpu
+   (MIT OR Apache-2.0; SolidCraft already uses it), which is a new dependency and needs Logan's approval
+   first. Core crates never depend on a GPU library.
+3. **Embedding.** How SolidCraft will host plugins is not known and is for its maintainers; nothing is built
+   against an assumed interface and no one is contacted. We offer host-agnostic hand-offs: the Rust library,
+   the MCP server, recipe JSON, an embeddable page with a small `postMessage` interface (`gui.embed`), and,
+   only if wanted and approved, an egui panel crate on SolidCraft's own stack (`ui.egui`).
+
+**Why.** Logan wants the app to feel like part of the SolidCraft family, to handle large meshes and use the
+GPU, and to stay joinable however SolidCraft ends up taking plugins.
+
+**Limits.** D-001 independence stands. No new dependency without approval (AGENTS.md). Targets for speed are
+set after measuring a baseline, not guessed.

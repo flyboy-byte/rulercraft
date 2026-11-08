@@ -1,0 +1,14 @@
+{
+  "id": "engine.gpu",
+  "milestone": "R7",
+  "title": "Optional GPU accelerators verified against the CPU reference",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "engine.bvh"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Needs a dependency approval for native GPU compute; browser paths need none."
+}

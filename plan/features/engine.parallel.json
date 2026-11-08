@@ -1,0 +1,14 @@
+{
+  "id": "engine.parallel",
+  "milestone": "R7",
+  "title": "Multi-core deviation, ICP, thickness and segmentation with the standard library only",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "engine.bvh"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Exit: identical results for 1 and N threads (tested), measured speed-up on a large mesh."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "ui.egui",
+  "milestone": "R7",
+  "title": "Optional egui panel crate on SolidCraft's own stack",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "gui.viewer"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Only if Logan wants it; needs a dependency approval (egui, wgpu)."
+}
