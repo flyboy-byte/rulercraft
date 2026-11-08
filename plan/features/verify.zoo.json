@@ -3,10 +3,13 @@
   "milestone": "R8",
   "title": "Shape zoo: generated parts with exact dimensions at many sizes, densities, noise and outlier rates",
   "spec": "verification",
-  "status": "planned",
+  "status": "implemented",
   "depends_on": [],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/67",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "First slice covers exact full spheres and cylinders across sizes and densities; planes, boxes, other shapes, partial surfaces, noise, outliers and larger seeded sweeps remain."
 }

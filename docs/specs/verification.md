@@ -64,3 +64,10 @@ tests, benchmark baselines. Reported in STATUS.md once the tools exist.
 Mutation testing and fuzzing run as developer tools installed on the machine or CI runner, not as dependencies of the
 shipped crates. A fuzz harness that needs a library dependency lives in its own crate outside the workspace and needs
 Logan's yes (AGENTS.md). Scheduled CI workflows are a hot file change: one PR at a time.
+
+## First shape-zoo slice
+
+The first fast, deterministic slice samples full spheres and open cylindrical surfaces at multiple radii and
+point densities. Each point is generated from an analytic centre, radius and (for cylinders) height; the tests
+compare fitted dimensions with those independent inputs, allowing only a stated allowance for f32 quantization.
+Later slices add more shapes, partial surfaces, noise, outliers and seeded sweeps. A slice is not the whole zoo.
