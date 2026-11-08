@@ -36,6 +36,24 @@ fn deviation_measures_known_planes_and_bounds_output() {
         String::from_utf8_lossy(&output.stderr)
     );
     let value: Value = serde_json::from_slice(&output.stdout).unwrap();
+    let measured_mesh = rulercraft_mesh::read_mesh(
+        "above.ply",
+        plane(1).as_bytes(),
+        rulercraft_mesh::Unit::Mm,
+        Default::default(),
+    )
+    .unwrap();
+    let reference_mesh = rulercraft_mesh::read_mesh(
+        "reference.ply",
+        plane(0).as_bytes(),
+        rulercraft_mesh::Unit::Mm,
+        Default::default(),
+    )
+    .unwrap();
+    let direct =
+        rulercraft_mesh::deviation::deviation(&measured_mesh, &reference_mesh, 0.1).unwrap();
+    assert_eq!(value["stats"], serde_json::to_value(&direct.stats).unwrap());
+    assert_eq!(direct.distances, vec![1.0; 3]);
     assert_eq!(
         (value["total"].as_u64(), value["returned"].as_u64()),
         (Some(3), Some(3))
