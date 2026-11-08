@@ -55,7 +55,8 @@ Status: R1 spec. Features: `io.stl`, `io.ply`, `io.obj`, `io.3mf`.
   (default 50 million, including dropped degenerates). List lengths are checked against remaining
   input before allocation. Non-finite positions and unit conversion overflow are refused.
 - The dispatcher supports STL, PLY and OBJ. Its limits apply to STL bytes and triangles;
-  the vertex cap is checked on the STL result. The existing read_stl API remains available.
+  the vertex cap stops STL decoding when the merged vertex count exceeds the limit. The existing
+  read_stl API remains available.
 
 PLY description: https://sites.cc.gatech.edu/projects/large_models/ply.html (format description only).
 
