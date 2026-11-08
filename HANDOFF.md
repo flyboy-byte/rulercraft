@@ -1,10 +1,8 @@
 # Handoff
 
-Last updated 2026-11-08, Claude. 211 tests on main. Everything Codex opened through #94 is merged (#81-#83, #85-#93: hole-pattern validation and large-range safety, bounded and faster PLY/3MF/STL imports, CLI thickness/deviation/version, cross-interface plane agreement, closed boundary loops, filename-extension dispatch). 
+Last updated 2026-11-08, Claude. 211 tests on main. Everything Codex opened through #94 is merged (#81-#83, #85-#93: hole-pattern validation and large-range safety, bounded and faster PLY/3MF/STL imports, CLI thickness/deviation/version, cross-interface plane agreement, closed boundary loops, filename-extension dispatch). Only #73 is open.
 
 ## Open right now
-- #95 (Codex, ready): signed plane deviation agrees across the library, CLI and MCP. Worktree `/tmp/rulercraft-deviation-agreement`, branch `codex/deviation-agreement`. Full checks and wrong-value runs passed; hosted CI passed on head `825386d`. Next: review the current head.
-- #97 (Codex, ready): linear intersection for combined box and radius selections. Worktree `/tmp/rulercraft-selection-intersect`, branch `codex/selection-intersect`. Full checks passed and an equality mutation failed the new test. Next: check hosted CI and review the current head.
 - #73 (Claude, draft): engine.parallel. `par::map` is bit-identical for any thread count and used by deviation, ICP, symmetry. Its speed test was still below target; check the PR for current state before touching related files.
 - Build output: `/tmp` is a 7.5 GB tmpfs and filled up once. Put build output in a separate directory under `$HOME/.cache`.
 
