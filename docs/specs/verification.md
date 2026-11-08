@@ -71,3 +71,6 @@ The first fast, deterministic slice samples full spheres and open cylindrical su
 point densities. Each point is generated from an analytic centre, radius and (for cylinders) height; the tests
 compare fitted dimensions with those independent inputs, allowing only a stated allowance for f32 quantization.
 Later slices add more shapes, partial surfaces, noise, outliers and seeded sweeps. A slice is not the whole zoo.
+
+The partial-surface slice adds 60-degree sphere caps and 120-degree cylinder arcs at three radii and three
+deterministic noise seeds, with radial noise bounded to 0.1% of radius. The fit allowance is 1% of radius.
