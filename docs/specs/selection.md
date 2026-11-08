@@ -17,3 +17,4 @@ Marks the vertices a fit runs on.
 
 Finite near queries compare unsquared distances to avoid overflow/underflow. Facing directions are
 scaled before normalization so any finite nonzero direction, including subnormal values, works.
+Facing compares the angle itself, including the boundary, so narrow cones remain selective near zero radians.
