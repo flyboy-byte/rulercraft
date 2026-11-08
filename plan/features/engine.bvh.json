@@ -1,0 +1,15 @@
+{
+  "id": "engine.bvh",
+  "milestone": "R7",
+  "title": "Shared spatial index for closest point, ray casts, thickness, ICP and picking",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "compare.deviation",
+    "measure.thickness"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Exit: same numbers as today on the corpus, and a 5-million-triangle query set many times faster than the per-call trees."
+}

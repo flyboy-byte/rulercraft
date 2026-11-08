@@ -11,5 +11,5 @@
   "owner": null,
   "pr": null,
   "verified_by": [],
-  "left": "Everything."
+  "left": "Everything. Needs a Wasm toolchain installed; a small glue tool would be a dependency to approve."
 }

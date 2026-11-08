@@ -1,0 +1,14 @@
+{
+  "id": "engine.stream",
+  "milestone": "R7",
+  "title": "Fast, bounded loading with progress and cancel",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "io.stl"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Exit: a baseline then target set on a real large mesh; limits and cancel tested."
+}

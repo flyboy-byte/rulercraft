@@ -1,0 +1,15 @@
+{
+  "id": "gui.lod",
+  "milestone": "R7",
+  "title": "App: reduced mesh for drawing, full mesh for measuring",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "gui.viewer",
+    "mesh.clean"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}
