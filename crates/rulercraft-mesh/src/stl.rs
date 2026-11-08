@@ -13,7 +13,7 @@ use std::fmt;
 pub struct Limits {
     /// Largest input accepted, bytes.
     pub max_bytes: usize,
-    /// Most triangles accepted.
+    /// Most candidate triangles accepted, including degenerates.
     pub max_triangles: usize,
 }
 
@@ -206,6 +206,7 @@ fn read_ascii(
     let mut corners: Vec<u32> = Vec::new();
     let mut in_loop = false;
     let mut facets = 0usize;
+    let mut candidates = 0usize;
     for (n, line) in text.lines().enumerate() {
         let line_no = n + 1;
         let mut words = line.split_whitespace();
@@ -234,6 +235,15 @@ fn read_ascii(
                         .and_then(|w| w.parse::<f32>().ok())
                         .ok_or_else(|| syntax("`vertex` needs three numbers"))?;
                 }
+                if corners.len() >= 2 {
+                    candidates = candidates.saturating_add(1);
+                    if candidates > limits.max_triangles {
+                        return Err(ReadError::TooManyTriangles {
+                            triangles: candidates,
+                            limit: limits.max_triangles,
+                        });
+                    }
+                }
                 facets += usize::from(corners.is_empty());
                 let id = b
                     .vertex(p)
@@ -252,12 +262,6 @@ fn read_ascii(
                 in_loop = false;
                 for k in 1..corners.len() - 1 {
                     b.triangle([corners[0], corners[k], corners[k + 1]]);
-                }
-                if b.triangle_count() > limits.max_triangles {
-                    return Err(ReadError::TooManyTriangles {
-                        triangles: b.triangle_count(),
-                        limit: limits.max_triangles,
-                    });
                 }
             }
             other => return Err(syntax(&format!("unexpected `{other}`"))),

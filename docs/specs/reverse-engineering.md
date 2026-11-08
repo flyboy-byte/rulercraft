@@ -60,3 +60,5 @@ At extreme coordinate ranges, a row is omitted when displacement rounding may ex
 position tolerance or the computed member order contradicts adjacent projections. Row ordering uses the
 largest direction component to retain distinguishable nearby positions across large coordinate ranges. Grid indices and
 dimensions that cannot be represented are omitted; an unrepresentably large cell count is not full.
+
+Holes with zero or nonfinite axes, nonfinite points, or nonpositive or nonfinite diameters are excluded from every candidate pattern regardless of their order in the input.

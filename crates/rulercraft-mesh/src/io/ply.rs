@@ -2,6 +2,7 @@
 //! PLY 1.0 scalar/list records, interpreted in their declared order.
 use super::{ImportLimits, ReadError, check_bytes, finish, vertex};
 use crate::{Mesh, MeshBuilder, Unit};
+use std::collections::HashSet;
 
 #[derive(Clone, Copy)]
 enum Type {
@@ -61,6 +62,8 @@ fn header(bytes: &[u8]) -> Result<(Encoding, Vec<Element>, usize, usize), ReadEr
     let mut line = 0;
     let mut encoding = None;
     let mut elements: Vec<Element> = Vec::new();
+    let mut element_names = HashSet::new();
+    let mut property_names = HashSet::new();
     loop {
         line += 1;
         let error = |s: &str| ReadError(format!("line {line}: {s}"));
@@ -92,9 +95,10 @@ fn header(bytes: &[u8]) -> Result<(Encoding, Vec<Element>, usize, usize), ReadEr
                 });
             }
             ["element", name, count] if encoding.is_some() => {
-                if elements.iter().any(|e| e.name == *name) {
+                if !element_names.insert(*name) {
                     return Err(error("duplicate element"));
                 }
+                property_names.clear();
                 let count = count.parse().map_err(|_| error("invalid element count"))?;
                 elements.push(Element {
                     name: name.to_string(),
@@ -126,7 +130,7 @@ fn header(bytes: &[u8]) -> Result<(Encoding, Vec<Element>, usize, usize), ReadEr
                     }
                     _ => return Err(error("malformed property")),
                 };
-                if e.props.iter().any(|v| v.name == p.name) {
+                if !property_names.insert(p.name.clone()) {
                     return Err(error("duplicate property"));
                 }
                 e.props.push(p);
