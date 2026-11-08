@@ -6,6 +6,7 @@ Last updated 2026-11-07 (night), Claude. 188 tests on main. Merged since the las
 #79 (3MF reflection winding at extreme scales), #80 (CLI/library/browser agree on known holes).
 
 ## Open right now
+- #91 (Codex): prevent pattern mean diameter overflow for finite inputs, with line, circle and grid checks. Next: check hosted CI and review when Logan chooses; #81 and #88 also touch pattern code.
 - #73 (Claude, **draft, paused**): engine.parallel. `par::map` is bit-identical for any thread count and used by
   deviation, ICP, symmetry. Only 1.7x on 12 threads because tree build and the stats sort are serial, so its
   ignored speed test fails. Next: parallel tree build, then thickness (`spatial.rs` is free again) and segmentation.

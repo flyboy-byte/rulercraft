@@ -55,3 +55,5 @@ circle, since it is one. Checks: a 4 x 3 grid at 10 x 15 mm; a grid with a hole 
 a hole pulled off its position makes it no grid; two holes on one position make it no grid; a turned grid
 reports the same spacings. Three wrong-value runs (full always true, position tolerance ignored, duplicate
 positions allowed) each failed a test.
+
+Pattern mean diameters are scaled before summation so a finite mean is not lost to sum overflow.

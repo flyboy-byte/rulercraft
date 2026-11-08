@@ -359,3 +359,80 @@ mod grid {
         );
     }
 }
+
+#[test]
+fn finite_large_diameters_have_finite_means_for_all_patterns() {
+    let diameter = f64::MAX;
+    let row: Vec<_> = [0.0, 10.0, 20.0]
+        .into_iter()
+        .enumerate()
+        .map(|(i, x)| hole(&i.to_string(), [x, 0.0, 0.0], diameter))
+        .collect();
+    let circle: Vec<_> = [
+        [10.0, 0.0, 0.0],
+        [0.0, 10.0, 0.0],
+        [-10.0, 0.0, 0.0],
+        [0.0, -10.0, 0.0],
+    ]
+    .into_iter()
+    .enumerate()
+    .map(|(i, p)| hole(&i.to_string(), p, diameter))
+    .collect();
+    let grid: Vec<_> = (0..3)
+        .flat_map(|y| {
+            (0..4).map(move |x| {
+                hole(
+                    &format!("{x}_{y}"),
+                    [x as f64 * 10.0, y as f64 * 15.0, 0.0],
+                    diameter,
+                )
+            })
+        })
+        .collect();
+    for (kind, holes) in [row, circle, grid].into_iter().enumerate() {
+        let patterns = hole_patterns(&holes, PatternOptions::default());
+        let [pattern] = patterns.as_slice() else {
+            panic!("{patterns:?}")
+        };
+        let value = match (kind, pattern) {
+            (0, Pattern::Line { diameter, .. })
+            | (1, Pattern::Circle { diameter, .. })
+            | (2, Pattern::Grid { diameter, .. }) => *diameter,
+            _ => panic!("unexpected pattern: {pattern:?}"),
+        };
+        assert_eq!(value, diameter, "{pattern:?}");
+    }
+}
+
+#[test]
+fn scaled_mean_handles_mixed_large_and_subnormal_diameters() {
+    for values in [
+        [f64::MAX / 2.0, f64::MAX, f64::MAX],
+        [1e-320, 1e-320, 1e-320],
+    ] {
+        let holes: Vec<_> = values
+            .into_iter()
+            .enumerate()
+            .map(|(i, d)| hole(&i.to_string(), [i as f64 * 10.0, 0.0, 0.0], d))
+            .collect();
+        let options = PatternOptions {
+            diameter_tolerance: f64::MAX,
+            ..Default::default()
+        };
+        let patterns = hole_patterns(&holes, options);
+        let [Pattern::Line { diameter, .. }] = patterns.as_slice() else {
+            panic!("{patterns:?}")
+        };
+        let expected = if values[0] == values[1] {
+            values[0]
+        } else {
+            f64::MAX * (5.0 / 6.0)
+        };
+        assert!(diameter.is_finite());
+        if expected < 1.0 {
+            assert_eq!(*diameter, expected);
+        } else {
+            assert!((diameter / expected - 1.0).abs() < 1e-15);
+        }
+    }
+}
