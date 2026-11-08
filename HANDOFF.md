@@ -13,6 +13,12 @@ Last updated 2026-11-07, Claude. Read AGENTS.md first (it outranks this), then P
   `implemented`), `align::datum_frame` (verified), `deviation::patches` (verified). `align_icp` and
   `deviation` are reachable through the MCP `compare` tool.
 
+## Intent and scope (D-010)
+- INTENT.md is locked (changes only by a superseding decision). We compete: milestone R7 and
+  docs/specs/product-scope.md list the everyday-job gaps (constructions, tolerances, deviation map, alignment,
+  sections, reports, projects, big meshes, browser build) in slice order. Overall % fell to ~61 because R7 is new.
+- Never name the other apps in this repository; keep specs in our own words.
+
 ## GUI (D-009)
 - `rulercraft-gui` is the standalone app: std-only server plus hand-written WebGL (docs/specs/gui.md). First slice
   works (open, look, mark, fit, measure, find regions); it was checked by hand in headless Chrome and the server by

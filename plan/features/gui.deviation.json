@@ -1,0 +1,16 @@
+{
+  "id": "gui.deviation",
+  "milestone": "R7",
+  "title": "App: deviation colour map, hover and pin readings, extra and missing regions",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "gui.viewer",
+    "compare.deviation",
+    "align.icp"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

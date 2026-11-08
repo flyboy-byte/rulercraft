@@ -109,3 +109,20 @@ headers, no assumption that it is the top-level window, so a host app could show
 recipe (`cad::recipe`) stays the hand-off to SolidCraft, and the GUI will offer it as an export. How
 SolidCraft would host a plugin is for its maintainers; nothing here is built against an assumed plugin
 interface, and no one is contacted.
+
+## D-010 Intent locked; we compete, and the GUI is a first-class product (2026-11-07)
+
+**Decision.** INTENT.md is the project's locked intent and changes only by a decision that supersedes this
+one. RulerCraft is built to be chosen over the established browser-based scan-inspection apps, not merely to
+be driven by an agent. The competitive scope is docs/specs/product-scope.md and becomes milestone R7. The GUI
+moves from a side feature to a product: its feature (`gui.viewer`) belongs to R7, and R5 gains a browser
+(Wasm) build so the app can run with nothing to install. The engine stays the product and every front end
+stays thin (D-009).
+
+**Why.** Logan asked for a tool that competes and for the intent to be locked so later sessions do not drift.
+Our advantages are a permissive licence, evidence-backed numbers, scriptability and the closed loop to CAD
+through SolidCraft; the everyday measuring job still has to match what people already have.
+
+**Limits.** Independence (D-001) is unchanged: new code and our own wording, MIT OR Apache-2.0, no outside
+product named in this repository. R7's exit is judged by Logan on a real job; until R1's real-scan exit passes,
+claims of accuracy stay modest.

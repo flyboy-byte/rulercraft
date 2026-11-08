@@ -48,6 +48,16 @@ SolidCraft.
 **Exit:** a written go/no-go with a prototype on photos of one object. Any library used must pass the
 licence rules in AGENTS.md (no copyleft).
 
+## R7 A tool people choose: the app, at parity and beyond
+
+**Exit:** Logan, who uses the established scan-inspection apps, does a real job in the RulerCraft app (a
+dimensioned report, a deviation check against the design, an alignment) and finds nothing he needs missing.
+
+The standalone app brought up to the everyday job (constructions, dimensions with tolerances, deviation map,
+alignment, sections, reports, save and undo, big meshes, no-install browser build) while keeping what we win on:
+permissive licence, evidence-backed numbers, scripting, the closed loop to CAD. Scope and order of work:
+docs/specs/product-scope.md. Intent: INTENT.md (D-010).
+
 ## Not planned (say so before starting)
 
-A CAD kernel of our own, and a 2D flatbed-photo measuring workflow.
+A CAD kernel of our own, cloud services or accounts, and a 2D flatbed-photo measuring workflow.

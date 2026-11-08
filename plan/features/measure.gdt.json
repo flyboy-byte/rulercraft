@@ -1,0 +1,14 @@
+{
+  "id": "measure.gdt",
+  "milestone": "R7",
+  "title": "Form and position checks: flatness, parallelism, perpendicularity, coaxiality and similar",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "measure.constructs"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything beyond flatness (form error exists on every fit)."
+}

@@ -1,0 +1,15 @@
+{
+  "id": "align.auto",
+  "milestone": "R7",
+  "title": "Auto-align a part from its own faces; guided three-plane datum applied to a mesh",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "align.icp",
+    "segment.planes"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Exit: a rotated and moved copy aligns back within 0.01 mm."
+}

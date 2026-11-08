@@ -1,0 +1,14 @@
+{
+  "id": "engine.wasm",
+  "milestone": "R5",
+  "title": "Browser (Wasm) build of the engine with the same numbers as native",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "engine.library"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything; needs a Wasm toolchain installed (not present on the development machine)."
+}

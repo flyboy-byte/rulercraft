@@ -1,0 +1,15 @@
+{
+  "id": "gui.sections",
+  "milestone": "R7",
+  "title": "App: section and outline views",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "gui.viewer",
+    "section.cut"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

@@ -29,13 +29,19 @@
       "id": "R5",
       "title": "Reusable engine",
       "weight": 10,
-      "exit": "Another project depends on rulercraft-mesh from crates.io or git and builds in Wasm."
+      "exit": "Another project depends on rulercraft-mesh from crates.io or git, and the engine builds for Wasm and runs the app in a browser with nothing to install."
     },
     {
       "id": "R6",
       "title": "Photos to mesh (research)",
       "weight": 5,
       "exit": "A written go/no-go with a prototype on photos of one object."
+    },
+    {
+      "id": "R7",
+      "title": "A tool people choose: the app, at parity and beyond",
+      "weight": 25,
+      "exit": "Logan, who uses the established scan-inspection apps, does a real job in the RulerCraft app (a dimensioned report, a deviation check against the design, an alignment) and finds nothing he needs missing."
     }
   ]
 }
