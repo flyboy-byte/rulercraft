@@ -82,7 +82,18 @@ fn compose(child: Matrix, parent: Matrix) -> Matrix {
     }
     out
 }
-fn determinant(m: Matrix) -> f64 {
+fn determinant(mut m: Matrix) -> f64 {
+    // Positive row scaling keeps the sign while avoiding overflow or underflow
+    // for uniformly extreme transform magnitudes.
+    for row in &mut m[..3] {
+        let largest = row.iter().map(|v| v.abs()).fold(0.0, f64::max);
+        if largest == 0.0 {
+            return 0.0;
+        }
+        for value in row {
+            *value /= largest;
+        }
+    }
     m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
         - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
         + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])

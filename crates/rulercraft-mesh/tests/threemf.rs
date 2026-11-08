@@ -220,3 +220,30 @@ fn namespace_reflection_repeats_and_degenerates() {
         .contains("expanded")
     );
 }
+
+#[test]
+fn reflection_winding_survives_extreme_finite_transform_scales() {
+    for (source, transform) in [
+        ("1e200", "-1e-200 0 0 0 1e-200 0 0 0 1e-200 0 0 0"),
+        ("1e-200", "1e200 2e200 0 3e200 4e200 0 0 0 1e200 0 0 0"),
+    ] {
+        let resources = format!(
+            "<object id='1'><mesh><vertices><vertex x='0' y='0' z='0'/><vertex x='{source}' y='0' z='0'/><vertex x='0' y='{source}' z='0'/></vertices><triangles><triangle v1='0' v2='1' v3='2'/></triangles></mesh></object>"
+        );
+        let xml = model(
+            &resources,
+            &format!("<item objectid='1' transform='{transform}'/>"),
+            "millimeter",
+        );
+        let mesh = read_mesh(
+            "mirror.3mf",
+            &package(&xml, zip::CompressionMethod::Stored),
+            Unit::Mm,
+            ImportLimits::default(),
+        )
+        .unwrap();
+        let [a, b, c] = mesh.triangles[0].map(|i| mesh.positions[i as usize]);
+        let normal_z = (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0]);
+        assert!(normal_z > 0.0, "source={source} normal_z={normal_z}");
+    }
+}
