@@ -6,6 +6,7 @@
 //! triangle was closest; the size of the distance never depends on it. Lengths in mm.
 use crate::Mesh;
 use crate::math::{Vec3, add, cross, dot, length, scale, sub};
+use crate::spatial::{Bvh, Closest};
 
 /// Why a deviation could not be computed.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -85,31 +86,9 @@ pub fn closest_point_on_triangle(p: Vec3, a: Vec3, b: Vec3, c: Vec3) -> Vec3 {
     add(a, add(scale(ab, vb * denom), scale(ac, vc * denom)))
 }
 
-struct Node {
-    min: Vec3,
-    max: Vec3,
-    /// Triangle range for a leaf, or children for an inner node.
-    kind: Kind,
-}
-enum Kind {
-    Leaf(usize, usize),
-    Inner(usize, usize),
-}
-
-/// A reference mesh indexed for closest-point queries.
+/// A reference mesh indexed for closest-point queries (a [`Bvh`] that refuses an empty mesh).
 pub struct Reference {
-    tris: Vec<[Vec3; 3]>,
-    order: Vec<usize>,
-    nodes: Vec<Node>,
-}
-
-fn box_dist2(p: Vec3, lo: Vec3, hi: Vec3) -> f64 {
-    (0..3)
-        .map(|i| {
-            let d = (lo[i] - p[i]).max(p[i] - hi[i]).max(0.0);
-            d * d
-        })
-        .sum()
+    tree: Bvh,
 }
 
 impl Reference {
@@ -118,94 +97,24 @@ impl Reference {
         if mesh.triangles.is_empty() {
             return Err(DeviationError("the reference mesh has no triangles".into()));
         }
-        Ok(Self::build(mesh))
+        Ok(Self {
+            tree: Bvh::new(mesh),
+        })
     }
-    fn build(mesh: &Mesh) -> Self {
-        let tris: Vec<[Vec3; 3]> = mesh
-            .triangles
-            .iter()
-            .map(|t| t.map(|i| v3(mesh.positions[i as usize])))
-            .collect();
-        let mut t = Reference {
-            order: (0..tris.len()).collect(),
-            tris,
-            nodes: vec![],
-        };
-        let n = t.order.len();
-        t.node(0, n);
-        t
-    }
-    fn node(&mut self, lo: usize, hi: usize) -> usize {
-        let (mut mn, mut mx) = ([f64::MAX; 3], [f64::MIN; 3]);
-        for &i in &self.order[lo..hi] {
-            for p in self.tris[i] {
-                for k in 0..3 {
-                    mn[k] = mn[k].min(p[k]);
-                    mx[k] = mx[k].max(p[k]);
-                }
-            }
-        }
-        let id = self.nodes.len();
-        self.nodes.push(Node {
-            min: mn,
-            max: mx,
-            kind: Kind::Leaf(lo, hi),
-        });
-        if hi - lo > 4 {
-            let axis = (0..3)
-                .max_by(|&a, &b| (mx[a] - mn[a]).total_cmp(&(mx[b] - mn[b])))
-                .unwrap_or(0);
-            let tris = &self.tris;
-            let centre = |i: &usize| tris[*i][0][axis] + tris[*i][1][axis] + tris[*i][2][axis];
-            self.order[lo..hi].sort_by(|a, b| centre(a).total_cmp(&centre(b)));
-            let mid = lo + (hi - lo) / 2;
-            let l = self.node(lo, mid);
-            let r = self.node(mid, hi);
-            self.nodes[id].kind = Kind::Inner(l, r);
-        }
-        id
+    /// The shared tree underneath.
+    pub fn tree(&self) -> &Bvh {
+        &self.tree
     }
     /// The closest point on the surface to `p`, and the (not unit) face normal of its triangle.
     pub fn closest(&self, p: Vec3) -> (Vec3, Vec3) {
-        let (q, t) = self.closest_index(p);
-        let [a, b, c] = self.tris[t];
-        (q, cross(sub(b, a), sub(c, a)))
-    }
-    fn closest_index(&self, p: Vec3) -> (Vec3, usize) {
-        let (mut best, mut best_d2, mut best_t) = ([0.0; 3], f64::MAX, 0);
-        let mut stack = vec![0usize];
-        while let Some(n) = stack.pop() {
-            let node = &self.nodes[n];
-            if box_dist2(p, node.min, node.max) >= best_d2 {
-                continue;
-            }
-            match node.kind {
-                Kind::Leaf(lo, hi) => {
-                    for &i in &self.order[lo..hi] {
-                        let [a, b, c] = self.tris[i];
-                        let q = closest_point_on_triangle(p, a, b, c);
-                        let d = sub(p, q);
-                        let d2 = dot(d, d);
-                        if d2 < best_d2 {
-                            (best, best_d2, best_t) = (q, d2, i);
-                        }
-                    }
-                }
-                Kind::Inner(l, r) => {
-                    let (dl, dr) = (
-                        box_dist2(p, self.nodes[l].min, self.nodes[l].max),
-                        box_dist2(p, self.nodes[r].min, self.nodes[r].max),
-                    );
-                    // Visit the nearer child first: push it last.
-                    if dl <= dr {
-                        stack.extend([r, l]);
-                    } else {
-                        stack.extend([l, r]);
-                    }
-                }
-            }
-        }
-        (best, best_t)
+        // Not empty: `new` refused a mesh without triangles.
+        let hit = self.tree.closest(p).unwrap_or(Closest {
+            point: p,
+            triangle: 0,
+            distance2: 0.0,
+        });
+        let [a, b, c] = self.tree.triangle(hit.triangle);
+        (hit.point, cross(sub(b, a), sub(c, a)))
     }
 }
 
@@ -225,7 +134,7 @@ pub fn deviation(
             "tolerance must be a finite number, 0 or more".into(),
         ));
     }
-    let tree = Reference::build(reference);
+    let tree = Reference::new(reference)?;
     let distances: Vec<f64> = mesh
         .positions
         .iter()

@@ -27,6 +27,10 @@ or medial-axis method. At sharp corners averaged vertex normals give oblique pat
 reversed normals, gaps and max-distance cutoffs may give missing hits. It does not certify a closed
 solid or repair winding. Degenerate target triangles are ignored.
 
+Rays run through the shared spatial index (`spatial::Bvh`, 2026-11-07), which finds the same nearest hit as
+testing every triangle. The work limit still counts selection size times triangle count, so it is now an upper
+bound; raising it is a separate decision.
+
 Options: default maximum 5 million selected-vertex/triangle tests, ray distance at most 1,000,000 mm,
 self-hit exclusion distance 1e-6 mm. Limits checked before work; distance/exclusion must be finite,
 positive and max distance greater than exclusion. Any invalid index, nonfinite position, mismatched
