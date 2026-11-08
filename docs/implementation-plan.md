@@ -13,8 +13,8 @@ report.
 
 Merged: STL/PLY/OBJ/3MF, mesh graph, selection, all three fits, relations, command layer, MCP,
 plane/cylinder/strip segmentation, known-design corpus, project JSON and local reference checks.
-Undo/redo remains planned. Segmentation, projects and thickness have no MCP tools yet; thickness is
-an engine-only R3 API. R1's published-dimension/printed-part acceptance is still open. The integration
+Undo/redo, segmentation and thickness are available over MCP. Projects are available through the CLI;
+directional thickness is available through the CLI as well. R1's published-dimension/printed-part acceptance is still open. The integration
 checkpoint found selection/axis edge cases and a separate math-range follow-up; see docs/findings/.
 
 ## R1: clean meshes, open, fit, measure, over CLI and MCP
@@ -42,10 +42,11 @@ they match the design dimensions.
 | --- | --- | --- |
 | ~~`io.3mf`~~ (done 2026-11-07) | M | Zip + model XML; zip/deflate crate pre-approved (D-006); 3MF's own unit wins; components and transforms flattened |
 | ~~`project.file`~~ (done 2026-11-07) | M | Own JSON format (docs/specs/project-file.md): version, embedded source mesh bytes and units, elements with their recipe (selection, settings) and last result; reopen refits and reports changes. serde pre-approved |
-| `history.undo` | S | Once commands exist: every successful command one undo step, failed ones change nothing |
-| `mcp.fit-validation` | S | Make robust and ordinary MCP plane fits reject a sphere/cylinder-only diameter option |
-| `mcp.thickness` | S | Expose paged directional wall-thickness samples over MCP |
-| `mcp.datum` | S | Fit three plane selections and return their datum frame over MCP |
+| ~~`history.undo`~~ (done 2026-11-07) | S | Once commands exist: every successful command one undo step, failed ones change nothing |
+| ~~`mcp.fit-validation`~~ (done 2026-11-07) | S | Make robust and ordinary MCP plane fits reject a sphere/cylinder-only diameter option |
+| ~~`mcp.thickness`~~ (done 2026-11-07) | S | Expose paged directional wall-thickness samples over MCP |
+| ~~`cli.thickness`~~ (done 2026-11-07) | S | Expose directional thickness and bounded pages at the CLI |
+| ~~`mcp.datum`~~ (done 2026-11-07) | S | Fit three plane selections and return their datum frame over MCP |
 | ~~`reference.local`~~ (done 2026-11-07) | S | A test helper that loads `fixtures/private/reference/<mesh>.json` and skips with a printed reason when absent |
 | ~~STL overflow fix~~ | S | DONE 2026-11-07: the shared mesh builder refuses a coordinate that overflows f32 after unit conversion, for every reader |
 

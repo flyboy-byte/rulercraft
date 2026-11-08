@@ -82,11 +82,48 @@ fn compose(child: Matrix, parent: Matrix) -> Matrix {
     }
     out
 }
-fn determinant(m: Matrix) -> f64 {
-    m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
-        - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
-        + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0])
+fn determinant_sign(mut m: Matrix) -> i8 {
+    // Positive row scaling bounds the entries without changing the determinant sign.
+    for row in &mut m[..3] {
+        let largest = row.iter().map(|v| v.abs()).fold(0.0, f64::max);
+        if largest == 0.0 {
+            return 0;
+        }
+        for value in row {
+            *value /= largest;
+        }
+    }
+    // Partial pivoting tracks pivot signs without multiplying them: the determinant's
+    // magnitude may underflow even when its nonzero pivots remain representable.
+    let mut sign = 1;
+    for column in 0..3 {
+        let mut pivot = column;
+        for row in column + 1..3 {
+            if m[row][column].abs() > m[pivot][column].abs() {
+                pivot = row;
+            }
+        }
+        if m[pivot][column] == 0.0 {
+            return 0;
+        }
+        if pivot != column {
+            m.swap(pivot, column);
+            sign = -sign;
+        }
+        if m[column][column] < 0.0 {
+            sign = -sign;
+        }
+        for row in column + 1..3 {
+            let factor = m[row][column] / m[column][column];
+            let pivot_row = m[column];
+            for (value, pivot_value) in m[row].iter_mut().zip(pivot_row).skip(column + 1) {
+                *value -= factor * pivot_value;
+            }
+        }
+    }
+    sign
 }
+
 fn entry(
     zip: &mut zip::ZipArchive<Cursor<&[u8]>>,
     name: &str,
@@ -170,7 +207,7 @@ impl Expansion<'_> {
                             .ok_or_else(|| fail(object.offset, "invalid vertex"))?,
                     );
                 }
-                let reverse = determinant(matrix) < 0.;
+                let reverse = determinant_sign(matrix) < 0;
                 for t in triangles {
                     let mut t = t.map(|i| indices[i]);
                     if reverse {

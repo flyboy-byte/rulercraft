@@ -68,7 +68,10 @@ fn known_parts_recover_all_stated_dimensions() {
         )
         .unwrap();
         let g = MeshGraph::build(&mesh);
-        assert!(g.boundary_loops().is_empty(), "{name}: open boundary");
+        assert!(
+            g.edges.iter().all(|e| e.t1.is_some()),
+            "{name}: open boundary"
+        );
         assert_eq!(g.non_manifold_edges(), 0, "{name}");
         let bounds = cli(&["info".into(), path.clone()]);
         assert_eq!(

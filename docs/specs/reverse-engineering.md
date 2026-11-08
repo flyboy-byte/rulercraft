@@ -55,3 +55,12 @@ circle, since it is one. Checks: a 4 x 3 grid at 10 x 15 mm; a grid with a hole 
 a hole pulled off its position makes it no grid; two holes on one position make it no grid; a turned grid
 reports the same spacings. Three wrong-value runs (full always true, position tolerance ignored, duplicate
 positions allowed) each failed a test.
+
+At extreme coordinate ranges, a row is omitted when displacement rounding may exceed the requested
+position tolerance or the computed member order contradicts adjacent projections. Row ordering uses the
+largest direction component to retain distinguishable nearby positions across large coordinate ranges. Grid indices and
+dimensions that cannot be represented are omitted; an unrepresentably large cell count is not full.
+
+Holes with zero or nonfinite axes, nonfinite points, or nonpositive or nonfinite diameters are excluded from every candidate pattern regardless of their order in the input.
+
+Pattern mean diameters are scaled before summation so a finite mean is not lost to sum overflow.

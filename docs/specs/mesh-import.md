@@ -5,7 +5,7 @@ Status: R1 spec. Features: `io.stl`, `io.ply`, `io.obj`, `io.3mf`.
 ## Behaviour
 
 - Input is bytes plus a file name (the extension picks the reader; `.stl`, `.ply`, `.obj`, `.3mf`,
-  case-insensitive) and the file's unit (`mm` default, also `cm`, `m`, `in`). Everything is converted
+  case-insensitive; a name without a dot and extension is refused) and the file's unit (`mm` default, also `cm`, `m`, `in`). Everything is converted
   to millimetres on read. 3MF carries its own unit in the file and that wins.
 - Output is a triangle mesh: positions (f32 triples, mm) and triangles (three vertex indices each),
   plus a short summary: vertex count, triangle count, bounding box, and which reader was used.
@@ -54,8 +54,11 @@ Status: R1 spec. Features: `io.stl`, `io.ply`, `io.obj`, `io.3mf`.
 - ImportLimits bounds bytes, source vertices (default 50 million), and candidate triangles
   (default 50 million, including dropped degenerates). List lengths are checked against remaining
   input before allocation. Non-finite positions and unit conversion overflow are refused.
+- STL triangle limits count candidate triangles, including degenerate fan triangles, and stop ASCII
+  decoding as soon as the cap is exceeded.
 - The dispatcher supports STL, PLY and OBJ. Its limits apply to STL bytes and triangles;
-  the vertex cap is checked on the STL result. The existing read_stl API remains available.
+  the vertex cap stops STL decoding when the merged vertex count exceeds the limit. The existing
+  read_stl API remains available.
 
 PLY description: https://sites.cc.gatech.edu/projects/large_models/ply.html (format description only).
 

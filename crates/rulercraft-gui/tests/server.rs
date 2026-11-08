@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! The GUI server over a real socket, with a cube of known size.
-#![allow(clippy::unwrap_used, missing_docs)]
+#![allow(clippy::unwrap_used, clippy::panic, missing_docs)]
 use rulercraft_gui::{State, serve};
 use serde_json::{Value, json};
 use std::io::{Read, Write};
@@ -243,4 +243,110 @@ fn the_stray_point_setting_changes_how_many_points_a_fit_keeps() {
     let tight = s.json("/api/fit", &req(1)).1;
     assert_eq!(keep_all["fit"]["used"], 5, "{keep_all}");
     assert!(tight["fit"]["used"].as_u64().unwrap() < 5, "{tight}");
+}
+
+#[test]
+fn known_hole_fits_agree_between_gui_and_library() {
+    use rulercraft_mesh::commands::{FitKind, FitRequest, Fitted, Selection, fit, select};
+    use rulercraft_mesh::fit::Clip;
+    use rulercraft_mesh::graph::MeshGraph;
+    use rulercraft_mesh::{ImportLimits, Unit, read_mesh};
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/known/hole-block.stl");
+    let bytes = std::fs::read(path).unwrap();
+    let mesh = read_mesh("hole-block.stl", &bytes, Unit::Mm, ImportLimits::default()).unwrap();
+    let graph = MeshGraph::build(&mesh);
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let mut state = State::default();
+    state
+        .open_bytes("hole-block.stl", &bytes, Unit::Mm)
+        .unwrap();
+    std::thread::spawn(move || serve(listener, Arc::new(Mutex::new(state))));
+    let server = Server { port };
+    for (min, max, expected_diameter) in [
+        ([8.4, 13.4, 1.0], [11.6, 16.6, 9.0], 3.0),
+        ([27.4, 12.4, 1.0], [32.6, 17.6, 9.0], 5.0),
+        ([45.9, 10.9, 1.0], [54.1, 19.1, 9.0], 8.0),
+    ] {
+        let selection = Selection {
+            in_box: Some((min, max)),
+            ..Default::default()
+        };
+        let ids = select(&mesh, &graph, &selection).unwrap();
+        let request = FitRequest {
+            kind: FitKind::Cylinder,
+            selection,
+            clip: Clip::None,
+            known_diameter: None,
+        };
+        let result = fit(&mesh, &graph, &request).unwrap();
+        let Fitted::Cylinder(cylinder) = result.fitted else {
+            panic!("expected cylinder")
+        };
+        let (status, gui) = server.json(
+            "/api/fit",
+            &json!({"kind":"cylinder", "vertices":ids, "sigma":0}),
+        );
+        assert_eq!(status, 200, "{gui}");
+        assert_eq!(gui["selected"], result.selected);
+        let output = &gui["fit"];
+        for (name, value) in [
+            ("radius", cylinder.radius),
+            ("diameter", cylinder.diameter),
+            ("length", cylinder.length),
+            ("sigma", cylinder.sigma),
+        ] {
+            assert_eq!(output[name].as_f64().unwrap(), value, "{name}");
+        }
+        assert_eq!(output["axis"], json!(cylinder.axis));
+        assert_eq!(output["axis_point"], json!(cylinder.axis_point));
+        assert!((cylinder.diameter - expected_diameter).abs() < 1e-5);
+    }
+}
+
+#[test]
+fn known_top_plane_agrees_between_gui_and_library() {
+    use rulercraft_mesh::commands::{FitKind, FitRequest, Fitted, Selection, fit, select};
+    use rulercraft_mesh::fit::Clip;
+    use rulercraft_mesh::graph::MeshGraph;
+    use rulercraft_mesh::{ImportLimits, Unit, read_mesh};
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("../../fixtures/known/hole-block.stl");
+    let bytes = std::fs::read(path).unwrap();
+    let mesh = read_mesh("hole-block.stl", &bytes, Unit::Mm, ImportLimits::default()).unwrap();
+    let graph = MeshGraph::build(&mesh);
+    let selection = Selection {
+        in_box: Some(([-1.0, -1.0, 9.999], [61.0, 31.0, 10.001])),
+        ..Default::default()
+    };
+    let ids = select(&mesh, &graph, &selection).unwrap();
+    let request = FitRequest {
+        kind: FitKind::Plane,
+        selection,
+        clip: Clip::None,
+        known_diameter: None,
+    };
+    let result = fit(&mesh, &graph, &request).unwrap();
+    let Fitted::Plane(plane) = result.fitted else {
+        panic!("expected plane")
+    };
+    let listener = TcpListener::bind("127.0.0.1:0").unwrap();
+    let port = listener.local_addr().unwrap().port();
+    let mut state = State::default();
+    state
+        .open_bytes("hole-block.stl", &bytes, Unit::Mm)
+        .unwrap();
+    std::thread::spawn(move || serve(listener, Arc::new(Mutex::new(state))));
+    let (status, output) = Server { port }.json(
+        "/api/fit",
+        &json!({"kind":"plane", "vertices":ids, "sigma":0}),
+    );
+    assert_eq!(status, 200, "{output}");
+    assert_eq!(output["selected"], result.selected);
+    assert_eq!(output["fit"]["center"], json!(plane.center));
+    assert_eq!(output["fit"]["normal"], json!(plane.normal));
+    assert_eq!(output["fit"]["sigma"].as_f64().unwrap(), plane.sigma);
+    assert!((plane.center[2] - 10.0).abs() < 1e-5);
+    assert!(plane.normal[2].abs() > 1.0 - 1e-10);
 }

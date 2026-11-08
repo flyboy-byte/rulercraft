@@ -24,3 +24,8 @@ CLI (2026-11-07): `rulercraft info <mesh>` prints the import summary; `rulercraf
 `{mesh, selected, fit}` as JSON. `rulercraft segment <mesh> [--kind planes|cylinders|strips] [--units]`
 prints compact segmentation summaries and defaults to cylinder regions for scan meshes. Errors go to
 stderr with exit code 2 and nothing on stdout.
+
+CLI fit options: `--within` specifies the facing angle and requires `--facing`; without a direction the command refuses with `--within requires --facing`. Either option order is accepted.
+
+`rulercraft --version` and `rulercraft -V` print `rulercraft <package-version>` and exit successfully.
+The version comes from the CLI package metadata so it tracks builds automatically.

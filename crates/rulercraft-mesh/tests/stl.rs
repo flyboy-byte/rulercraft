@@ -150,3 +150,79 @@ fn a_coordinate_that_overflows_after_unit_conversion_is_refused() {
         Err(ReadError::NotFinite { triangle: 1 })
     );
 }
+
+#[test]
+fn dispatcher_enforces_unique_vertex_limit_before_later_bad_data() {
+    use rulercraft_mesh::{ImportLimits, read_mesh};
+    let original = cube();
+    let mut bad_later = original.clone();
+    bad_later.last_mut().unwrap()[2][0] = f32::NAN;
+    let limited = ImportLimits {
+        max_vertices: 3,
+        ..Default::default()
+    };
+    for (good, bad) in [
+        (ascii(&original), ascii(&bad_later)),
+        (binary(&original, b""), binary(&bad_later, b"")),
+    ] {
+        let error = read_mesh("cube.stl", &bad, Unit::Mm, limited)
+            .unwrap_err()
+            .to_string();
+        assert!(error.contains("vertex limit"), "{error}");
+        let too_small = ImportLimits {
+            max_vertices: 7,
+            ..Default::default()
+        };
+        assert!(
+            read_mesh("cube.stl", &good, Unit::Mm, too_small)
+                .unwrap_err()
+                .to_string()
+                .contains("vertex limit")
+        );
+        let exact = ImportLimits {
+            max_vertices: 8,
+            ..Default::default()
+        };
+        assert_eq!(
+            read_mesh("cube.stl", &good, Unit::Mm, exact)
+                .unwrap()
+                .positions
+                .len(),
+            8
+        );
+    }
+}
+
+#[test]
+fn ascii_triangle_limit_counts_degenerate_fan_candidates_before_later_input() {
+    let prefix = "solid t\nouter loop\nvertex 0 0 0\nvertex 0 0 0\nvertex 1 0 0\nvertex 0 1 0\n";
+    let complete = format!("{prefix}endloop\nendsolid\n");
+    let bad_later = format!("{prefix}vertex NaN 0 0\nendloop\nendsolid\n");
+    let limits = |max_triangles| Limits {
+        max_triangles,
+        ..Default::default()
+    };
+    assert_eq!(
+        read_stl(bad_later.as_bytes(), Unit::Mm, limits(1)),
+        Err(ReadError::TooManyTriangles {
+            triangles: 2,
+            limit: 1
+        })
+    );
+    assert_eq!(
+        read_stl(complete.as_bytes(), Unit::Mm, limits(0)),
+        Err(ReadError::TooManyTriangles {
+            triangles: 1,
+            limit: 0
+        })
+    );
+    let mesh = read_stl(complete.as_bytes(), Unit::Mm, limits(2)).unwrap();
+    assert_eq!(
+        (
+            mesh.positions.len(),
+            mesh.triangles.len(),
+            mesh.degenerate_dropped
+        ),
+        (3, 1, 1)
+    );
+}
