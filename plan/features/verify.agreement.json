@@ -1,0 +1,15 @@
+{
+  "id": "verify.agreement",
+  "milestone": "R8",
+  "title": "Library, CLI, MCP and app give identical numbers (later native/Wasm, CPU/GPU)",
+  "spec": "verification",
+  "status": "planned",
+  "depends_on": [
+    "mcp.server",
+    "gui.viewer"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

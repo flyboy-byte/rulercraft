@@ -1,0 +1,14 @@
+{
+  "id": "io.gltf",
+  "milestone": "R6",
+  "title": "Read glTF/GLB meshes (common phone-app export)",
+  "spec": "scan-sources",
+  "status": "planned",
+  "depends_on": [
+    "mesh.graph"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

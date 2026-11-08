@@ -33,15 +33,21 @@
     },
     {
       "id": "R6",
-      "title": "Photos to mesh (research)",
+      "title": "Any scanner in: point clouds, phones, photos (research first)",
       "weight": 5,
-      "exit": "A written go/no-go with a prototype on photos of one object."
+      "exit": "Point clouds and phone-app exports open and measure correctly on generated scenes, and a written go/no-go with a prototype on photos of one object."
     },
     {
       "id": "R7",
       "title": "v1: the native app for the SolidCraft community, at parity and beyond",
       "weight": 25,
       "exit": "A SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own parts in the native app without help: inspect with a dimensioned report and a deviation check, rebuild a part in SolidCraft, let Claude measure while they watch, and use the engine from another program."
+    },
+    {
+      "id": "R8",
+      "title": "Proof at scale: machines break it so users do not",
+      "weight": 10,
+      "exit": "Nightly and weekly verification tiers run on their own, every reader has been fuzzed, the engine's mutation score is reported, and every confirmed break has a regression test (docs/specs/verification.md)."
     }
   ]
 }

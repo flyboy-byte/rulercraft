@@ -1,0 +1,12 @@
+{
+  "id": "verify.mutants",
+  "milestone": "R8",
+  "title": "Mutation testing of the engine; each survivor becomes a test or a deleted rule",
+  "spec": "verification",
+  "status": "planned",
+  "depends_on": [],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Tool, not a dependency."
+}

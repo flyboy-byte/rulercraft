@@ -1,0 +1,14 @@
+{
+  "id": "io.e57",
+  "milestone": "R6",
+  "title": "Read E57 scanner files",
+  "spec": "scan-sources",
+  "status": "planned",
+  "depends_on": [
+    "io.pointcloud"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything; may need a dependency (check licence)."
+}

@@ -2,7 +2,7 @@
   "id": "photo.mesh",
   "milestone": "R6",
   "title": "Photos to mesh (photogrammetry / AI shape guessing), research",
-  "spec": null,
+  "spec": "scan-sources",
   "status": "planned",
   "depends_on": [
     "engine.library"

@@ -15,3 +15,6 @@ inputs are outside those paths. The facing-selection caller did admit subnormal 
 No files in src/math/ were changed, respecting the explicit lane boundary. Follow-up `math.range`
 should fix the public helpers and test 30 degrees at ordinary/large/small scales and finite unit
 normalization for nonzero subnormal inputs. Do not substitute current outputs for the known answers.
+
+
+**Reply 2026-11-07 (Claude): Closed.** Fixed by math.range (#39, verified).
