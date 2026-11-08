@@ -1,0 +1,18 @@
+{
+  "id": "gui.viewer",
+  "milestone": "R1",
+  "title": "Standalone GUI: 3D view, brush selection, fits, measure, segments",
+  "spec": "gui",
+  "status": "implemented",
+  "depends_on": [
+    "fit.plane",
+    "fit.sphere",
+    "fit.cylinder",
+    "measure.relations",
+    "segment.planes"
+  ],
+  "owner": "claude",
+  "pr": null,
+  "verified_by": [],
+  "left": "Recipe/deviation/thickness views, undo, saving projects from the page, point-to-point ruler, big-mesh performance, a SolidCraft-panel trial. No native window (needs a dependency; ask first)."
+}

@@ -1,0 +1,23 @@
+[package]
+name = "rulercraft-gui"
+description = "Standalone graphical app for RulerCraft: a local 3D viewer with selection, fits and measurements"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+repository.workspace = true
+rust-version.workspace = true
+
+[lib]
+name = "rulercraft_gui"
+path = "src/lib.rs"
+
+[[bin]]
+name = "rulercraft-gui"
+path = "src/main.rs"
+
+[dependencies]
+rulercraft-mesh = { path = "../rulercraft-mesh" }
+serde_json = "1"
+
+[lints]
+workspace = true

@@ -539,6 +539,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "rulercraft-gui"
+version = "0.1.0"
+dependencies = [
+ "rulercraft-mesh",
+ "serde_json",
+]
+
+[[package]]
 name = "rulercraft-mcp"
 version = "0.1.0"
 dependencies = [

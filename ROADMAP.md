@@ -50,4 +50,4 @@ licence rules in AGENTS.md (no copyleft).
 
 ## Not planned (say so before starting)
 
-A GUI or viewer, a CAD kernel of our own, and a 2D flatbed-photo measuring workflow.
+A CAD kernel of our own, and a 2D flatbed-photo measuring workflow.

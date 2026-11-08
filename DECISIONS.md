@@ -85,3 +85,27 @@ as changed solely by JSON parsing.
 D-006. Stored/deflated model and relationship parts are read in memory with byte caps, never extracted.
 The core geometry XML subset is implemented here without another dependency. zip's Rust 1.73 minimum
 fits the workspace's declared 1.85 minimum; no minimum-version change.
+
+## D-009 A standalone GUI, no new dependencies (2026-11-07)
+
+**Decision.** RulerCraft gets its own graphical app, `rulercraft-gui`, for people who do not use Claude.
+It is a single program that serves a local page on 127.0.0.1 (never a public address) and opens it in
+the default browser: a 3D view, click-and-brush selection, fits, measurements and segmentation, all
+through the same engine functions the CLI and MCP use. It is written with the standard library only (a
+small HTTP server) and hand-written WebGL: no web framework, no JavaScript library, no CDN. This
+supersedes the "not planned: a GUI or viewer" line in ROADMAP.md.
+
+**Why.** Logan asked for a GUI that stands on its own, not another tool for Claude. Keeping to the
+standard library keeps the build light and needs no dependency approval. A native window (egui, wgpu)
+would be a heavy new dependency and stays an option if Logan wants it.
+
+**Limits.** Local use only: bound to loopback, the Host header is checked, nothing is uploaded anywhere.
+
+**Addendum (2026-11-07): stays joinable with SolidCraft.** The GUI must not close that door. (1) It is a
+thin client: every number comes from the same engine calls as the CLI and MCP, so SolidCraft (or anything
+else) can use the engine as a Rust library, later as Wasm, or through the MCP server, and the GUI adds
+nothing the engine lacks. (2) The page is self-contained and embeddable: one origin, no frame-blocking
+headers, no assumption that it is the top-level window, so a host app could show it in a panel. (3) The
+recipe (`cad::recipe`) stays the hand-off to SolidCraft, and the GUI will offer it as an export. How
+SolidCraft would host a plugin is for its maintainers; nothing here is built against an assumed plugin
+interface, and no one is contacted.
