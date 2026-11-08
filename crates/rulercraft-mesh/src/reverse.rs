@@ -100,8 +100,10 @@ pub enum Pattern {
 }
 
 fn parallel(a: Vec3, b: Vec3, limit_deg: f64) -> bool {
-    let d = angle_between(a, b).unwrap_or(0.0).to_degrees();
-    d.min(180.0 - d) <= limit_deg
+    angle_between(a, b).is_some_and(|angle| {
+        let d = angle.to_degrees();
+        d.min(180.0 - d) <= limit_deg
+    })
 }
 
 /// Finds lines, circles and grids of equal parallel holes. A square of four holes is reported as a circle
@@ -114,12 +116,20 @@ pub fn hole_patterns(holes: &[Hole], options: PatternOptions) -> Vec<Pattern> {
     let mut used = vec![false; holes.len()];
     let mut out = vec![];
     for i in 0..holes.len() {
-        if used[i] || normalize(holes[i].axis).is_none() || !holes[i].diameter.is_finite() {
+        if used[i]
+            || normalize(holes[i].axis).is_none()
+            || !holes[i].diameter.is_finite()
+            || holes[i].diameter <= 0.0
+            || holes[i].point.iter().any(|v| !v.is_finite())
+        {
             continue;
         }
         let group: Vec<usize> = (i..holes.len())
             .filter(|&j| {
                 !used[j]
+                    && holes[j].point.iter().all(|v| v.is_finite())
+                    && holes[j].diameter.is_finite()
+                    && holes[j].diameter > 0.0
                     && (holes[j].diameter - holes[i].diameter).abs() <= options.diameter_tolerance
                     && parallel(holes[j].axis, holes[i].axis, options.axis_tolerance_deg)
             })

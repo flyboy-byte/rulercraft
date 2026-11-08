@@ -1,0 +1,19 @@
+{
+  "id": "cli.thickness",
+  "milestone": "R3",
+  "title": "Directional wall thickness from the CLI",
+  "spec": "measure",
+  "status": "verified",
+  "depends_on": [
+    "measure.thickness",
+    "cli.commands"
+  ],
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/87",
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Dense-scan acceleration beyond the current engine work cap remains separate."
+}

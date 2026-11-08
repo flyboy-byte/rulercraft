@@ -57,3 +57,5 @@ reports the same spacings. Three wrong-value runs (full always true, position to
 positions allowed) each failed a test.
 
 Pattern mean diameters are scaled before summation so a finite mean is not lost to sum overflow.
+
+Holes with zero or nonfinite axes, nonfinite points, or nonpositive or nonfinite diameters are excluded from every candidate pattern regardless of their order in the input.
