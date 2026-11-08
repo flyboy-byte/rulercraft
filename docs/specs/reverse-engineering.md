@@ -57,5 +57,6 @@ reports the same spacings. Three wrong-value runs (full always true, position to
 positions allowed) each failed a test.
 
 At extreme coordinate ranges, a row is omitted when displacement rounding may exceed the requested
-position tolerance or the computed member order contradicts adjacent projections. Grid indices and
+position tolerance or the computed member order contradicts adjacent projections. Row ordering uses the
+largest direction component to retain distinguishable nearby positions across large coordinate ranges. Grid indices and
 dimensions that cannot be represented are omitted; an unrepresentably large cell count is not full.

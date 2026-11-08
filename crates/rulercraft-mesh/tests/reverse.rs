@@ -492,3 +492,29 @@ fn grid_with_unrepresentable_span_is_not_reported() {
         "{patterns:?}"
     );
 }
+
+#[test]
+fn distant_straight_row_order_is_independent_of_input_order() {
+    let base = vec![
+        hole("zero", [0.0, 0.0, 0.0], 5.0),
+        hole("two", [2.0, 0.0, 0.0], 5.0),
+        hole("one", [1.0, 0.0, 0.0], 5.0),
+        hole("far", [1e20, 0.0, 0.0], 5.0),
+    ];
+    for shift in 0..base.len() {
+        let mut holes = base.clone();
+        holes.rotate_left(shift);
+        let patterns = hole_patterns(&holes, PatternOptions::default());
+        let [Pattern::Line { members, .. }] = patterns.as_slice() else {
+            panic!("shift={shift}: {patterns:?}")
+        };
+        let coords: Vec<_> = members
+            .iter()
+            .map(|name| holes.iter().find(|h| &h.name == name).unwrap().point[0])
+            .collect();
+        assert!(
+            coords.windows(2).all(|w| w[0] <= w[1]) || coords.windows(2).all(|w| w[0] >= w[1]),
+            "{members:?}"
+        );
+    }
+}

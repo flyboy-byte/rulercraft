@@ -174,13 +174,20 @@ fn line(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
         return None;
     }
     let mut order: Vec<usize> = (0..g.len()).collect();
-    order.sort_by(|&p, &q| dot(sub(pts[p], far), u).total_cmp(&dot(sub(pts[q], far), u)));
+    // The largest direction component gives a stable total order without subtracting
+    // a distant endpoint from every coordinate. The adjacent projections below
+    // still verify that off-line tolerances did not reverse that order.
+    let axis = (0..3).max_by(|&a, &b| u[a].abs().total_cmp(&u[b].abs()))?;
+    order.sort_by(|&p, &q| {
+        let cmp = pts[p][axis].total_cmp(&pts[q][axis]);
+        if u[axis] < 0.0 { cmp.reverse() } else { cmp }
+    });
     let gaps: Vec<f64> = order
         .windows(2)
         .map(|w| dot(sub(pts[w[1]], pts[w[0]]), u))
         .collect();
-    // A large shared projection can erase nearby differences and give the wrong order.
-    // Refuse that row if direct adjacent projections contradict the sorted order.
+    // Refuse the row if off-line offsets make coordinate order disagree with
+    // direct adjacent projections along the fitted line.
     if gaps.iter().any(|gap| !gap.is_finite() || *gap < 0.0) {
         return None;
     }
