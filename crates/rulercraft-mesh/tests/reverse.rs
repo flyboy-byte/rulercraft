@@ -401,6 +401,18 @@ fn nonfinite_axis_points_do_not_hide_valid_hole_patterns() {
         assert_eq!(members.len(), 3);
         assert!(!members.iter().any(|name| name == "bad"));
     }
+    // An invalid first point must not anchor a partial diameter group and consume valid holes.
+    let holes = vec![
+        hole("bad", [f64::NAN, 0.0, 0.0], 0.01),
+        hole("a", [0.0, 0.0, 0.0], 0.04),
+        hole("b", [10.0, 0.0, 0.0], 0.05),
+        hole("c", [20.0, 0.0, 0.0], 0.07),
+    ];
+    let patterns = hole_patterns(&holes, PatternOptions::default());
+    let [Pattern::Line { members, .. }] = patterns.as_slice() else {
+        panic!("{patterns:?}")
+    };
+    assert_eq!(members.len(), 3);
 }
 
 #[test]
