@@ -1,0 +1,15 @@
+{
+  "id": "gui.web",
+  "milestone": "R7",
+  "title": "App as a static page running the engine in the browser",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "gui.viewer",
+    "engine.wasm"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

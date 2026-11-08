@@ -1,0 +1,14 @@
+{
+  "id": "section.cut",
+  "milestone": "R7",
+  "title": "Sections across a feature and the part's widest outline, measured in 2D",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "mesh.graph"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Exit: sections of known solids give the known outline lengths."
+}

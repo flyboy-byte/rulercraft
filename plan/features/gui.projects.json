@@ -1,0 +1,16 @@
+{
+  "id": "gui.projects",
+  "milestone": "R7",
+  "title": "App: save and reopen a project, undo and redo",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "gui.viewer",
+    "project.file",
+    "history.undo"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

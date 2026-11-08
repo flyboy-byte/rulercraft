@@ -1,8 +1,8 @@
 # RulerCraft: context
 
-Last updated 2026-11-06.
+Last updated 2026-11-07. The locked intent is INTENT.md (D-010); read it first.
 
-## North star
+## North star (see INTENT.md)
 
 Hand Claude any mesh (a downloaded STL, a phone scan, a professional scan) and get back
 trustworthy measurements and an editable CAD model.

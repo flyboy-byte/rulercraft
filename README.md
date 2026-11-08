@@ -14,6 +14,9 @@ answers: it reads meshes, finds and fits their planes, holes, cylinders and sphe
 them, over a CLI and an MCP server. The CAD half (building the solid, STEP export) is
 [SolidCraft](https://github.com/tangency-labs) and its kernel SolidCore.
 
+The project's locked intent is [INTENT.md](INTENT.md); the competitive scope is
+[docs/specs/product-scope.md](docs/specs/product-scope.md).
+
 ## Try it
 
 ```bash

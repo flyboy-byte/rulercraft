@@ -1,0 +1,16 @@
+{
+  "id": "gui.dimensions",
+  "milestone": "R7",
+  "title": "App: constructions, dimension list, tolerances and pass/fail",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "gui.viewer",
+    "measure.constructs",
+    "measure.gdt"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

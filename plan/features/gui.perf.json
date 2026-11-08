@@ -1,0 +1,14 @@
+{
+  "id": "gui.perf",
+  "milestone": "R7",
+  "title": "App: smooth picking and drawing on multi-million-triangle scans",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "gui.viewer"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Exit: open a 5-million-triangle scan and pick in under 100 ms."
+}

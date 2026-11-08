@@ -1,0 +1,15 @@
+{
+  "id": "fit.shapes",
+  "milestone": "R7",
+  "title": "Cone, torus and circle fits",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "fit.cylinder",
+    "fit.robust"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Exit: known-answer fits within stated tolerance, with a wrong-value run each."
+}

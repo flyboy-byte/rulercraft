@@ -1,6 +1,6 @@
 {
   "id": "gui.viewer",
-  "milestone": "R1",
+  "milestone": "R7",
   "title": "Standalone GUI: 3D view, brush selection, fits, measure, segments",
   "spec": "gui",
   "status": "implemented",

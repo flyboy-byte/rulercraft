@@ -1,0 +1,14 @@
+{
+  "id": "mesh.clean",
+  "milestone": "R7",
+  "title": "Mesh clean-up: hole fill, bad triangle removal, reduction",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "mesh.graph"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Exit: clean-up never moves a surviving vertex more than a stated amount."
+}

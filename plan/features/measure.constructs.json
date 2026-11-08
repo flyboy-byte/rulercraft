@@ -1,0 +1,15 @@
+{
+  "id": "measure.constructs",
+  "milestone": "R7",
+  "title": "Points, lines and planes built from fits; dimensions between them with nominal and tolerance",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "measure.relations",
+    "fit.plane"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Exit: known parts give dimension lists equal to the CLI's numbers, with pass/fail against tolerance."
+}

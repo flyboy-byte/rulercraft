@@ -1,0 +1,14 @@
+{
+  "id": "cad.step",
+  "milestone": "R7",
+  "title": "STEP export of measured features through SolidCraft",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "cad.solidcraft"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything; needs SolidCraft running."
+}
