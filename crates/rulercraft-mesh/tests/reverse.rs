@@ -359,3 +359,136 @@ mod grid {
         );
     }
 }
+
+#[test]
+fn distant_hole_does_not_erase_nearby_line_offsets() {
+    // Three close points form a right triangle; no line can put all within 0.1 mm.
+    // The fourth point is so far away that subtracting it from each close point
+    // rounds away their distinct coordinates in f64.
+    for far in [1e20, 1e30] {
+        let base = vec![
+            hole("a", [0.0, 0.0, 0.0], 5.0),
+            hole("b", [1.0, 0.0, 0.0], 5.0),
+            hole("c", [0.0, 1.0, 0.0], 5.0),
+            hole("far", [far, -far, 0.0], 5.0),
+        ];
+        for shift in 0..base.len() {
+            let mut holes = base.clone();
+            holes.rotate_left(shift);
+            let patterns = hole_patterns(&holes, PatternOptions::default());
+            assert!(
+                patterns.iter().all(|p| !matches!(p, Pattern::Line { .. })),
+                "far={far}, shift={shift}: {patterns:?}"
+            );
+        }
+    }
+}
+
+#[test]
+#[cfg(target_pointer_width = "64")]
+fn sparse_grid_larger_than_address_space_is_not_full() {
+    let points = [
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [1e10, 1e10, 0.0],
+    ];
+    let holes: Vec<_> = points
+        .iter()
+        .enumerate()
+        .map(|(i, p)| hole(&i.to_string(), *p, 5.0))
+        .collect();
+    let patterns = hole_patterns(&holes, PatternOptions::default());
+    let [
+        Pattern::Grid {
+            columns,
+            rows,
+            full,
+            ..
+        },
+    ] = patterns.as_slice()
+    else {
+        panic!("{patterns:?}")
+    };
+    assert_eq!((*columns, *rows), (10_000_000_001, 10_000_000_001));
+    assert!(!full);
+}
+
+#[test]
+fn distant_holes_on_both_sides_do_not_hide_middle_offsets() {
+    let points = [
+        [-1e20, 1e20, 0.0],
+        [1e20, -1e20, 0.0],
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+    ];
+    let holes: Vec<_> = points
+        .iter()
+        .enumerate()
+        .map(|(i, p)| hole(&i.to_string(), *p, 5.0))
+        .collect();
+    let patterns = hole_patterns(&holes, PatternOptions::default());
+    assert!(
+        patterns.iter().all(|p| !matches!(p, Pattern::Line { .. })),
+        "{patterns:?}"
+    );
+}
+
+#[test]
+fn distant_endpoint_does_not_shuffle_nearby_row_members() {
+    let holes = vec![
+        hole("zero", [0.0, 0.0, 0.0], 5.0),
+        hole("two", [2.0, 0.0, 0.0], 5.0),
+        hole("one", [1.0, 0.0, 0.0], 5.0),
+        hole("far", [1e20, 0.0, 0.0], 5.0),
+    ];
+    for pattern in hole_patterns(&holes, PatternOptions::default()) {
+        if let Pattern::Line { members, .. } = pattern {
+            let coords: Vec<_> = members
+                .iter()
+                .map(|name| holes.iter().find(|h| &h.name == name).unwrap().point[0])
+                .collect();
+            assert!(
+                coords.windows(2).all(|w| w[0] <= w[1]) || coords.windows(2).all(|w| w[0] >= w[1]),
+                "{members:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn distant_endpoint_keeps_a_resolvable_line() {
+    let points = [2.0, 1.0, 0.0, 1e20];
+    let holes: Vec<_> = points
+        .iter()
+        .enumerate()
+        .map(|(i, &x)| hole(&i.to_string(), [x, 0.0, 0.0], 5.0))
+        .collect();
+    let patterns = hole_patterns(&holes, PatternOptions::default());
+    let [Pattern::Line { worst_offset, .. }] = patterns.as_slice() else {
+        panic!("{patterns:?}")
+    };
+    assert_eq!(*worst_offset, 0.0);
+}
+
+#[test]
+fn grid_with_unrepresentable_span_is_not_reported() {
+    let points = [
+        [0.0, 0.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [9e18, 9e18, 0.0],
+        [-9e18, -9e18, 0.0],
+    ];
+    let holes: Vec<_> = points
+        .iter()
+        .enumerate()
+        .map(|(i, p)| hole(&i.to_string(), *p, 5.0))
+        .collect();
+    let patterns = hole_patterns(&holes, PatternOptions::default());
+    assert!(
+        patterns.iter().all(|p| !matches!(p, Pattern::Grid { .. })),
+        "{patterns:?}"
+    );
+}
