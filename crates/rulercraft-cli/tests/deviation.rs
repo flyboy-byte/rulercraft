@@ -79,6 +79,27 @@ fn deviation_measures_known_planes_and_bounds_output() {
         (past["returned"].as_u64(), past["truncated"].as_bool()),
         (Some(0), Some(false))
     );
+    // Independent reference units: z=2 mm measured against a z=1 m reference is -998 mm.
+    let reference_one = dir.join("reference-one.ply");
+    let measured_two = dir.join("measured-two.ply");
+    std::fs::write(&reference_one, plane(1)).unwrap();
+    std::fs::write(&measured_two, plane(2)).unwrap();
+    let independent = Command::new(env!("CARGO_BIN_EXE_rulercraft"))
+        .arg("deviation")
+        .arg(&measured_two)
+        .arg(&reference_one)
+        .args(["--reference-units", "m"])
+        .output()
+        .unwrap();
+    assert!(
+        independent.status.success(),
+        "{}",
+        String::from_utf8_lossy(&independent.stderr)
+    );
+    assert_eq!(
+        serde_json::from_slice::<Value>(&independent.stdout).unwrap()["stats"]["mean"],
+        -998.0
+    );
     let scaled = run(&above, &["--units", "m", "--reference-units", "m"]);
     assert!(scaled.status.success());
     assert_eq!(
