@@ -279,7 +279,8 @@ fn large_inherited_namespace_set_preserves_child_scope() {
         "<object id='1'><mesh><vertices><p:vertex xmlns:p='urn:other' x='99' y='99' z='99'/>",
     );
     for _ in 0..500 {
-        resources.push_str("<p:vertex x='0' y='0' z='0'/><p:vertex x='1' y='0' z='0'/><p:vertex x='0' y='1' z='0'/>");
+        let core = "http://schemas.microsoft.com/3dmanufacturing/core/2015/02";
+        resources.push_str(&format!("<p:vertex xmlns:p='{core}' x='0' y='0' z='0'/><p:vertex xmlns='{core}' x='1' y='0' z='0'/><p:vertex x='0' y='1' z='0'/>"));
     }
     resources.push_str(
         "</vertices><triangles><triangle v1='0' v2='1' v3='2'/></triangles></mesh></object>",

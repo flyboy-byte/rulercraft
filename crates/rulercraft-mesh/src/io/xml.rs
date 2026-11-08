@@ -188,9 +188,14 @@ impl<'a> Parser<'a> {
             if attrs.insert(key.clone(), value.clone()).is_some() {
                 return Err(fail(offset, "duplicate attribute"));
             }
-            if key == "xmlns" {
-                namespaces.to_mut().insert(String::new(), value);
-            } else if let Some(prefix) = key.strip_prefix("xmlns:") {
+            let namespace_prefix = if key == "xmlns" {
+                Some("")
+            } else {
+                key.strip_prefix("xmlns:")
+            };
+            if let Some(prefix) = namespace_prefix
+                && namespaces.get(prefix) != Some(&value)
+            {
                 namespaces.to_mut().insert(prefix.into(), value);
             }
         }
