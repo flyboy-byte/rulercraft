@@ -6,7 +6,7 @@ Overall roadmap progress: **60%** (details in ROADMAP-PROGRESS.md).
 
 | Status | Features |
 | --- | ---: |
-| planned | 25 |
+| planned | 26 |
 | specced | 0 |
 | in-progress | 1 |
 | implemented | 6 |

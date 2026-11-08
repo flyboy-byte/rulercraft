@@ -12,7 +12,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | R2 Mesh to editable CAD through SolidCraft | `████████░░` | 75% | 20 | A simple prismatic downloaded part is rebuilt as a SolidCraft model whose deviation from the STL is under 0.05 mm. |
 | R3 Noisy scans: robust fits, deviation, alignment, thickness | `█████████░` | 90% | 20 | A real scan (a public sample scan or a phone scan) gives stable fits and a deviation report against its CAD. |
 | R4 Reverse-engineering workflows with AI | `█████████░` | 90% | 15 | Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft. |
-| R5 Reusable engine | `██░░░░░░░░` | 15% | 10 | Another project depends on rulercraft-mesh from crates.io or git, and the engine builds for Wasm and runs the app in a browser with nothing to install. |
+| R5 Reusable engine | `█░░░░░░░░░` | 10% | 10 | Another project depends on rulercraft-mesh from crates.io or git, and the engine builds for Wasm and runs the app in a browser with nothing to install. |
 | R6 Photos to mesh (research) | `░░░░░░░░░░` | 0% | 5 | A written go/no-go with a prototype on photos of one object. |
 | R7 A tool people choose: the app, at parity and beyond | `░░░░░░░░░░` | 3% | 25 | Logan, who uses the established scan-inspection apps, does a real job in the RulerCraft app (a dimensioned report, a deviation check against the design, an alignment) and finds nothing he needs missing. |
 
@@ -71,10 +71,11 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | --- | --- | --- | --- | --- |
 | `re.features` Reverse-engineering workflows: hole patterns, symmetry, design-intent guesses | verified | math, wrong-value | claude https://github.com/flyboy-byte/rulercraft/pull/58 | Splitting partial patterns out of a larger group, and a CLI command (MCP reverse returns patterns, guesses and symmetry). |
 
-## R5: Reusable engine (15%)
+## R5: Reusable engine (10%)
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
+| `engine.command-api` One JSON command entry point, run(command, args), mirroring the MCP tools, for any host | planned | - | unclaimed | Everything. Exit: every MCP tool is reachable through it with identical JSON in and out (tested); no assumed host interface. |
 | `engine.library` Stable library API, docs, crates.io, Wasm build | in-progress | - | claude | Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog. |
 | `engine.wasm` Browser (Wasm) build of the engine with the same numbers as native | planned | - | unclaimed | Everything; needs a Wasm toolchain installed (not present on the development machine). |
 
