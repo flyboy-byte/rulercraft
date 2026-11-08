@@ -10,6 +10,7 @@ use serde_json::{Value, json};
 use std::process::ExitCode;
 
 const USAGE: &str = "Usage:
+  rulercraft --version
   rulercraft project create <project.json> <mesh> [--units U]
   rulercraft project fit <project.json> <id> <plane|sphere|cylinder> [fit options]
   rulercraft project info <project.json>
@@ -240,6 +241,10 @@ fn run(args: &[String]) -> Result<String, String> {
 
 fn main() -> ExitCode {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if matches!(args.first().map(String::as_str), Some("-V" | "--version")) {
+        println!("rulercraft {}", env!("CARGO_PKG_VERSION"));
+        return ExitCode::SUCCESS;
+    }
     if matches!(args.first().map(String::as_str), Some("-h" | "--help")) {
         println!("{USAGE}");
         return ExitCode::SUCCESS;
