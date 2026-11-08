@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Small UTF-8 XML reader for the geometry subset of 3MF. No DTD or external entities.
 use super::ReadError;
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 
 pub(super) struct Node {
@@ -148,7 +149,7 @@ impl<'a> Parser<'a> {
         self.pos += 1;
         let full = self.name()?;
         let mut attrs = BTreeMap::new();
-        let mut namespaces = ns.clone();
+        let mut namespaces = Cow::Borrowed(ns);
         loop {
             let before = self.pos;
             self.ws();
@@ -188,9 +189,9 @@ impl<'a> Parser<'a> {
                 return Err(fail(offset, "duplicate attribute"));
             }
             if key == "xmlns" {
-                namespaces.insert(String::new(), value);
+                namespaces.to_mut().insert(String::new(), value);
             } else if let Some(prefix) = key.strip_prefix("xmlns:") {
-                namespaces.insert(prefix.into(), value);
+                namespaces.to_mut().insert(prefix.into(), value);
             }
         }
         let (prefix, local) = full.split_once(':').unwrap_or(("", &full));

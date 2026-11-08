@@ -220,3 +220,29 @@ fn namespace_reflection_repeats_and_degenerates() {
         .contains("expanded")
     );
 }
+
+#[test]
+fn large_inherited_namespace_set_preserves_child_scope() {
+    let namespaces: String = (0..2000)
+        .map(|i| format!(" xmlns:n{i}='urn:ns{i}'"))
+        .collect();
+    let mut resources = String::from(
+        "<object id='1'><mesh><vertices><p:vertex xmlns:p='urn:other' x='99' y='99' z='99'/>",
+    );
+    for _ in 0..500 {
+        resources.push_str("<p:vertex x='0' y='0' z='0'/><p:vertex x='1' y='0' z='0'/><p:vertex x='0' y='1' z='0'/>");
+    }
+    resources.push_str(
+        "</vertices><triangles><triangle v1='0' v2='1' v3='2'/></triangles></mesh></object>",
+    );
+    let xml = model(&resources, "<item objectid='1'/>", "millimeter").replace("unit='millimeter'", &format!("unit='millimeter' xmlns:p='http://schemas.microsoft.com/3dmanufacturing/core/2015/02'{namespaces}"));
+    let mesh = read_mesh(
+        "namespaces.3mf",
+        &package(&xml, zip::CompressionMethod::Deflated),
+        Unit::Mm,
+        ImportLimits::default(),
+    )
+    .unwrap();
+    assert_eq!((mesh.positions.len(), mesh.triangles.len()), (3, 1));
+    assert_eq!(mesh.bounds().unwrap().max, [1.0, 1.0, 0.0]);
+}
