@@ -100,8 +100,10 @@ pub enum Pattern {
 }
 
 fn parallel(a: Vec3, b: Vec3, limit_deg: f64) -> bool {
-    let d = angle_between(a, b).unwrap_or(0.0).to_degrees();
-    d.min(180.0 - d) <= limit_deg
+    angle_between(a, b).is_some_and(|angle| {
+        let d = angle.to_degrees();
+        d.min(180.0 - d) <= limit_deg
+    })
 }
 
 /// Finds lines, circles and grids of equal parallel holes. A square of four holes is reported as a circle

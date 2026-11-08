@@ -359,3 +359,28 @@ mod grid {
         );
     }
 }
+
+#[test]
+fn invalid_axes_do_not_create_or_join_hole_patterns() {
+    for axis in [
+        [0.0, 0.0, 0.0],
+        [f64::NAN, 0.0, 1.0],
+        [f64::INFINITY, 0.0, 1.0],
+    ] {
+        let mut bad = hole("bad", [20.0, 0.0, 0.0], 5.0);
+        bad.axis = axis;
+        let mut holes = vec![
+            hole("a", [0.0, 0.0, 0.0], 5.0),
+            hole("b", [10.0, 0.0, 0.0], 5.0),
+            bad,
+        ];
+        assert!(hole_patterns(&holes, PatternOptions::default()).is_empty());
+        holes.push(hole("c", [20.0, 0.0, 0.0], 5.0));
+        let patterns = hole_patterns(&holes, PatternOptions::default());
+        let [Pattern::Line { members, .. }] = patterns.as_slice() else {
+            panic!("{patterns:?}")
+        };
+        assert_eq!(members.len(), 3);
+        assert!(!members.iter().any(|name| name == "bad"));
+    }
+}
