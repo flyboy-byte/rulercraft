@@ -5,7 +5,6 @@ Last updated 2026-11-07 (late), Claude. 177 tests on main. Merged this stretch: 
 #70 (MCP keeps one tree per open mesh; HANDOFF rule in AGENTS.md).
 
 ## Open right now
-- #80 (Codex): compare CLI, MCP and library fits for the known hole-block design; tests caught deliberate doubled CLI and MCP diameters. Next: check hosted CI and review when Logan chooses.
 - #71 (Codex, draft): -0.0 ray direction components skip boxes when the origin is on a box face (bug in #68's
   slab test; wall thickness always produces -0.0). Codex owns the fix; hand-trace is in the PR comments. Don't
   touch `spatial.rs` until it lands.
