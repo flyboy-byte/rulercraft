@@ -150,6 +150,22 @@ pub fn hole_patterns(holes: &[Hole], options: PatternOptions) -> Vec<Pattern> {
     out
 }
 
+fn mean_diameter(holes: &[Hole], group: &[usize]) -> f64 {
+    // Scaling avoids overflowing the sum even when the finite mean is near f64::MAX.
+    let scale = group
+        .iter()
+        .map(|&i| holes[i].diameter.abs())
+        .fold(0.0, f64::max);
+    if scale == 0.0 {
+        return 0.0;
+    }
+    let normalized = group
+        .iter()
+        .map(|&i| holes[i].diameter / scale)
+        .sum::<f64>();
+    scale * (normalized / group.len() as f64)
+}
+
 fn line(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
     let pts: Vec<Vec3> = g.iter().map(|&i| holes[i].point).collect();
     // Direction between the two farthest holes, found against the first.
@@ -204,7 +220,7 @@ fn line(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
     let mean = gaps.iter().sum::<f64>() / gaps.len() as f64;
     Some(Pattern::Line {
         members: order.iter().map(|&k| holes[g[k]].name.clone()).collect(),
-        diameter: g.iter().map(|&i| holes[i].diameter).sum::<f64>() / g.len() as f64,
+        diameter: mean_diameter(holes, g),
         spacing: mean,
         equal_spacing: gaps.iter().all(|x| (x - mean).abs() <= o.spacing_tolerance),
         worst_offset: worst,
@@ -289,7 +305,7 @@ fn grid(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
     let cos = (dot([a[0], a[1], 0.0], [b[0], b[1], 0.0]) / (len(a) * len(b))).clamp(-1.0, 1.0);
     Some(Pattern::Grid {
         members: cells.iter().map(|c| holes[g[c.2]].name.clone()).collect(),
-        diameter: g.iter().map(|&i| holes[i].diameter).sum::<f64>() / g.len() as f64,
+        diameter: mean_diameter(holes, g),
         columns,
         rows,
         spacing_a: len(a),
@@ -370,7 +386,7 @@ fn circle(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
     let centre = add(origin, add(scale(x, cu), scale(y, cv)));
     Some(Pattern::Circle {
         members: order.iter().map(|&k| holes[g[k]].name.clone()).collect(),
-        diameter: g.iter().map(|&i| holes[i].diameter).sum::<f64>() / n as f64,
+        diameter: mean_diameter(holes, g),
         center: centre,
         radius,
         step_deg: step,
