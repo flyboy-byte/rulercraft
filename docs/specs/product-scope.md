@@ -83,7 +83,7 @@ wrong-value run must make it fail); speed targets are set after measuring a base
   set as its MCP server, and a plugin exports a manifest and entry points such as `execute` or `import(bytes)`.
   If that shape lands, an engine built for Wasm with one JSON command entry point that mirrors our MCP tools
   (`engine.command-api`) would fit it with little rework. That is a reason to do `engine.wasm` and the command
-  entry point anyway; we still build against nothing until it is decided. Meanwhile We keep every
+  entry point anyway; we still build against nothing until it is decided. Meanwhile we keep every
   hand-off host-agnostic: library, MCP, recipe JSON, an embeddable page with a small `postMessage` interface
   (`gui.embed`: open mesh bytes, read measurements, send a recipe), and optionally an egui panel crate on its own
   stack (`ui.egui`, needs a dependency approval). We build against none of them until asked.
