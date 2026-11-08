@@ -179,20 +179,44 @@ fn line(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
         .copied()
         .max_by(|p, q| length(sub(*p, far)).total_cmp(&length(sub(*q, far))))?;
     let u = normalize(sub(b, far))?;
-    // Offset of each hole from the line, measured across the axis too (axes need not meet the row).
-    let worst = pts
-        .iter()
-        .map(|&p| length(cross(sub(p, far), u)))
-        .fold(0.0, f64::max);
+    // Use the closer endpoint to retain small offsets near either end of a long row.
+    let worst = pts.iter().try_fold(0.0f64, |worst, &p| {
+        let from_far = sub(p, far);
+        let from_b = sub(p, b);
+        let delta = if length(from_far) <= length(from_b) {
+            from_far
+        } else {
+            from_b
+        };
+        let distance = length(delta);
+        // If rounding of the displacement itself can exceed the requested tolerance,
+        // do not report an apparently exact line on uncertain evidence.
+        if !distance.is_finite() || distance * f64::EPSILON * 8.0 > o.position_tolerance {
+            return None;
+        }
+        Some(worst.max(length(cross(delta, u))))
+    })?;
     if worst > o.position_tolerance {
         return None;
     }
     let mut order: Vec<usize> = (0..g.len()).collect();
-    order.sort_by(|&p, &q| dot(sub(pts[p], far), u).total_cmp(&dot(sub(pts[q], far), u)));
+    // The largest direction component gives a stable total order without subtracting
+    // a distant endpoint from every coordinate. The adjacent projections below
+    // still verify that off-line tolerances did not reverse that order.
+    let axis = (0..3).max_by(|&a, &b| u[a].abs().total_cmp(&u[b].abs()))?;
+    order.sort_by(|&p, &q| {
+        let cmp = pts[p][axis].total_cmp(&pts[q][axis]);
+        if u[axis] < 0.0 { cmp.reverse() } else { cmp }
+    });
     let gaps: Vec<f64> = order
         .windows(2)
         .map(|w| dot(sub(pts[w[1]], pts[w[0]]), u))
         .collect();
+    // Refuse the row if off-line offsets make coordinate order disagree with
+    // direct adjacent projections along the fitted line.
+    if gaps.iter().any(|gap| !gap.is_finite() || *gap < 0.0) {
+        return None;
+    }
     let mean = gaps.iter().sum::<f64>() / gaps.len() as f64;
     Some(Pattern::Line {
         members: order.iter().map(|&k| holes[g[k]].name.clone()).collect(),
@@ -243,8 +267,21 @@ fn grid(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
         let i = (q[0] * b[1] - q[1] * b[0]) / det;
         let j = (a[0] * q[1] - a[1] * q[0]) / det;
         let (ri, rj) = (i.round(), j.round());
+        // Float-to-integer casts saturate; refuse unrepresentable cells rather than
+        // inventing coordinates or overflowing the grid dimensions below.
+        if !ri.is_finite()
+            || !rj.is_finite()
+            || ri < i64::MIN as f64
+            || ri >= i64::MAX as f64
+            || rj < i64::MIN as f64
+            || rj >= i64::MAX as f64
+        {
+            return None;
+        }
         let off = len([q[0] - ri * a[0] - rj * b[0], q[1] - ri * a[1] - rj * b[1]]);
-        if off > o.position_tolerance || cells.iter().any(|c| c.0 == ri as i64 && c.1 == rj as i64)
+        if !off.is_finite()
+            || off > o.position_tolerance
+            || cells.iter().any(|c| c.0 == ri as i64 && c.1 == rj as i64)
         {
             return None;
         }
@@ -259,7 +296,8 @@ fn grid(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
         cells.iter().map(|c| c.1).min()?,
         cells.iter().map(|c| c.1).max()?,
     );
-    let (columns, rows) = ((i1 - i0 + 1) as usize, (j1 - j0 + 1) as usize);
+    let columns = usize::try_from(i1.checked_sub(i0)?.checked_add(1)?).ok()?;
+    let rows = usize::try_from(j1.checked_sub(j0)?.checked_add(1)?).ok()?;
     if columns < 2 || rows < 2 {
         return None;
     }
@@ -273,7 +311,9 @@ fn grid(holes: &[Hole], g: &[usize], o: &PatternOptions) -> Option<Pattern> {
         spacing_a: len(a),
         spacing_b: len(b),
         angle_deg: cos.acos().to_degrees(),
-        full: cells.len() == columns * rows,
+        full: columns
+            .checked_mul(rows)
+            .is_some_and(|area| cells.len() == area),
         worst_offset: worst,
     })
 }
