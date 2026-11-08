@@ -1,8 +1,18 @@
 # Handoff
 
-Last updated 2026-11-07, Claude. main at the merge of #64 plus this note. No open PRs. 165 tests pass (about a
-second, plus a Node check of the viewer's geometry when node exists). Overall plan 55% (new milestones R7, R8 added
-today, so the percentage fell; that is expected).
+Last updated 2026-11-07 (late), Claude. 177 tests on main. Merged this stretch: #66 (OBJ memory bound), #67
+(verify.zoo first slice), #68 (engine.bvh: `spatial::Bvh`, 283x on 5.12 M triangles), #69 (narrow facing angles),
+#70 (MCP keeps one tree per open mesh; HANDOFF rule in AGENTS.md).
+
+## Open right now
+- #71 (Codex, draft): -0.0 ray direction components skip boxes when the origin is on a box face (bug in #68's
+  slab test; wall thickness always produces -0.0). Codex owns the fix; hand-trace is in the PR comments. Don't
+  touch `spatial.rs` until it lands.
+- #73 (Claude, draft): engine.parallel. `par::map`, bit-identical for any thread count, used by deviation, ICP,
+  symmetry. Only 1.7x on 12 threads because the tree build and the stats sort are serial; its ignored speed test
+  fails. Next: parallel tree build, then thickness (after #71) and segmentation.
+- Build output: `/tmp` is a 7.5 GB tmpfs and filled up once. Build worktrees with
+  `CARGO_TARGET_DIR=$HOME/.cache/rulercraft-claude-target` (or your own dir off /tmp).
 
 ## Read first
 INTENT.md (locked; changes only by a superseding decision), AGENTS.md (outranks the rest), docs/v1.md (what v1 means,
