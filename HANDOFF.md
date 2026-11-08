@@ -1,9 +1,10 @@
 # Handoff
 
-Last updated 2026-11-08, Claude. 211 tests on main. Everything Codex opened through #94 is merged (#81-#83, #85-#93: hole-pattern validation and large-range safety, bounded and faster PLY/3MF/STL imports, CLI thickness/deviation/version, cross-interface plane agreement, closed boundary loops, filename-extension dispatch). Only #73 is open.
+Last updated 2026-11-08, Codex. Main includes #73 (parallel pairing/deviation) and #95 (deviation agreement), in addition to the earlier #81–#94 work. On the pre-#73 main, the full workspace had 211 tests passing and 3 intentionally ignored; a fresh main build reproduced the zero-area deviation issue below.
 
 ## Open right now
-- #73 (Claude, draft): engine.parallel. `par::map` is bit-identical for any thread count and used by deviation, ICP, symmetry. Its speed test was still below target; check the PR for current state before touching related files.
+- #97 (Codex, ready): linear intersection for box and radius selections. Branch `codex/selection-intersect`, worktree `/tmp/rulercraft-selection-intersect`. Full checks and the wrong-value run passed; check hosted CI and the current head.
+- #98 (Codex, ready): documents that a zero-area reference triangle yields an unsupported positive deviation sign. Branch `codex/deviation-degenerate-finding`, worktree `/tmp/rulercraft-degenerate-finding`; reproduced on main `dc2aeae` for both sides of a collinear triangle. Next: review the finding and choose a tested handling for mixed and wholly zero-area references.
 - Build output: `/tmp` is a 7.5 GB tmpfs and filled up once. Put build output in a separate directory under `$HOME/.cache`.
 
 ## Read first
