@@ -13,6 +13,12 @@ Last updated 2026-11-07, Claude. Read AGENTS.md first (it outranks this), then P
   `implemented`), `align::datum_frame` (verified), `deviation::patches` (verified). `align_icp` and
   `deviation` are reachable through the MCP `compare` tool.
 
+## GUI (D-009)
+- `rulercraft-gui` is the standalone app: std-only server plus hand-written WebGL (docs/specs/gui.md). First slice
+  works (open, look, mark, fit, measure, find regions); it was checked by hand in headless Chrome and the server by
+  tests. Next slices are listed in the spec's "Not done". Keep it a thin client over the engine and embeddable, so
+  it can also be a panel in SolidCraft.
+
 ## Owed
 - cad.solidcraft: one replay of a recipe against a live SolidCraft server (SolidCraft is not built on
   this machine; mind the disk guard before building it).

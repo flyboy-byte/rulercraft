@@ -23,7 +23,7 @@ trustworthy measurements and an editable CAD model.
   (AGENTS.md "Independence", DECISIONS.md D-001).
 - Not a CAD kernel. Solids, NURBS, booleans and STEP belong to SolidCore.
 - Not a photogrammetry engine yet. Photos-to-mesh is a later research direction (ROADMAP R6).
-- Not a viewer or GUI yet. CLI and MCP come first.
+- A standalone GUI exists (`rulercraft-gui`, D-009); the CLI and MCP remain the scriptable fronts.
 
 ## Who drives it
 

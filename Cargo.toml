@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["crates/rulercraft-mesh", "crates/rulercraft-cli", "crates/rulercraft-mcp"]
+members = ["crates/rulercraft-mesh", "crates/rulercraft-cli", "crates/rulercraft-mcp", "crates/rulercraft-gui"]
 
 [workspace.package]
 version = "0.1.0"

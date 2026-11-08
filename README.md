@@ -20,7 +20,11 @@ them, over a CLI and an MCP server. The CAD half (building the solid, STEP expor
 cargo run -p rulercraft-cli -- info fixtures/known/hole-block.stl
 cargo run -p rulercraft-cli -- fit sphere fixtures/known/sphere-seat.stl --near 0 0 12 12.01 --sigma 0
 cargo run -p rulercraft-mcp # stdio server; connect using an MCP client
+cargo run -p rulercraft-gui -- fixtures/known/hole-block.stl # the app: 3D view, mark, fit, measure
 ```
+
+The app (`rulercraft-gui`) runs on your computer only and opens in your browser; no Claude or internet is
+needed. See [the GUI page](docs/specs/gui.md).
 
 Project commands are `rulercraft project create`, `project fit` and `project info`; see
 [project format and CLI](docs/specs/project-file.md). [MCP tools](docs/specs/mcp.md) provide bounded
