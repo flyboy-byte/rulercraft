@@ -1,0 +1,14 @@
+{
+  "id": "app.release",
+  "milestone": "R7",
+  "title": "Installers for Linux, Windows and macOS",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "app.parity"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. P5; publishing needs Logan's yes."
+}

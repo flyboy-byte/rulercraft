@@ -1,0 +1,15 @@
+{
+  "id": "app.solidcraft-send",
+  "milestone": "R7",
+  "title": "Send the recipe to SolidCraft (over its MCP) so an editable part appears",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "cad.solidcraft",
+    "app.shell"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. P3; needs SolidCraft running."
+}

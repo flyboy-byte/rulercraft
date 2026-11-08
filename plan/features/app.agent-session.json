@@ -1,0 +1,16 @@
+{
+  "id": "app.agent-session",
+  "milestone": "R7",
+  "title": "The app shares its open document with Claude over MCP; agent steps visible and undoable",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "app.shell",
+    "mcp.server",
+    "history.undo"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. P4."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "app.shell",
+  "milestone": "R7",
+  "title": "Native app (egui/eframe): window, menus, files, settings, SolidCraft look",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "fit.plane"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. P0."
+}

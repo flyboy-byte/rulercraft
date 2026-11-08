@@ -1,11 +1,11 @@
 {
   "id": "gui.theme",
   "milestone": "R7",
-  "title": "App: adopt SolidCraft's visual design, light and dark, with a NOTICE",
+  "title": "App: adopt SolidCraft's theme (same toolkit), light and dark, with a NOTICE",
   "spec": "product-scope",
   "status": "planned",
   "depends_on": [
-    "gui.viewer"
+    "app.shell"
   ],
   "owner": null,
   "pr": null,

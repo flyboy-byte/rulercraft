@@ -148,3 +148,23 @@ GPU, and to stay joinable however SolidCraft ends up taking plugins.
 
 **Limits.** D-001 independence stands. No new dependency without approval (AGENTS.md). Targets for speed are
 set after measuring a baseline, not guessed.
+
+## D-012 v1 is all four jobs, a native app, judged by the SolidCraft community (2026-11-07)
+
+**Decision.** Logan chose, when asked: v1 must do all four jobs (inspect, scan to CAD, work with an agent, be an
+engine for others); the app is a native desktop app; the SolidCraft community is who judges v1 finished; pacing
+of credits is left open. docs/v1.md defines the bar and the phases.
+
+- **App technology.** The product app is native on egui, eframe, egui-wgpu and wgpu at the versions SolidCraft uses
+  (0.36 / 30 at this date), all MIT OR Apache-2.0. Logan approved these dependencies by choosing "native desktop"
+  (the option stated it needs new dependencies). They are allowed only in the app crates (`rulercraft-ui`,
+  `rulercraft-app`); the engine crates stay light (D-006). This supersedes D-009's choice of the standard library and
+  hand-written WebGL for the main app; that browser viewer stays as a prototype and test harness.
+- **Audience.** INTENT.md's "who it is for" now leads with the SolidCraft community (supersedes that part of D-010).
+- **Look.** SolidCraft's theme is adopted directly (same toolkit), with a NOTICE (D-011).
+
+**Why.** Logan wants a finished product and named these choices; matching SolidCraft's toolkit gives a native, GPU-backed
+app that feels like family, could later run in the browser from the same code, and could become a panel in SolidCraft.
+
+**Limits.** No contact with SolidCraft or its community from us; publishing (installers, crates.io) still needs Logan's
+yes at the time; accuracy rules (D-003) are unchanged.
