@@ -1,9 +1,9 @@
 # Handoff
 
-Last updated 2026-11-08, Claude. 211 tests on main. Everything Codex opened through #94 is merged (#81-#83, #85-#93: hole-pattern validation and large-range safety, bounded and faster PLY/3MF/STL imports, CLI thickness/deviation/version, cross-interface plane agreement, closed boundary loops, filename-extension dispatch). Only #73 is open.
+Last updated 2026-11-08, Claude. 218 tests on main. Merged: everything Codex opened through #97, and my #73 (engine.parallel: tree build, deviation, ICP, symmetry and thickness use every core with identical results for any thread count; 4.6x on 12 threads; segmentation stays serial because region growing depends on seed order). Open: #98 (Codex, docs: a finding about undefined deviation signs on degenerate references).
 
 ## Open right now
-- #73 (Claude, draft): engine.parallel. `par::map` is bit-identical for any thread count and used by deviation, ICP, symmetry. Its speed test was still below target; check the PR for current state before touching related files.
+- Threads: `RULERCRAFT_THREADS` or `par::with_threads` sets the count; results never depend on it (tests/parallel.rs). Parallel loops go through `par::map`.
 - Build output: `/tmp` is a 7.5 GB tmpfs and filled up once. Put build output in a separate directory under `$HOME/.cache`.
 
 ## Read first
