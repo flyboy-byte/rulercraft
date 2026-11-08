@@ -3,9 +3,18 @@
 Rules for every model (Claude, Codex, others) and every contributor. This file outranks every
 other doc here; if another doc disagrees, this one wins and the other gets fixed.
 
-Read first, in order: CONTEXT.md (what this is), this file, PROCESS.md (how work gets done),
+Read first, in order: INTENT.md (the locked intent), CONTEXT.md (what this is), this file, PROCESS.md (how work gets done),
 docs/architecture.md (where code goes), docs/implementation-plan.md (build order), STATUS.md (where things stand), HANDOFF.md (what the last
 session left). Then the feature file in `plan/features/` and its spec in `docs/specs/`.
+
+## How work is chosen: open improvement
+
+We are improving the app, not marching through a plan. The roadmap, docs/v1.md and plan/features/ are a map of
+where things are heading; they do not limit what you may work on. When told "find something to work on", follow
+docs/where-to-help.md: run `python3 tools/plan.py needs`, look at what needs help, pick the one thing that helps the
+app most for its size, say in one line what and why, claim it, build it. Off-plan work that serves INTENT.md is
+welcome; say why in the PR. Do not push the project toward one direction on your own: leave choices that change
+what the project is (INTENT.md, a new dependency, publishing) to Logan.
 
 There is no original to copy: behaviour comes from `docs/specs/`. When a spec does not settle a
 question, pick the simplest reasonable behaviour, write it into the spec in the same PR, and say so in
@@ -29,8 +38,11 @@ cargo clippy --workspace --all-targets -- -D warnings
 cargo test --workspace                       # the whole suite: must stay under 5 minutes
 python3 tools/plan.py check                  # plan files valid, generated files current
 python3 tools/plan.py render                 # regenerate STATUS.md and ROADMAP-PROGRESS.md
-python3 tools/plan.py next                   # what to work on, if you were given no task
+python3 tools/plan.py needs                  # what needs help (ready, half-done, findings, open PRs)
+python3 tools/plan.py next                   # ready, unclaimed roadmap features and current claims
 cargo run -p rulercraft-cli -- info part.stl
+cargo run -p rulercraft-mcp                  # MCP server on stdio
+cargo run -p rulercraft-gui -- part.stl      # browser app prototype (the native app is docs/v1.md P0)
 ```
 
 Toolchain: system Rust (1.99+), no rustup. Python 3, no packages.
@@ -47,7 +59,10 @@ to each other directly. Everything they need to know is in the repo:
   checked even a minute ago may be stale. If someone's lower-numbered PR claims the same feature, theirs
   wins: stop and say so in your PR, even if you are further along. Claim a
   feature by opening a draft PR titled with its id (`fit.cylinder: ...`) and setting `owner` and
-  `pr` in its `plan/features/<id>.json`. Lowest PR number wins a tie. One feature per PR.
+  `pr` in its `plan/features/<id>.json`. Lowest PR number wins a tie. One feature per PR. Work that is not a
+  roadmap feature is claimed the same way with an area tag (`fix:`, `improve:`, `perf:`, `test:`, `docs:`).
+- **One checkout, many sessions.** Never switch branches in a checkout another session may be using; work in
+  your own `git worktree add /tmp/<name> -b <branch> origin/main` and remove it after the merge.
 - **Hot files** (`.github/workflows/`, `Cargo.toml` at the root, `tools/plan.py`, `plan/roadmap.json`)
   are touched by one open PR at a time; say so in the PR body.
 - **HANDOFF.md** is rewritten (not appended) at the end of every session that leaves work open:

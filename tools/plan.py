@@ -5,6 +5,7 @@
   python3 tools/plan.py check    # exit 1 on an invalid plan or stale generated files
   python3 tools/plan.py render   # rewrite the generated files
   python3 tools/plan.py next     # ready, unclaimed features first
+  python3 tools/plan.py needs    # what needs help: ready, half-done, open findings, ignored tests, open PRs
 """
 import json
 import subprocess
@@ -126,6 +127,35 @@ def open_pr_claims():
     return claims
 
 
+def needs(features, claims):
+    """Lines describing what needs help, for "find something to work on" (docs/where-to-help.md)."""
+    out = ["What needs help (the roadmap is a map, not a limit; see docs/where-to-help.md):", ""]
+    r = ready(features, claims)
+    out.append(f"Ready roadmap features ({len(r)}):")
+    out += [f"  {f['id']:24} {f['milestone']}  {f['title']}" for f in r[:12]]
+    half = [f for f in features if f["status"] in ("in-progress", "implemented") and (f["left"] or "").strip()]
+    out += ["", f"Started but not finished ({len(half)}):"]
+    for f in half:
+        left = " ".join(f["left"].split())
+        out.append(f"  {f['id']:24} {f['status']:12} {left[:100] + ('...' if len(left) > 100 else '')}")
+    found = []
+    for path in sorted((ROOT / "docs/findings").glob("*.md")):
+        text = path.read_text()
+        if path.name != "README.md" and "Closed.**" not in text:
+            found.append(f"  {path.name}: {text.splitlines()[0].lstrip('# ')}")
+    out += ["", f"Open findings ({len(found)}):"] + found
+    ignored = []
+    for path in sorted((ROOT / "crates").rglob("*.rs")):
+        for n, line in enumerate(path.read_text().splitlines(), 1):
+            if "#[ignore" in line:
+                ignored.append(f"  {path.relative_to(ROOT)}:{n}")
+    out += ["", f"Ignored tests, run by hand ({len(ignored)}):"] + ignored
+    out += ["", "Open PRs (do not collide):" if claims else "Open PRs: none (or gh unavailable)."]
+    out += [f"  {k}: {v}" for k, v in sorted(claims.items())]
+    out += ["", "Always open: break it, accuracy, speed, everyday use, inputs, interfaces, the CAD loop, docs."]
+    return out
+
+
 def ready(features, claims=None):
     by_id = {f["id"]: f for f in features}
     claims = claims or {}
@@ -171,6 +201,8 @@ def main(argv):
             print("note: generated files out of date, run `python3 tools/plan.py render`: " + ", ".join(stale))
             if "--strict" in sys.argv:
                 return 1
+    elif cmd == "needs":
+        print("\n".join(needs(features, open_pr_claims())))
     elif cmd == "next":
         claims = open_pr_claims()
         r = ready(features, claims)

@@ -1,0 +1,12 @@
+{
+  "id": "verify.zoo",
+  "milestone": "R8",
+  "title": "Shape zoo: generated parts with exact dimensions at many sizes, densities, noise and outlier rates",
+  "spec": "verification",
+  "status": "planned",
+  "depends_on": [],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

@@ -1,0 +1,14 @@
+{
+  "id": "scan.phone",
+  "milestone": "R6",
+  "title": "Phone capture: read capture-app exports first, own app only if needed",
+  "spec": "scan-sources",
+  "status": "planned",
+  "depends_on": [
+    "io.gltf"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Research."
+}

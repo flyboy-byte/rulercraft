@@ -168,3 +168,19 @@ app that feels like family, could later run in the browser from the same code, a
 
 **Limits.** No contact with SolidCraft or its community from us; publishing (installers, crates.io) still needs Logan's
 yes at the time; accuracy rules (D-003) are unchanged.
+
+## D-013 Open improvement, and verification by machines at scale (2026-11-07)
+
+**Decision.**
+1. **Open improvement.** The roadmap is a map, not a limit. A session told "find something to work on" follows
+   docs/where-to-help.md and may pick any improvement that serves INTENT.md, on or off the plan, claimed with a draft
+   PR (feature id or area tag). Choices that change what the project is stay with Logan.
+2. **Verification at scale.** Beyond the fast PR gate (D-003, unchanged at under 5 minutes), scheduled tiers run more:
+   nightly property tests over generated shapes, a regression corpus, agreement between the library, CLI, MCP and app,
+   and benchmarks; weekly and before release, fuzzing, mutation testing, soak runs and break-it sessions
+   (docs/specs/verification.md). This supersedes D-003's "fuzzing only at release gates when Logan asks". Mutation and fuzz
+   tools run as developer tools, not dependencies of shipped crates; a fuzz harness needing a library dependency
+   still needs Logan's yes.
+
+**Why.** Logan: "a pure roadmap can only get me so far, especially if it's just one person here", and "I'm not going
+to use it hard enough to break it like it needs to be broken."

@@ -1,0 +1,14 @@
+{
+  "id": "verify.nightly",
+  "milestone": "R8",
+  "title": "Scheduled nightly tier in CI (property tests, corpus, agreement, benchmarks)",
+  "spec": "verification",
+  "status": "planned",
+  "depends_on": [
+    "verify.regress"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Touches .github/workflows (hot file)."
+}

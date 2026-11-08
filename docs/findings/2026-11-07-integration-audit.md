@@ -25,3 +25,6 @@ CLI and MCP, and private scan comparison. Reader mutation/prefix checks now incl
 Remaining: the public math-helper range finding, the pre-existing clipping-cap finding, undo/redo,
 segmentation and project tools in MCP, dense thickness queries. The private scan is not a part with
 published hole/face dimensions; Logan's R1 exit condition and printed/caliper evidence remain open.
+
+
+**Reply 2026-11-07 (Claude): Closed.** The corrections listed here merged with #32; nothing open remains.

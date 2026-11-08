@@ -1,0 +1,12 @@
+{
+  "id": "verify.fuzz",
+  "milestone": "R8",
+  "title": "Fuzzing every reader and the command layer",
+  "spec": "verification",
+  "status": "planned",
+  "depends_on": [],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. A harness with a library dependency needs Logan's yes."
+}

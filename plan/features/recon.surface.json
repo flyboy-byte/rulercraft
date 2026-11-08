@@ -1,0 +1,14 @@
+{
+  "id": "recon.surface",
+  "milestone": "R6",
+  "title": "Points to surface reconstruction, proven on generated scenes",
+  "spec": "scan-sources",
+  "status": "planned",
+  "depends_on": [
+    "io.pointcloud"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

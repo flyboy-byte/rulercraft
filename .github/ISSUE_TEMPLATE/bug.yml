@@ -1,0 +1,17 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+name: Something broke
+description: A crash, a hang, a refusal you think is wrong, or the app misbehaving
+labels: ["bug"]
+body:
+  - type: textarea
+    attributes:
+      label: What happened and what you expected
+    validations:
+      required: true
+  - type: textarea
+    attributes:
+      label: How to reproduce
+      description: Steps or command, and the file if you can share it.
+  - type: input
+    attributes:
+      label: Version or commit, and your system

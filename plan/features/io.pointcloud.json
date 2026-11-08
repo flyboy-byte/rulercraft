@@ -1,0 +1,14 @@
+{
+  "id": "io.pointcloud",
+  "milestone": "R6",
+  "title": "Read point clouds (PLY points, XYZ/PTS/ASC) and fit directly to points",
+  "spec": "scan-sources",
+  "status": "planned",
+  "depends_on": [
+    "io.ply"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

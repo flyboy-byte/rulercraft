@@ -14,6 +14,12 @@ How work gets done here, kept fast on purpose. Owner decisions behind it: DECISI
 5. **No waiting on CI to think.** Run the gate locally, push, and keep working on the next thing while
    hosted CI runs. A red hosted run is read in full before anything else.
 
+## Improvements that are not features
+
+A fix, a speed-up, a clearer message, a test that breaks something: claim with a draft PR titled with an area tag
+(`fix:`, `improve:`, `perf:`, `test:`, `docs:`), prove it the same way (a check that fails before and passes after,
+or a wrong-value run), report it with the same template. No feature file unless it is a capability a user would name.
+
 ## How a feature gets done
 
 A feature is one capability a user would name ("fit a cylinder", "read PLY", "deviation map"). Its plan
@@ -39,7 +45,7 @@ file is `plan/features/<id>.json`; its behaviour is `docs/specs/<spec>.md`.
 | **Known design** | A part whose design dimensions are known: one we design (committed), or a downloaded model with published dimensions (kept local), or a part Logan printed and measured. | Every user-facing measurement. |
 | **Local reference** | Another program's number for the same mesh, kept in gitignored `fixtures/private/` (D-004), compared within a stated tolerance; the test skips when absent. | Optional, when one is available locally. |
 | **Wrong value** | One deliberate break that must fail a check. | Always, once, by hand. |
-| **Fuzz / sweep** | Random or bulk inputs. | Only at release gates, when Logan asks. |
+| **Fuzz / sweep / mutation** | Random, bulk or mutated inputs and code. | Scheduled tiers T1 and T2, never in the PR gate (docs/specs/verification.md, D-013). |
 
 Tolerances are stated in the test with a reason and never loosened to get green. A reference number is
 never replaced with RulerCraft's own output. PR reports and commit messages follow AGENTS.md

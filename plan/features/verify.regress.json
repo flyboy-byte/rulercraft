@@ -1,0 +1,14 @@
+{
+  "id": "verify.regress",
+  "milestone": "R8",
+  "title": "Regression corpus with stored known answers and a runner over every face",
+  "spec": "verification",
+  "status": "planned",
+  "depends_on": [
+    "verify.zoo"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}
