@@ -3,13 +3,16 @@
   "milestone": "R8",
   "title": "Library, CLI, MCP and app give identical numbers (later native/Wasm, CPU/GPU)",
   "spec": "verification",
-  "status": "planned",
+  "status": "implemented",
   "depends_on": [
     "mcp.server",
     "gui.viewer"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "owner": "Codex",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/86",
+  "verified_by": [
+    "math",
+    "wrong-value"
+  ],
+  "left": "Known hole-block plane and three cylinder fits agree across library, CLI, MCP and browser prototype. Other operations, units, future native app, CPU/GPU and native/Wasm comparisons remain."
 }
