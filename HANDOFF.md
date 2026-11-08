@@ -22,7 +22,7 @@ Last updated 2026-11-07, Claude. Read AGENTS.md first (it outranks this), then P
 ## Look, GPU, embedding (D-011)
 - UI look comes from SolidCraft (MIT OR Apache-2.0, egui + wgpu, has gpu/render/mcp crates), never from a copyleft app.
 - GPU is an accelerator verified against the CPU reference; native wgpu needs Logan's approval (new dependency).
-- SolidCraft's plugin mechanism is unknown: stay host-agnostic (library, MCP, recipe JSON, postMessage page).
+- SolidCraft's plugin mechanism is undecided (its issue #1221 proposes sandboxed Wasm plugins calling `run(command, args)` JSON, same as MCP). Do `engine.wasm` + `engine.command-api`; stay host-agnostic (library, MCP, recipe JSON, postMessage page).
 - Large-mesh plan: engine.bvh, engine.parallel, engine.stream, gui.lod, engine.gpu (product-scope.md).
 
 ## GUI (D-009)

@@ -1,0 +1,15 @@
+{
+  "id": "engine.command-api",
+  "milestone": "R5",
+  "title": "One JSON command entry point, run(command, args), mirroring the MCP tools, for any host",
+  "spec": "product-scope",
+  "status": "planned",
+  "depends_on": [
+    "mcp.server",
+    "engine.library"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything. Exit: every MCP tool is reachable through it with identical JSON in and out (tested); no assumed host interface."
+}
