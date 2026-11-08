@@ -182,7 +182,8 @@ impl MeshGraph {
     }
 
     /// Closed loops of open-boundary edges (edges with exactly one triangle), as vertex sequences.
-    /// Empty for a closed (watertight) mesh.
+    /// Open chains on non-manifold boundaries are not returned. To check that no
+    /// boundary exists, inspect `edges` for entries with `t1 == None` instead.
     pub fn boundary_loops(&self) -> Vec<Vec<u32>> {
         let open: Vec<&Edge> = self.edges.iter().filter(|e| e.t1.is_none()).collect();
         let nv = self.component.len();
@@ -213,7 +214,9 @@ impl MeshGraph {
                 }
                 at = w;
             }
-            loops.push(chain);
+            if at == begin {
+                loops.push(chain);
+            }
         }
         loops
     }
