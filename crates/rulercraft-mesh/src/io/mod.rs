@@ -40,9 +40,8 @@ impl std::error::Error for ReadError {}
 /// The supported reader name for a case-insensitive filename extension.
 pub fn format_name(name: &str) -> Result<&'static str, ReadError> {
     match name
-        .rsplit('.')
-        .next()
-        .unwrap_or("")
+        .rsplit_once('.')
+        .map_or("", |(_, extension)| extension)
         .to_ascii_lowercase()
         .as_str()
     {

@@ -5,7 +5,7 @@ Status: R1 spec. Features: `io.stl`, `io.ply`, `io.obj`, `io.3mf`.
 ## Behaviour
 
 - Input is bytes plus a file name (the extension picks the reader; `.stl`, `.ply`, `.obj`, `.3mf`,
-  case-insensitive) and the file's unit (`mm` default, also `cm`, `m`, `in`). Everything is converted
+  case-insensitive; a name without a dot and extension is refused) and the file's unit (`mm` default, also `cm`, `m`, `in`). Everything is converted
   to millimetres on read. 3MF carries its own unit in the file and that wins.
 - Output is a triangle mesh: positions (f32 triples, mm) and triangles (three vertex indices each),
   plus a short summary: vertex count, triangle count, bounding box, and which reader was used.
