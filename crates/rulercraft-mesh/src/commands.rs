@@ -102,7 +102,14 @@ pub fn select(
     };
     if let Some((center, radius)) = selection.near {
         let close = near(&mesh.positions, center, radius).map_err(CommandError::Select)?;
-        picked.retain(|i| close.binary_search(i).is_ok());
+        // Both filters return ascending vertex IDs, so merge them in one pass.
+        let mut close = close.into_iter().peekable();
+        picked.retain(|i| {
+            while close.peek().is_some_and(|candidate| candidate < i) {
+                close.next();
+            }
+            close.peek() == Some(i)
+        });
     }
     if let Some((direction, within)) = selection.facing {
         picked = facing(&picked, &graph.vertex_normals, direction, within)

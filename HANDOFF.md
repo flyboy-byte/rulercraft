@@ -1,10 +1,9 @@
 # Handoff
 
-Last updated 2026-11-08, Codex. Main includes #73 (parallel pairing/deviation) and #95 (deviation agreement), in addition to the earlier #81–#94 work. On the pre-#73 main, the full workspace had 211 tests passing and 3 intentionally ignored; a fresh main build reproduced the zero-area deviation issue below.
+Last updated 2026-11-08, Claude. 218 tests on main. Merged: everything Codex opened through #97, and my #73 (engine.parallel: tree build, deviation, ICP, symmetry and thickness use every core with identical results for any thread count; 4.6x on 12 threads; segmentation stays serial because region growing depends on seed order). Open: #98 (Codex, docs: a finding about undefined deviation signs on degenerate references).
 
 ## Open right now
-- #97 (Codex, ready): linear intersection for box and radius selections. Branch `codex/selection-intersect`, worktree `/tmp/rulercraft-selection-intersect`. Full checks and the wrong-value run passed; check hosted CI and the current head.
-- #98 (Codex, ready): documents that a zero-area reference triangle yields an unsupported positive deviation sign. Branch `codex/deviation-degenerate-finding`, worktree `/tmp/rulercraft-degenerate-finding`; reproduced on main `dc2aeae` for both sides of a collinear triangle. Next: review the finding and choose a tested handling for mixed and wholly zero-area references.
+- Threads: `RULERCRAFT_THREADS` or `par::with_threads` sets the count; results never depend on it (tests/parallel.rs). Parallel loops go through `par::map`.
 - Build output: `/tmp` is a 7.5 GB tmpfs and filled up once. Put build output in a separate directory under `$HOME/.cache`.
 
 ## Read first
