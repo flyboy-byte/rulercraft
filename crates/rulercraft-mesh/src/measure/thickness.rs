@@ -2,6 +2,7 @@
 //! Bounded directional wall thickness, not a shortest-distance or solid-classification method.
 use crate::Mesh;
 use crate::math::{Vec3, cross, dot, normalize, scale, sub};
+use crate::spatial::Bvh;
 use std::fmt;
 
 /// Limits and tolerances for normal rays; lengths in mm.
@@ -106,6 +107,15 @@ pub fn wall_thickness(
             return Err(error(format!("triangle {i}: vertex index out of range")));
         }
     }
+    let tree = Bvh::new(mesh);
+    // The hit test accepts points up to 1e-12 (in barycentric terms) outside a triangle; widening every
+    // box by far more than that, scaled to the part, keeps the tree from skipping any such hit.
+    let reach = mesh
+        .positions
+        .iter()
+        .flat_map(|p| p.iter().map(|v| f64::from(v.abs())))
+        .fold(0.0, f64::max);
+    let pad = 1e-9 * (1.0 + reach);
     let mut samples = Vec::with_capacity(selection.len());
     for &vertex in selection {
         let index = vertex as usize;
@@ -123,18 +133,21 @@ pub fn wall_thickness(
                     "vertex {vertex}: normal must be finite and nonzero"
                 ))
             })?;
-        let mut nearest: Option<f64> = None;
-        for t in &mesh.triangles {
-            if t.contains(&vertex) {
-                continue;
-            }
-            let [a, b, c] = t.map(|i| mesh.positions[i as usize].map(f64::from));
-            if let Some(distance) = hit(origin, direction, a, b, c)
-                .filter(|t| *t > options.exclusion && *t <= options.max_distance)
-            {
-                nearest = Some(nearest.map_or(distance, |old| old.min(distance)));
-            }
-        }
+        let nearest = tree
+            .ray_nearest(
+                origin,
+                direction,
+                options.exclusion,
+                options.max_distance,
+                pad,
+                |t, [a, b, c]| {
+                    if mesh.triangles[t].contains(&vertex) {
+                        return None;
+                    }
+                    hit(origin, direction, a, b, c)
+                },
+            )
+            .map(|(distance, _)| distance);
         samples.push(ThicknessSample {
             vertex,
             distance: nearest,

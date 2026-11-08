@@ -127,3 +127,17 @@ fn nearest_wall_wins_over_a_further_surface() {
     let samples = wall_thickness(&m, &normals, &sel[..1], Default::default()).unwrap();
     assert!((samples[0].distance.unwrap() - 6.).abs() < 1e-10); // box top z=6 before extra plane z=10
 }
+
+#[test]
+fn a_ray_just_past_the_opposite_walls_edge_still_counts() {
+    // The start vertex sits 5e-12 mm outside the far triangle's edge x = 0, inside the hit test's edge
+    // allowance. The tree's boxes must be widened so it is still tested.
+    let m = Mesh {
+        positions: vec![[0., 0., 0.], [0., 10., 0.], [10., 0., 0.], [-5e-12, 2., 5.]],
+        triangles: vec![[0, 1, 2]],
+        degenerate_dropped: 0,
+    };
+    let normals = [[0., 0., 1.]; 4];
+    let s = wall_thickness(&m, &normals, &[3], Default::default()).unwrap();
+    assert_eq!(s[0].distance, Some(5.0));
+}
