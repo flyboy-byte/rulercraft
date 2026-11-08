@@ -59,3 +59,26 @@ fn filters_combine_and_feed_the_fit() {
         ))
     );
 }
+
+#[test]
+fn combined_box_and_radius_preserve_sorted_intersection() {
+    let m = grid();
+    let g = MeshGraph::build(&m);
+    let cases = [
+        (
+            ([2., 0., 0.], [5., 1., 0.]),
+            ([4., 0., 0.], 1.),
+            vec![3, 4, 5, 14],
+        ),
+        (([0., 0., 0.], [1., 1., 0.]), ([9., 9., 0.], 1.), vec![]),
+        (([0., 0., 0.], [9., 9., 0.]), ([5., 5., 0.], 0.), vec![55]),
+    ];
+    for (bounds, radius, expected) in cases {
+        let selection = Selection {
+            in_box: Some(bounds),
+            near: Some(radius),
+            facing: None,
+        };
+        assert_eq!(select(&m, &g, &selection).unwrap(), expected);
+    }
+}
