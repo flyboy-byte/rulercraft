@@ -56,4 +56,4 @@ a hole pulled off its position makes it no grid; two holes on one position make 
 reports the same spacings. Three wrong-value runs (full always true, position tolerance ignored, duplicate
 positions allowed) each failed a test.
 
-Holes with zero or nonfinite axes are excluded from every candidate pattern, including when they follow a valid hole in the input.
+Holes with zero or nonfinite axes, or nonfinite points, are excluded from every candidate pattern regardless of their order in the input.
