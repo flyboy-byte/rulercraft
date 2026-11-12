@@ -72,13 +72,11 @@ pub fn fit_sphere(
     let mut s = solve(&points, &kept, None)?;
     let mut rounds = 1;
     if let Some(k) = k {
-        while rounds < MAX_ROUNDS {
-            let sigma = rms(&points, &kept, &s);
-            if sigma == 0.0 {
-                break;
-            }
+        // The cut-off is fixed from the all-points fit; shrinking it every round creeps on heavy tails.
+        let cut = k * rms(&points, &kept, &s);
+        while rounds < MAX_ROUNDS && cut > 0.0 {
             let next: Vec<usize> = (0..points.len())
-                .filter(|&i| residual(&points[i], &s).abs() <= k * sigma)
+                .filter(|&i| residual(&points[i], &s).abs() <= cut)
                 .collect();
             if next == kept || next.len() < 4 {
                 break;
