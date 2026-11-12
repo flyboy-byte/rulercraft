@@ -5,8 +5,21 @@ break `main` by following this page.
 
 ## Set up
 
-- Rust 1.99 or newer (`cargo`, `rustfmt`, `clippy`). Python 3 for the plan tool.
+- Current stable Rust (`cargo`, `rustfmt`, `clippy`; 1.88 or newer). Python 3 for the plan tool.
 - `cargo test --workspace` should pass in a few minutes on a fresh clone.
+
+## First ten minutes
+
+```bash
+cargo test --workspace                                          # everything passes
+cargo run -p rulercraft-cli -- info fixtures/known/hole-block.stl
+cargo run -p rulercraft-cli -- fit cylinder fixtures/known/hole-block.stl --box 8.4 13.4 1 11.6 16.6 9
+python3 tools/plan.py needs                                     # what needs help right now
+```
+
+The hole you just fitted is 3 mm across by design (`fixtures/known/hole-block.json`); the radius should
+read 1.5. That is the whole idea of the project: every number checked against an answer known in advance.
+You only need AGENTS.md, PROCESS.md and the spec for what you touch; the rest of the docs are reference.
 
 ## Pick something
 
