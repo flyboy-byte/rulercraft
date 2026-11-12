@@ -197,3 +197,44 @@ fn patch_inputs_are_checked() {
     // Shorter distances than vertices must not panic.
     assert!(patches(&g, &[1.0; 10], 0.1).is_ok());
 }
+
+// Finding 2026-11-07-degenerate-deviation-sign: a zero-area reference triangle has no normal, so it
+// cannot say which side a point is on.
+
+/// A reference made only of collinear triangles is refused, not measured as "outside" on both sides.
+#[test]
+fn all_zero_area_reference_is_refused() {
+    let reference = mesh(&[[0., 0., 0.], [1., 0., 0.], [2., 0., 0.]], &[[0, 1, 2]]);
+    for z in [-1.0f32, 1.0] {
+        let measured = mesh(&[[0., 0., z], [1., 0., z], [2., 0., z]], &[[0, 1, 2]]);
+        let e = deviation(&measured, &reference, 0.1).unwrap_err();
+        assert!(e.0.contains("area"), "z={z}: {}", e.0);
+    }
+}
+
+/// A sliver lying in a valid face's plane is left out, so points on either side get the valid face's
+/// sign: +1 above the face (its normal is +z), -1 below.
+#[test]
+fn zero_area_triangle_beside_a_valid_face_does_not_set_the_sign() {
+    // Valid face (0,1,2) with normal +z; collinear triangle (0,3,1) along its edge from 0 to 1, listed
+    // first so it wins any tie in the tree.
+    let reference = mesh(
+        &[[0., 0., 0.], [2., 0., 0.], [0., 2., 0.], [1., 0., 0.]],
+        &[[0, 3, 1], [0, 1, 2]],
+    );
+    // Points directly above and below the shared edge: the collinear triangle is at the same distance.
+    let measured = mesh(&[[1., 0., 1.], [1., 0., -1.]], &[]);
+    let d = deviation(&measured, &reference, 0.1).unwrap();
+    assert!(
+        (d.distances[0] - 1.0).abs() < 1e-12,
+        "above: {}",
+        d.distances[0]
+    );
+    assert!(
+        (d.distances[1] + 1.0).abs() < 1e-12,
+        "below: {}",
+        d.distances[1]
+    );
+    assert_eq!(d.stats.max_outside, 1.0);
+    assert_eq!(d.stats.max_inside, 1.0);
+}
