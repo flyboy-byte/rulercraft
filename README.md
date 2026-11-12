@@ -3,8 +3,10 @@
 **Measure any mesh, and turn it back into editable CAD, with Claude doing the driving.**
 
 > [!NOTE]
-> As of 2026-11-07: reads STL/PLY/OBJ/3MF, fits planes/spheres/cylinders, measures fitted elements
-> over MCP, and saves fit recipes in JSON projects through the CLI. CAD reconstruction is still planned.
+> As of 2026-11-12: reads STL/PLY/OBJ/3MF; fits planes, spheres and cylinders (also robust versions); finds
+> flat and round regions; measures wall thickness and deviation from a reference; aligns meshes; suggests a CAD
+> recipe. All through a CLI, an MCP server and a browser prototype app. Nothing has yet been checked against a
+> real printed or published part (ROADMAP R1), and the native app and the SolidCraft hand-off are still ahead.
 > Progress is tracked in
 > [STATUS.md](STATUS.md) and [ROADMAP-PROGRESS.md](ROADMAP-PROGRESS.md).
 
@@ -31,9 +33,8 @@ needed. See [the GUI page](docs/specs/gui.md).
 
 Project commands are `rulercraft project create`, `project fit` and `project info`; see
 [project format and CLI](docs/specs/project-file.md). [MCP tools](docs/specs/mcp.md) provide bounded
-selection pages, fits and two-selection measurements. Segmentation and wall thickness currently have
-engine APIs; their CLI/MCP front ends and undo/redo remain unfinished. The known corpus is mathematical
-design evidence, with real dimensional acceptance still open.
+selection pages, fits, two-selection measurements, segmentation, thickness, comparison and undo/redo.
+The known corpus is mathematical design evidence, with real dimensional acceptance still open.
 
 ## How it is built
 
@@ -48,7 +49,7 @@ design evidence, with real dimensional acceptance still open.
 | | |
 | --- | --- |
 | [CONTEXT.md](CONTEXT.md) | What this is and is not, direction |
-| [ROADMAP.md](ROADMAP.md) | Milestones R1-R6 and what each one lets you do |
+| [ROADMAP.md](ROADMAP.md) | Milestones and what each one lets you do |
 | [docs/implementation-plan.md](docs/implementation-plan.md) | Build order, parallel lanes, what each PR contains |
 | [PROCESS.md](PROCESS.md) | How a feature gets done and proven |
 | [AGENTS.md](AGENTS.md) | Rules for AI agents and contributors |
