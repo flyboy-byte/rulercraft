@@ -3,7 +3,8 @@
 //! reference mesh, with statistics. Distance is exact (closest point on the reference surface, found
 //! with a bounding-box tree). The sign comes from the face normal of the closest reference triangle:
 //! positive on the side that normal points to. Beside an edge or corner the sign follows whichever
-//! triangle was closest; the size of the distance never depends on it. Lengths in mm.
+//! triangle was closest; the size of the distance never depends on it. Zero-area reference triangles
+//! are left out (they have no normal). Lengths in mm.
 use crate::Mesh;
 use crate::math::{Vec3, add, cross, dot, length, scale, sub};
 use crate::spatial::{Bvh, Closest};
@@ -92,14 +93,33 @@ pub struct Reference {
 }
 
 impl Reference {
-    /// Indexes `mesh`. Fails when it has no triangles.
+    /// Indexes `mesh`, leaving out zero-area triangles: they have no normal, so they cannot give a
+    /// distance a sign, and their points also lie on the edges of any neighbours they have. Fails when
+    /// it has no triangles, or none with area.
     pub fn new(mesh: &Mesh) -> Result<Self, DeviationError> {
         if mesh.triangles.is_empty() {
             return Err(DeviationError("the reference mesh has no triangles".into()));
         }
-        Ok(Self {
-            tree: Bvh::new(mesh),
-        })
+        let has_area = |t: &[u32; 3]| {
+            let [a, b, c] = t.map(|i| mesh.positions.get(i as usize).map_or([0.0; 3], |p| v3(*p)));
+            length(cross(sub(b, a), sub(c, a))) > 0.0
+        };
+        let tree = if mesh.triangles.iter().all(has_area) {
+            Bvh::new(mesh)
+        } else {
+            let kept = Mesh {
+                positions: mesh.positions.clone(),
+                triangles: mesh.triangles.iter().copied().filter(has_area).collect(),
+                degenerate_dropped: mesh.degenerate_dropped,
+            };
+            if kept.triangles.is_empty() {
+                return Err(DeviationError(
+                    "every triangle of the reference mesh has zero area, so it has no surface to measure against".into(),
+                ));
+            }
+            Bvh::new(&kept)
+        };
+        Ok(Self { tree })
     }
     /// The shared tree underneath.
     pub fn tree(&self) -> &Bvh {

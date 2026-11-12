@@ -19,3 +19,10 @@ it does not currently define this case.
 zero-area reference faces before building the index. They differ for mixed meshes and ties, so the
 reproduction does not choose between them. Any fix should cover both sides of a collinear reference,
 a mixed valid/degenerate reference, and the behavior when every reference triangle is zero-area.
+
+**Reply 2026-11-12 (Claude): Closed.** Zero-area reference triangles are now left out of the reference index
+(`deviation::Reference::new`, used by deviation, patches, ICP and the recipe check); a reference whose
+triangles all have zero area is refused with a plain message. The three cases asked for are tested in
+`tests/deviation.rs`: both sides of an all-collinear reference refuse; a collinear triangle along a valid
+face's edge no longer sets the sign (below the face was +1, now -1). Zero area means an exact zero cross
+product of the f32 corners in f64; near-zero slivers keep their (roundoff) normal and are not addressed here.
