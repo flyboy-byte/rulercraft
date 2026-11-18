@@ -1,0 +1,43 @@
+# SPDX-License-Identifier: MIT OR Apache-2.0
+# Builds the SolidCraft plugin package (docs/specs/solidcraft-plugin.md, D-014). Not part of the fast gate: it
+# runs only when someone starts it, or on a pull request that changes plugin/. A few minutes per run.
+name: solidcraft-plugin
+on:
+  workflow_dispatch:
+  pull_request:
+    paths: ["plugin/**", ".github/workflows/solidcraft-plugin.yml"]
+concurrency:
+  group: solidcraft-plugin-${{ github.ref }}
+  cancel-in-progress: true
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Rust toolchain with the WebAssembly target
+        run: |
+          rustup toolchain install stable --profile minimal --component rustfmt,clippy --target wasm32-unknown-unknown
+          rustup default stable
+      - uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: plugin/solidcraft
+      - uses: taiki-e/install-action@v2
+        with:
+          tool: wasm-tools
+      - name: Format and lints
+        working-directory: plugin/solidcraft
+        run: |
+          cargo fmt --check
+          cargo clippy --target wasm32-unknown-unknown -- -D warnings
+      - name: Build the package
+        run: plugin/solidcraft/build.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: rulercraft-solidcraft-plugin
+          path: |
+            plugin/solidcraft/dist/rulercraft-solidcraft-plugin.zip
+            plugin/solidcraft/package/rulercraft.wasm
+          if-no-files-found: error

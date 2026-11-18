@@ -1,0 +1,6 @@
+# Built by build.sh, never committed.
+/package/rulercraft.wasm
+/package/tests/hole-block.stl
+/package/tests/stepped-cylinder.stl
+/target/
+/dist/

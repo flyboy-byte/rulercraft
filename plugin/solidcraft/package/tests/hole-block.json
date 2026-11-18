@@ -1,0 +1,5 @@
+{
+  "entry": "scan-to-part",
+  "file": "hole-block.stl",
+  "expect": {"model": {"body_count": 1, "total": {"volume_mm3": 17230.3098}}, "tolerance": 1e-6}
+}
