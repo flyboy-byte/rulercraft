@@ -4,6 +4,11 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Fits: 1-, 2- and 3-sigma clipping (the CLI default is 3) now uses a cut-off fixed from the all-points fit, so it
+  settles instead of trimming to the round limit. On scans, clipped fits keep more points and report a larger, more
+  honest sigma and form error than before (#101).
+- Deviation: zero-area reference triangles no longer give a distance an unsupported sign; a reference with no
+  triangle of nonzero area is refused (#102).
 - Engine: tree build, deviation, alignment, symmetry and wall thickness use every core; results are identical for any
   thread count (`RULERCRAFT_THREADS` or `par::with_threads` to set it).
 - MCP: `thickness` keeps one spatial index per open mesh, so paging through a large selection no longer rebuilds it

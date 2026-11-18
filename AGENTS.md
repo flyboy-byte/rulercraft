@@ -45,7 +45,9 @@ cargo run -p rulercraft-mcp                  # MCP server on stdio
 cargo run -p rulercraft-gui -- part.stl      # browser app prototype (the native app is docs/v1.md P0)
 ```
 
-Toolchain: system Rust (1.99+), no rustup. Python 3, no packages.
+Toolchain: current stable Rust (hosted CI installs the latest stable; `rulercraft-mcp` needs 1.88 or newer).
+Python 3, no packages. Clippy lints change between releases: if the gate fails only on a lint your toolchain
+has and CI's does not (or the other way round), fix the code to satisfy both rather than allowing the lint.
 
 ## Working alongside other sessions (crosstalk)
 
