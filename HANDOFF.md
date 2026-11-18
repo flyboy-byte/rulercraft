@@ -1,20 +1,25 @@
 # Handoff
 
-Last updated 2026-11-18, Claude. Merged on main: everything through #103. Open, all mine:
-- #104 fix: Rust 1.100 (stable since 2026-11-09) flags a loop in tests/math_core.rs, so main's CI is red until it
-  merges. Test-only; its CI passed on 1.100. Merge first.
-- #105 docs: real-scan check of the clipping fix (two public research scans, local only) and the clipping finding
-  closed; this file. Red only on the #104 lint.
-- #106 io.gltf: glTF 2.0 / GLB reader (phone-scan export). Carries #104's commit so its CI ran the full gate on
-  1.100: green. Checked on the Khronos sample models (cloned locally from KhronosGroup/glTF-Sample-Assets, not
-  committed) and 3,000 corrupted GLBs without a crash.
+Last updated 2026-11-18 (afternoon), Claude. Merged on main: everything through #107. Open, both mine:
+- #108 cad.solidcraft: `solidcraft::design` and `rulercraft solidcraft` rebuild a scanned plate as an editable
+  SolidCraft design (box, cut holes, named sizes, loss report). Checked in SolidCraft's own CLI. Merge first.
+- #109 D-014 (approved by Logan): the SolidCraft importer plugin in `plugin/solidcraft` (own workspace, the only
+  `wit-bindgen` user). Contains #108's commits until #108 merges. Its component passes SolidCraft's
+  `plugin check` and all four `plugin test` cases, and a real install and import (docs/specs/solidcraft-plugin.md).
 
 ## Open right now
 - No open findings.
-- Real-scan clipping table is in docs/findings/2026-11-07-clipping-on-real-scans.md. A fit that stops at the round
-  cap cannot report whether one more round would change it; noted, not a bug.
-- glTF with buffers in a separate `.bin` refuses (the reader gets bytes, not a folder). Reading the sibling file in
-  the CLI/MCP loaders is the obvious follow-up if real phone exports need it.
+- Plugin limits: plate-like parts only; bosses, slanted faces, tilted holes and non-rectangular outlines go to
+  the import report. Next real step is a scan of a printed plate (R1/R2).
+- `--facing` counts a vertex when any touching triangle faces the direction (#110, okayed by Logan); on scans
+  this adds the faced surface's edge vertices (table in #110).
+- Building SolidCraft here: pin is Rust 1.99.1 (unavailable offline); `RUSTUP_TOOLCHAIN=stable` (1.97, its
+  rust-version is 1.95), `-j 1`, `CARGO_PROFILE_DEV_DEBUG=0`, `CARGO_PROFILE_DEV_PACKAGE_SOLIDCORE_OPT_LEVEL=0`
+  or the 8 GB box runs out of memory; about 70 minutes, `--no-default-features` keeps plugin support.
+- Building the plugin here without the wasm target: fetch `library/` (and the `library/backtrace` submodule) of
+  rust-lang/rust at `rustc -vV`'s commit, link it to `$(rustc --print sysroot)/lib/rustlib/src/rust/`, then
+  `RUSTC_BOOTSTRAP=1 cargo build --release --target wasm32-unknown-unknown -Z build-std=std,panic_abort`.
+  CI's `solidcraft-plugin` workflow does it the normal way; its artifact download is blocked from this sandbox.
 - Build output: `/tmp` can be a small tmpfs. Put build output under `$HOME/.cache`.
 
 ## Read first

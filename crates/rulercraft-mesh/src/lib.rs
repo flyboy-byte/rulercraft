@@ -62,6 +62,7 @@ pub mod project;
 pub mod reverse;
 pub mod segment;
 pub mod select;
+pub mod solidcraft;
 pub mod spatial;
 pub mod stl;
 

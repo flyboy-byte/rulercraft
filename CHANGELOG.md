@@ -7,6 +7,10 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 - Selection: `--facing` (and MCP/app facing) also counts a vertex when a triangle touching it faces the direction,
   so a box side on a sharp-edged CAD mesh can be selected by facing. Facing selections on scans can gain edge
   vertices of the faced surface (#110).
+- SolidCraft plugin: `plugin/solidcraft` builds RulerCraft as a SolidCraft importer (Plugins › RulerCraft ›
+  scan-to-part): a scan opens as an editable part with an import report, checked by SolidCraft's own rebuild (#109).
+- Scan to SolidCraft: `rulercraft solidcraft <mesh> --out design.json` rebuilds a scanned plate as an editable
+  SolidCraft design (box, cut holes, named sizes) with a report of everything it could not rebuild (#108).
 - CLI: `rulercraft measure` fits two selections and prints their distance and angle with the convention used, the
   same numbers as the MCP measure tool. Cylinder fits on the CLI now also report `extend_before`/`extend_after` (#107).
 - Reading: glTF 2.0 (`.gltf` with embedded buffers) and GLB, the usual phone-scan export, with node transforms;

@@ -1,0 +1,25 @@
+{
+  "id": "rulercraft",
+  "name": "RulerCraft",
+  "version": "0.1.0",
+  "description": "Opens a 3D scan as an editable part: a plate with its holes, every size a parameter, and a report of what it could not rebuild.",
+  "capabilities": ["formats@0.2", "evaluate@0.2"],
+  "runtime": {
+    "module": "rulercraft.wasm",
+    "commands": [],
+    "entries": [{
+      "name": "scan-to-part",
+      "kind": "importer",
+      "extensions": ["stl", "ply", "obj", "3mf", "gltf", "glb"],
+      "input_schema": {"type": "object", "properties": {
+        "units": {"type": "string", "title": "Scan units", "default": "mm", "oneOf": [
+          {"const": "mm", "title": "Millimetres"},
+          {"const": "cm", "title": "Centimetres"},
+          {"const": "m", "title": "Metres"},
+          {"const": "in", "title": "Inches"}
+        ]}
+      }}
+    }],
+    "limits": {"fuel": 100000000000, "memory_mib": 1024, "deadline_ms": 600000, "stack_kib": 16384}
+  }
+}

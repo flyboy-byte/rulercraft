@@ -1,0 +1,5 @@
+{
+  "entry": "scan-to-part",
+  "file": "lone-sheet.stl",
+  "expect": {"error": "unsupported", "message": "thickness"}
+}

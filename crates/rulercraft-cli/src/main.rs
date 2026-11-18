@@ -23,6 +23,7 @@ const USAGE: &str = "Usage:
   rulercraft thickness <mesh> [selection options] [--offset N] [--limit N] [--max-distance MM]
   rulercraft fit <plane|sphere|cylinder> <mesh> [--units U] [--box X Y Z X Y Z] [--near X Y Z R]
                  [--facing DX DY DZ] [--within DEG] [--sigma 0|1|2|3] [--known-diameter D]
+  rulercraft solidcraft <mesh> [--units U] [--out design.json]
   rulercraft measure <mesh> <plane|sphere|cylinder> [fit options] --and <plane|sphere|cylinder> [fit options]
 Meshes: .stl .ply .obj .3mf .gltf .glb. Lengths in mm (after --units), angles in degrees. Selection filters combine;
 with none the whole mesh is used. --within defaults to 30, --sigma to 3 (0 keeps every point).";
@@ -151,6 +152,47 @@ fn fit_command(args: &[String]) -> Result<String, String> {
     let out = fit(&mesh, &graph, &request).map_err(|e| e.to_string())?;
     let (value, _) = fitted(&out.fitted);
     Ok(json!({ "mesh": path, "selected": out.selected, "fit": value }).to_string())
+}
+
+/// `solidcraft <mesh> [--units U] [--out design.json]`: the scan as an editable SolidCraft part. With
+/// `--out` the design is written to a new file (never over an existing one) and the report printed;
+/// without it both are printed.
+fn solidcraft_command(args: &[String]) -> Result<String, String> {
+    let [path, rest @ ..] = args else {
+        return Err(USAGE.into());
+    };
+    let (mut unit, mut out) = (Unit::Mm, None);
+    let mut it = rest.iter();
+    while let Some(flag) = it.next() {
+        match flag.as_str() {
+            "--units" => {
+                let u = it.next().ok_or("--units needs mm, cm, m or in")?;
+                unit = Unit::parse(u).ok_or("--units must be mm, cm, m or in")?;
+            }
+            "--out" => out = Some(it.next().ok_or("--out needs a file name")?),
+            other => return Err(format!("unknown option `{other}`\n{USAGE}")),
+        }
+    }
+    let mesh = load(path, unit)?;
+    let name = std::path::Path::new(path)
+        .file_stem()
+        .and_then(|s| s.to_str())
+        .unwrap_or("scan");
+    let r = rulercraft_mesh::solidcraft::design(&mesh, name).map_err(|e| e.to_string())?;
+    match out {
+        Some(file) => {
+            use std::io::Write;
+            let mut f = std::fs::OpenOptions::new()
+                .write(true)
+                .create_new(true)
+                .open(file)
+                .map_err(|e| format!("{file}: {e}"))?;
+            f.write_all(r.design.to_string().as_bytes())
+                .map_err(|e| format!("{file}: {e}"))?;
+            Ok(json!({"mesh": path, "design": file, "report": r.report}).to_string())
+        }
+        None => Ok(json!({"mesh": path, "design": r.design, "report": r.report}).to_string()),
+    }
 }
 
 /// `measure <mesh> <kind> [fit options] --and <kind> [fit options]`: two fits and their relation.
@@ -355,6 +397,9 @@ fn run(args: &[String]) -> Result<String, String> {
     }
     if command == "measure" {
         return measure_command(rest);
+    }
+    if command == "solidcraft" {
+        return solidcraft_command(rest);
     }
     if command == "segment" {
         return segment_command(rest);

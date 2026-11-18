@@ -52,7 +52,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
 | `cad.check` Deviation of the mesh from the rebuilt CAD (via SolidCore projection) | implemented | - | claude | Only the in-house coverage check exists. Still owed: the SolidCore projection against a solid built in SolidCraft (the R2 exit check, needs SolidCraft running). |
-| `cad.solidcraft` Rebuild fitted features as a SolidCraft model over its MCP | implemented | - | claude | Recipe is done and tested on synthetic parts. Still owed: a CLI/MCP command to produce it, and one replay against a live SolidCraft server (SolidCraft is not built on this machine). |
+| `cad.solidcraft` Rebuild fitted features as a SolidCraft model over its MCP | implemented | - | claude | A scan becomes a SolidCraft design (plate, cut holes, named parameters, loss report) via solidcraft::design and `rulercraft solidcraft`; checked against SolidCraft's own build. Still owed: the importer plugin wrapper, bosses, non-rectangular outlines and slanted faces. |
 
 ## R3: Noisy scans: robust fits, deviation, alignment, thickness (90%)
 

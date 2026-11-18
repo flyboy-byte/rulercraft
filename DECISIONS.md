@@ -184,3 +184,29 @@ yes at the time; accuracy rules (D-003) are unchanged.
 
 **Why.** Logan: "a pure roadmap can only get me so far, especially if it's just one person here", and "I'm not going
 to use it hard enough to break it like it needs to be broken."
+
+## D-014 Deliver to SolidCraft as a plugin (2026-11-18)
+
+**Decision (approved by Logan, 2026-11-18).** SolidCraft now publishes a plugin interface (its `docs/plugins.md`,
+`docs/plugin-runtime.md` and the book's "Writing a plugin"; WIT package `craft:plugin@0.2.0`), so the hand-off
+that D-008's addendum and D-011 point 3 left open is known. RulerCraft ships to SolidCraft as a plugin package
+built from this repository, against that published interface only:
+
+1. **First, an importer** (`formats@0.2`): it opens a scan file (`.stl`, `.ply`, `.obj`, `.3mf`, `.gltf`, `.glb`)
+   as a new SolidCraft design holding the editable part RulerCraft rebuilds, with a loss report naming what it
+   could not rebuild. An importer reads the whole file (up to 1 GiB) and may run for minutes, which a scan
+   needs; a command plugin's `model.mesh` stops at 8,192 vertices.
+2. The design comes from an engine function (`solidcraft::design`) that is ordinary Rust, tested natively and
+   checked in SolidCraft itself; the plugin crate only wraps it for WebAssembly. The engine has no plugin or
+   WIT code.
+3. Later, command entries (measure or fit a mesh body already in a design) if the importer proves useful.
+
+**Why.** It is the most direct route to v1's "scan to editable CAD" job, inside the app its users already have.
+
+**Limits.** Only SolidCraft's published, documented interface is used; no SolidCraft code goes into the engine.
+Its WIT file is copied into the plugin crate, as its guide says, under its MIT licence with the notice kept.
+The plugin crate (`plugin/solidcraft`, its own Cargo workspace) is the one place that depends on `wit-bindgen`,
+approved by Logan. The package is built for `wasm32-unknown-unknown` with no WASI and no network, as SolidCraft
+requires. Nothing is sent to SolidCraft's maintainers or repository. This supersedes D-008's addendum and D-011
+point 3 where they say nothing is built against a plugin interface; the other hand-offs (library, MCP, recipe
+JSON, `rulercraft solidcraft`) stay.
