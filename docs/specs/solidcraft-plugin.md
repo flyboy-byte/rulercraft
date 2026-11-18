@@ -25,8 +25,9 @@ another importer claims the extension too).
    fails as `invalid-input`.
 3. Writes the design through `design.write`.
 4. Checks it (`evaluate@0.2`): SolidCraft opens the design in a private session and `inspect.measure` gives its
-   volume, set beside the scan's enclosed volume in the report's `details.check` (meaningful when the scan is
-   closed). A failed check is reported there and does not fail the import.
+   volume, set beside the scan's enclosed volume in the report's `details.volume_check` (meaningful when the scan is
+   closed). A failed check is reported there and does not fail the import. The report's `details.check` is the
+   separate point-by-point deviation of the scan from the rebuilt part (mesh-to-cad spec).
 
 ## Package
 

@@ -4,6 +4,10 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Scan to SolidCraft: through holes, holes blind from the top and bosses on the top face now follow `thickness`
+  when it is edited (a boss used to stay where it was). The plugin's volume comparison moves to
+  `details.volume_check`, so it no longer hides the point-by-point `details.check`. New `tools/agent_smoke.py` and
+  docs/agents-and-solidcraft.md: Claude installing and driving the importer over SolidCraft's MCP.
 - Scan to SolidCraft: the import report now measures the scan against the rebuilt part, point by point (mean, RMS,
   95th percentile, worst, share within tolerance), and says so when the rebuild is off the scan.
 
