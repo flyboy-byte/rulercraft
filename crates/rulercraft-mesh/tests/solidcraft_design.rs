@@ -497,6 +497,8 @@ fn holes_and_bosses_follow_the_thickness() {
         by("Boss1")["base"][2]
             .as_str()
             .is_some_and(|z| z.starts_with("thickness - "))
+    );
+}
 
 /// The import report measures the scan against the rebuilt part. Rebuilt from SolidCraft's own part, the scan
 /// lies on it (to float precision); one vertex pulled 2 mm off the top face is found, and only that one.
