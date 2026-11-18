@@ -19,6 +19,8 @@ pub const FORMAT: &str = "solidcraft/57";
 pub const SQUARE_DEG: f64 = 5.0;
 /// The most corners a traced polygon outline may have; a more complex outline stays a rectangle.
 const MAX_OUTLINE_CORNERS: usize = 200;
+/// At most this many of the scan's points are measured against the rebuilt part.
+const MAX_CHECK_POINTS: usize = 200_000;
 /// A loop needs at least this many points to count as a circle.
 const MIN_CIRCLE_POINTS: usize = 12;
 
@@ -289,6 +291,86 @@ fn point_in_loop(q: [f64; 2], p: &[[f64; 2]]) -> bool {
         }
     }
     inside
+}
+
+/// The rebuilt part as a signed-distance field in the part frame: negative inside the material.
+/// Unions and cuts are combined by min and max, which is exact on faces and a slight underestimate
+/// near the edges where two features meet; fine for judging how far a scan lies from the rebuild.
+struct Solid {
+    /// Parts of the body: a 2D shape extruded between two heights.
+    body: Vec<(Shape, f64, f64)>,
+    /// Material taken away.
+    cuts: Vec<(Shape, f64, f64)>,
+}
+
+enum Shape {
+    Circle(f64, f64, f64),
+    Rect([f64; 2], [f64; 2]),
+    Poly(Vec<[f64; 2]>),
+}
+
+impl Shape {
+    fn dist(&self, q: [f64; 2]) -> f64 {
+        match self {
+            Shape::Circle(x, y, r) => (q[0] - x).hypot(q[1] - y) - r,
+            Shape::Rect(lo, hi) => {
+                let c = [(lo[0] + hi[0]) / 2.0, (lo[1] + hi[1]) / 2.0];
+                let h = [(hi[0] - lo[0]) / 2.0, (hi[1] - lo[1]) / 2.0];
+                let d = [(q[0] - c[0]).abs() - h[0], (q[1] - c[1]).abs() - h[1]];
+                d[0].max(0.0).hypot(d[1].max(0.0)) + d[0].max(d[1]).min(0.0)
+            }
+            Shape::Poly(p) => {
+                let e = (0..p.len())
+                    .map(|i| seg_dist(q, p[i], p[(i + 1) % p.len()]))
+                    .fold(f64::INFINITY, f64::min);
+                if point_in_loop(q, p) { -e } else { e }
+            }
+        }
+    }
+}
+
+impl Solid {
+    fn extruded(shape: &Shape, z0: f64, z1: f64, p: [f64; 3]) -> f64 {
+        let (d, dz) = (
+            shape.dist([p[0], p[1]]),
+            (p[2] - (z0 + z1) / 2.0).abs() - (z1 - z0) / 2.0,
+        );
+        d.max(dz).min(0.0) + d.max(0.0).hypot(dz.max(0.0))
+    }
+
+    fn distance(&self, p: [f64; 3]) -> f64 {
+        let body = self
+            .body
+            .iter()
+            .map(|(s, a, b)| Self::extruded(s, *a, *b, p))
+            .fold(f64::INFINITY, f64::min);
+        let cut = self
+            .cuts
+            .iter()
+            .map(|(s, a, b)| Self::extruded(s, *a, *b, p))
+            .fold(f64::INFINITY, f64::min);
+        body.max(-cut)
+    }
+}
+
+/// How far the scan's points lie from the rebuilt part.
+fn scan_distances(solid: &Solid, points: impl Iterator<Item = [f64; 3]>) -> Vec<f64> {
+    points.map(|p| solid.distance(p).abs()).collect()
+}
+
+fn check_report(mut d: Vec<f64>, tol: f64) -> Value {
+    d.sort_by(f64::total_cmp);
+    let n = d.len().max(1) as f64;
+    let at = |q: f64| {
+        d.get(((d.len() as f64 - 1.0) * q).round() as usize)
+            .copied()
+            .unwrap_or(0.0)
+    };
+    let within = d.iter().filter(|&&x| x <= tol).count() as f64 / n;
+    json!({"points": d.len(), "mean_mm": d.iter().sum::<f64>() / n,
+           "rms_mm": (d.iter().map(|x| x * x).sum::<f64>() / n).sqrt(),
+           "p95_mm": at(0.95), "max_mm": d.last().copied().unwrap_or(0.0),
+           "within_tolerance": within, "tolerance_mm": tol})
 }
 
 /// The plate's outline, traced from the base face.
@@ -753,6 +835,73 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         });
     }
 
+    // The check: the scan's own points against the rebuilt part.
+    let mut solid = Solid {
+        body: Vec::new(),
+        cuts: Vec::new(),
+    };
+    solid.body.push((
+        match &outline {
+            Outline::Rectangle => Shape::Rect([0.0, 0.0], [len, wid]),
+            Outline::Circle { x, y, r } => Shape::Circle(*x, *y, *r),
+            Outline::Polygon(p) => Shape::Poly(p.clone()),
+        },
+        0.0,
+        thick,
+    ));
+    let g = |v: &Value, k: &str| v[k].as_f64().unwrap_or(0.0);
+    for b in &pads {
+        let (x, y) = (g(b, "x"), g(b, "y"));
+        solid.body.push((
+            Shape::Rect([x, y], [x + g(b, "length"), y + g(b, "width")]),
+            thick,
+            g(b, "height"),
+        ));
+    }
+    for b in &bosses {
+        solid.body.push((
+            Shape::Circle(g(b, "x"), g(b, "y"), g(b, "diameter") / 2.0),
+            g(b, "on"),
+            g(b, "on") + g(b, "standing_height"),
+        ));
+    }
+    for h in &holes {
+        solid.cuts.push((
+            Shape::Circle(g(h, "x"), g(h, "y"), g(h, "diameter") / 2.0),
+            g(h, "from"),
+            g(h, "to"),
+        ));
+    }
+    for b in &pockets {
+        let (x, y) = (g(b, "x"), g(b, "y"));
+        solid.cuts.push((
+            Shape::Rect([x, y], [x + g(b, "length"), y + g(b, "width")]),
+            g(b, "height"),
+            thick,
+        ));
+    }
+    for poly in &slots {
+        solid.cuts.push((Shape::Poly(poly.clone()), 0.0, thick));
+    }
+    let step = (mesh.positions.len() / MAX_CHECK_POINTS).max(1);
+    let distances = scan_distances(
+        &solid,
+        (0..mesh.positions.len())
+            .step_by(step)
+            .map(|i| to_part(local(pos(i as u32)))),
+    );
+    let check = check_report(distances, tol);
+    let p95 = check["p95_mm"].as_f64().unwrap_or(0.0);
+    if p95 > 3.0 * tol {
+        losses.push(Loss {
+            severity: "degraded",
+            title: "The rebuilt part is off the scan",
+            subject: "whole part".into(),
+            message: format!("5 % of the scan lies {p95:.2} mm or more from the rebuilt part; look at what was dropped above"),
+            code: "scan_deviation",
+        });
+    }
+
     // The design: parameters for the sizes a person would edit, then the features in build order.
     let param = |name: &str, v: f64| json!({"name": name, "expr": format!("{} mm", mm(v)), "unit": "mm", "model": false});
     let mut params = vec![
@@ -901,7 +1050,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         "details": {
             "base": {"area_mm2": base.area, "sigma": base.plane.sigma, "form_error": base.plane.form_error},
             "plate": {"length": len, "width": wid, "thickness": thick},
-            "cutouts": slots, "holes": holes, "bosses": bosses, "pockets": pockets, "pads": pads,
+            "check": check, "cutouts": slots, "holes": holes, "bosses": bosses, "pockets": pockets, "pads": pads,
             "frame": {"origin": o, "u": u, "v": v, "normal": n, "outline_min": lo, "z0": 0.0},
         },
     });
@@ -912,6 +1061,30 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
 #[allow(clippy::panic, clippy::unwrap_used, clippy::expect_used)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn distance_to_a_plate_with_a_hole_and_a_boss() {
+        // 10 x 10 x 4 plate, Ø2 through hole at (5, 5), Ø2 boss 3 high at (2, 2).
+        let solid = Solid {
+            body: vec![
+                (Shape::Rect([0.0, 0.0], [10.0, 10.0]), 0.0, 4.0),
+                (Shape::Circle(2.0, 2.0, 1.0), 4.0, 7.0),
+            ],
+            cuts: vec![(Shape::Circle(5.0, 5.0, 1.0), 0.0, 4.0)],
+        };
+        let d = |p| solid.distance(p);
+        assert!((d([8.0, 8.0, 7.0]) - 3.0).abs() < 1e-9, "above the top");
+        assert!(
+            (d([8.0, 8.0, 2.0]) + 2.0).abs() < 1e-9,
+            "inside, 2 from the top"
+        );
+        assert!(
+            (d([5.0, 5.0, 2.0]) - 1.0).abs() < 1e-9,
+            "in the hole, 1 from its wall"
+        );
+        assert!((d([2.0, 2.0, 7.5]) - 0.5).abs() < 1e-9, "over the boss");
+        assert!((d([12.0, 5.0, 2.0]) - 2.0).abs() < 1e-9, "beside the plate");
+    }
 
     #[test]
     fn area_of_an_l_is_1600() {

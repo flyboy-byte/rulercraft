@@ -467,3 +467,36 @@ fn a_window_is_a_cut_through_sketch() {
         .unwrap();
     assert_eq!(cutout["operation"], "cut");
 }
+
+/// The import report measures the scan against the rebuilt part. Rebuilt from SolidCraft's own part, the scan
+/// lies on it (to float precision); one vertex pulled 2 mm off the top face is found, and only that one.
+#[test]
+fn the_check_finds_a_bump() {
+    let clean = design(&fixture("hole-block.stl"), "hole-block").unwrap();
+    let c = &clean.report["details"]["check"];
+    assert!(c["max_mm"].as_f64().unwrap() < 1e-3, "{c}");
+    assert_eq!(c["within_tolerance"].as_f64().unwrap(), 1.0);
+
+    let mut m = fixture("hole-block.stl");
+    // A vertex in the middle of the top face: the highest point nearest the centre of the scan.
+    let top = m.positions.iter().map(|p| p[2]).fold(f32::MIN, f32::max);
+    let (cx, cy) = (
+        m.positions.iter().map(|p| p[0]).sum::<f32>() / m.positions.len() as f32,
+        m.positions.iter().map(|p| p[1]).sum::<f32>() / m.positions.len() as f32,
+    );
+    let i = (0..m.positions.len())
+        .filter(|&i| (m.positions[i][2] - top).abs() < 1e-4)
+        .min_by(|&a, &b| {
+            let d = |i: usize| (m.positions[i][0] - cx).hypot(m.positions[i][1] - cy);
+            d(a).total_cmp(&d(b))
+        })
+        .unwrap();
+    m.positions[i][2] += 2.0;
+    let r = design(&m, "bumped").unwrap();
+    let c = &r.report["details"]["check"];
+    assert!((c["max_mm"].as_f64().unwrap() - 2.0).abs() < 0.05, "{c}");
+    assert!(
+        c["p95_mm"].as_f64().unwrap() < 1e-3,
+        "one point is not 5 %: {c}"
+    );
+}

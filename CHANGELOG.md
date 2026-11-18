@@ -4,6 +4,9 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Scan to SolidCraft: the import report now measures the scan against the rebuilt part, point by point (mean, RMS,
+  95th percentile, worst, share within tolerance), and says so when the rebuild is off the scan.
+
 - Scan to SolidCraft: windows (non-round cutouts through the plate) are rebuilt as cut sketches; a rectangle of four
   corners is no longer mistaken for a circle. Checked against SolidCraft: 8,280 mm³ exact.
 - Scan to SolidCraft: counterbored holes are checked against a SolidCraft-made part (11,377.965 mm³, exact): the wide and narrow bores come back as two coaxial cuts.

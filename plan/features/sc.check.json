@@ -3,12 +3,16 @@
   "milestone": "R7",
   "title": "Deviation of the scan from the rebuilt part in the import report, not only volumes",
   "spec": "solidcraft-plugin",
-  "status": "planned",
+  "status": "verified",
   "depends_on": [
     "sc.importer"
   ],
-  "owner": null,
+  "owner": "Claude",
   "pr": null,
-  "verified_by": [],
-  "left": "Volumes are compared today through SolidCraft's evaluate; per-point deviation needs the rebuilt surface."
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Measured against the engine's own model of the rebuild, not SolidCraft's surface; points near where two features meet may read slightly low."
 }
