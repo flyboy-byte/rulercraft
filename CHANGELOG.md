@@ -4,6 +4,8 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- SolidCraft plugin: `plugin/solidcraft` builds RulerCraft as a SolidCraft importer (Plugins › RulerCraft ›
+  scan-to-part): a scan opens as an editable part with an import report, checked by SolidCraft's own rebuild (#109).
 - Scan to SolidCraft: `rulercraft solidcraft <mesh> --out design.json` rebuilds a scanned plate as an editable
   SolidCraft design (box, cut holes, named sizes) with a report of everything it could not rebuild (#108).
 - CLI: `rulercraft measure` fits two selections and prints their distance and angle with the convention used, the

@@ -1,0 +1,35 @@
+[package]
+name = "rulercraft-solidcraft-plugin"
+version = "0.1.0"
+edition = "2024"
+license = "MIT OR Apache-2.0"
+description = "RulerCraft as a SolidCraft importer plugin: opens a scan as an editable part (DECISIONS.md D-014)."
+repository = "https://github.com/flyboy-byte/rulercraft"
+publish = false
+
+# Its own workspace, so wit-bindgen stays out of the engine's build (D-014).
+[workspace]
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+rulercraft-mesh = { path = "../../crates/rulercraft-mesh" }
+serde_json = "1"
+wit-bindgen = "0.57"
+
+[profile.release]
+# Fuel counts instructions, so build for speed; keep the component small too.
+opt-level = 3
+lto = true
+codegen-units = 1
+strip = true
+
+[lints.rust]
+# Denied in our code; allowed only on the generated bindings module (src/lib.rs).
+unsafe_code = "deny"
+
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
