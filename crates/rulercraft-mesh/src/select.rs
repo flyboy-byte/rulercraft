@@ -130,6 +130,40 @@ pub fn facing(
     Ok(out)
 }
 
+/// The vertices of `selection` that face `direction` within `within` radians, by their own normal or by
+/// any triangle touching them. On a sharp-edged mesh a face whose vertices are all corners (a box side) has
+/// no vertex whose averaged normal faces it, but each of its triangles does. Zero normals never match.
+pub fn facing_any(
+    selection: &[u32],
+    graph: &crate::graph::MeshGraph,
+    direction: Vec3,
+    within: f64,
+) -> Result<Vec<u32>, SelectError> {
+    // `facing` checks the direction, the angle and every index, so the triangle lookups below stay in range.
+    let by_normal: std::collections::HashSet<u32> =
+        facing(selection, &graph.vertex_normals, direction, within)?
+            .into_iter()
+            .collect();
+    let magnitude = direction.iter().map(|v| v.abs()).fold(0.0, f64::max);
+    let d = normalize(direction.map(|v| v / magnitude)).ok_or(SelectError::ZeroDirection)?;
+    let mut out = Vec::with_capacity(selection.len());
+    for &i in selection {
+        let triangle_faces = || {
+            graph.triangles_of(i).iter().any(|&t| {
+                graph
+                    .face_normals
+                    .get(t as usize)
+                    .and_then(|&n| angle_between(n, d))
+                    .is_some_and(|angle| angle <= within)
+            })
+        };
+        if by_normal.contains(&i) || triangle_faces() {
+            out.push(i);
+        }
+    }
+    Ok(out)
+}
+
 /// An explicit list of vertex indices, checked against the mesh size, sorted and without repeats.
 pub fn explicit(count: usize, indices: &[u32]) -> Result<Vec<u32>, SelectError> {
     if let Some(&index) = indices.iter().find(|&&i| i as usize >= count) {

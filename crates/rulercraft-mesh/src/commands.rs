@@ -9,7 +9,7 @@ use crate::fit::{
 use crate::graph::MeshGraph;
 use crate::math::Vec3;
 use crate::mesh::Mesh;
-use crate::select::{SelectError, facing, in_box, near};
+use crate::select::{SelectError, facing_any, in_box, near};
 use std::fmt;
 
 /// Which vertices a command works on. Every given filter applies; none means the whole mesh.
@@ -112,8 +112,7 @@ pub fn select(
         });
     }
     if let Some((direction, within)) = selection.facing {
-        picked = facing(&picked, &graph.vertex_normals, direction, within)
-            .map_err(CommandError::Select)?;
+        picked = facing_any(&picked, graph, direction, within).map_err(CommandError::Select)?;
     }
     Ok(picked)
 }

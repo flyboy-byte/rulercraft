@@ -3,7 +3,7 @@
 #![allow(clippy::unwrap_used, missing_docs)]
 use rulercraft_mesh::fit::{Clip, fit_plane};
 use rulercraft_mesh::graph::MeshGraph;
-use rulercraft_mesh::select::{SelectError, explicit, facing, in_box, near, thinned};
+use rulercraft_mesh::select::{SelectError, explicit, facing, facing_any, in_box, near, thinned};
 use rulercraft_mesh::{Mesh, Unit, read_mesh};
 
 fn grid(n: i32) -> Vec<[f32; 3]> {
@@ -173,4 +173,74 @@ fn facing_respects_very_small_angles_and_includes_boundary() {
         .unwrap(),
         [0]
     );
+}
+
+/// A cube with shared corners: every vertex is a corner, so its averaged normal points diagonally and no
+/// vertex faces a side by its own normal. `facing_any` counts a vertex when a triangle touching it faces
+/// the direction, so each side's four corners are found (docs/specs/selection.md).
+#[test]
+fn facing_any_finds_a_side_whose_vertices_are_all_corners() {
+    let p: Vec<[f32; 3]> = (0..8)
+        .map(|i| {
+            [
+                (i & 1) as f32 * 20.0,
+                ((i >> 1) & 1) as f32 * 20.0,
+                ((i >> 2) & 1) as f32 * 20.0,
+            ]
+        })
+        .collect();
+    let t = vec![
+        [0, 2, 1],
+        [1, 2, 3],
+        [4, 5, 6],
+        [5, 7, 6],
+        [0, 1, 4],
+        [1, 5, 4],
+        [2, 6, 3],
+        [3, 6, 7],
+        [0, 4, 2],
+        [2, 4, 6],
+        [1, 3, 5],
+        [3, 7, 5],
+    ];
+    let m = Mesh {
+        positions: p,
+        triangles: t,
+        degenerate_dropped: 0,
+    };
+    let g = MeshGraph::build(&m);
+    let all: Vec<u32> = (0..8).collect();
+    let x = [1.0, 0.0, 0.0];
+    let narrow = 5f64.to_radians();
+    assert!(
+        facing(&all, &g.vertex_normals, x, narrow)
+            .unwrap()
+            .is_empty()
+    );
+    // The +x side is corners 1, 3, 5, 7.
+    assert_eq!(facing_any(&all, &g, x, narrow).unwrap(), vec![1, 3, 5, 7]);
+    assert_eq!(
+        facing_any(&all, &g, [0.0, 0.0, -1.0], narrow).unwrap(),
+        vec![0, 1, 2, 3]
+    );
+    // Everything `facing` keeps, `facing_any` keeps too; it refuses the same bad input.
+    let wide = 60f64.to_radians();
+    let by_normal = facing(&all, &g.vertex_normals, [1.0, 1.0, 1.0], wide).unwrap();
+    let by_any = facing_any(&all, &g, [1.0, 1.0, 1.0], wide).unwrap();
+    assert!(
+        by_normal.iter().all(|v| by_any.contains(v)),
+        "{by_normal:?} {by_any:?}"
+    );
+    assert!(matches!(
+        facing_any(&all, &g, [0.0; 3], 1.0),
+        Err(SelectError::ZeroDirection)
+    ));
+    assert!(matches!(
+        facing_any(&all, &g, x, 0.0),
+        Err(SelectError::BadAngle)
+    ));
+    assert!(matches!(
+        facing_any(&[8], &g, x, 1.0),
+        Err(SelectError::NoSuchVertex { index: 8, count: 8 })
+    ));
 }

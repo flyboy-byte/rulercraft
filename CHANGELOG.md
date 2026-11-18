@@ -4,6 +4,9 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Selection: `--facing` (and MCP/app facing) also counts a vertex when a triangle touching it faces the direction,
+  so a box side on a sharp-edged CAD mesh can be selected by facing. Facing selections on scans can gain edge
+  vertices of the faced surface (#110).
 - CLI: `rulercraft measure` fits two selections and prints their distance and angle with the convention used, the
   same numbers as the MCP measure tool. Cylinder fits on the CLI now also report `extend_before`/`extend_after` (#107).
 - Reading: glTF 2.0 (`.gltf` with embedded buffers) and GLB, the usual phone-scan export, with node transforms;
