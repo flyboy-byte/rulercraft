@@ -55,3 +55,13 @@ part of the fast gate: it runs when started by hand or on a pull request that ch
 
 Command entries (measure or fit a mesh body already in a design); bosses, non-rectangular outlines, slanted
 faces and tilted holes (they go to the report); a signed or published package.
+
+## Checked (2026-11-18)
+
+With SolidCraft's CLI built from tangency-labs/solidcraft 4711df6a and the component built from this crate:
+`plugin check` reports no errors (one warning: the 1024 MiB memory request, which Install asks the user to
+allow); `plugin test` passes all four cases; `plugin.install` (with `approve: {memory_mib: 1024}`) then
+`file.import` of the hole block gives the report above with no items, and SolidCraft's private rebuild measures
+17,230.3098 mm³ against the scan's enclosed 17,231.5432 mm³ (−0.007 %, the scan's holes being polygons). The
+Khronos sample `Box.glb` opens as a 1,000 mm cube, equal to the scan's volume to 1e-14 %; SolidCraft reads no
+`.glb` itself, so a plain `file.import` picks this plugin.
