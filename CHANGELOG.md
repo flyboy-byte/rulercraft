@@ -4,6 +4,9 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Reading: glTF 2.0 (`.gltf` with embedded buffers) and GLB, the usual phone-scan export, with node transforms;
+  positions are metres by the standard. Compressed (Draco) files and buffers kept in separate files are refused
+  with a message saying what to export instead (#106).
 - Fits: 1-, 2- and 3-sigma clipping (the CLI default is 3) now uses a cut-off fixed from the all-points fit, so it
   settles instead of trimming to the round limit. On scans, clipped fits keep more points and report a larger, more
   honest sigma and form error than before (#101).

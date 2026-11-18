@@ -3,12 +3,16 @@
   "milestone": "R6",
   "title": "Read glTF/GLB meshes (common phone-app export)",
   "spec": "scan-sources",
-  "status": "in-progress",
+  "status": "verified",
   "depends_on": [
     "mesh.graph"
   ],
   "owner": "Claude",
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/106",
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Triangles from scenes with node transforms, embedded buffers. Refused: required extensions (Draco, quantization), sparse accessors, buffers in separate files."
 }

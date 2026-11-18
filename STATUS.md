@@ -8,15 +8,14 @@ Overall roadmap progress: **60%** (details in ROADMAP-PROGRESS.md).
 | --- | ---: |
 | planned | 38 |
 | specced | 0 |
-| in-progress | 2 |
+| in-progress | 1 |
 | implemented | 9 |
-| verified | 34 |
+| verified | 35 |
 | done | 0 |
 
 ## In progress
 
 - `engine.library` (claude): Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog.
-- `io.gltf` (Claude): Everything.
 
 ## Ready to claim
 
@@ -34,6 +33,7 @@ Overall roadmap progress: **60%** (details in ROADMAP-PROGRESS.md).
 - `io.pointcloud` (R6): Read point clouds (PLY points, XYZ/PTS/ASC) and fit directly to points
 - `measure.constructs` (R7): Points, lines and planes built from fits; dimensions between them with nominal and tolerance
 - `mesh.clean` (R7): Mesh clean-up: hole fill, bad triangle removal, reduction
+- `scan.phone` (R6): Phone capture: read capture-app exports first, own app only if needed
 - `section.cut` (R7): Sections across a feature and the part's widest outline, measured in 2D
 - `verify.fuzz` (R8): Fuzzing every reader and the command layer
 - `verify.mutants` (R8): Mutation testing of the engine; each survivor becomes a test or a deleted rule
