@@ -440,3 +440,66 @@ fn limits_count_instanced_triangles_before_building() {
         .to_string();
     assert!(e.contains("limit"), "{e}");
 }
+
+/// Review finding: a small file whose many primitives share one accessor must hit the limit from the
+/// accessor counts, before any primitive is decoded.
+#[test]
+fn shared_accessors_are_limited_before_decoding() {
+    let (mut d, bin) = cube_doc(5125, json!([{"mesh": 0}]));
+    let prim = json!({"attributes": {"POSITION": 0}, "indices": 1});
+    d["meshes"][0]["primitives"] = Value::Array(vec![prim; 1000]);
+    let bytes = glb(&d, &bin);
+    let lim = |t| ImportLimits {
+        max_triangles: t,
+        ..ImportLimits::default()
+    };
+    // 1000 primitives x 12 triangles.
+    assert_eq!(
+        read_mesh("a.glb", &bytes, Unit::Mm, lim(12_000))
+            .unwrap()
+            .triangles
+            .len(),
+        12_000
+    );
+    let e = read_mesh("a.glb", &bytes, Unit::Mm, lim(11_999))
+        .unwrap_err()
+        .to_string();
+    assert!(e.contains("12000 triangles"), "{e}");
+    let v = read_mesh(
+        "a.glb",
+        &bytes,
+        Unit::Mm,
+        ImportLimits {
+            max_vertices: 7_999,
+            ..ImportLimits::default()
+        },
+    )
+    .unwrap_err()
+    .to_string();
+    assert!(v.contains("8000 vertices"), "{v}");
+}
+
+/// Review finding: the public reader enforces the byte limit itself, like the other readers.
+#[test]
+fn the_reader_checks_the_byte_limit() {
+    let (d, bin) = cube_doc(5125, json!([{"mesh": 0}]));
+    let bytes = glb(&d, &bin);
+    let lim = ImportLimits {
+        max_bytes: bytes.len() - 1,
+        ..ImportLimits::default()
+    };
+    let e = rulercraft_mesh::io::gltf::read_gltf(&bytes, true, lim)
+        .unwrap_err()
+        .to_string();
+    assert!(e.contains("byte limit"), "{e}");
+}
+
+/// Review finding: a buffer is only as long as it declares; bytes past that (padding, or a longer BIN
+/// chunk) are not geometry.
+#[test]
+fn buffer_views_stop_at_the_declared_length() {
+    let (mut d, bin) = cube_doc(5125, json!([{"mesh": 0}]));
+    d["buffers"][0]["byteLength"] = json!(bin.len() - 4);
+    let e = read("a.glb", &glb(&d, &bin)).unwrap_err();
+    assert!(e.contains("out of range"), "{e}");
+}

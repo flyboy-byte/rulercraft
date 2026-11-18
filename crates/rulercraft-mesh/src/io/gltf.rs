@@ -21,6 +21,7 @@ fn fail(why: impl Into<String>) -> ReadError {
 
 /// Reads a `.glb` (binary container) or `.gltf` (JSON with embedded buffers).
 pub fn read_gltf(bytes: &[u8], binary: bool, limits: ImportLimits) -> Result<Mesh, ReadError> {
+    super::check_bytes(bytes, limits)?;
     let (json, bin) = if binary {
         split_glb(bytes)?
     } else {
@@ -92,27 +93,28 @@ pub fn read_gltf(bytes: &[u8], binary: bool, limits: ImportLimits) -> Result<Mes
         }
     }
 
-    // Count expanded geometry before building anything.
+    // Count expanded geometry from accessor counts alone, before decoding anything.
     let meshes = doc.list("meshes");
-    let mut prims: Vec<Vec<Prim>> = Vec::with_capacity(meshes.len());
+    let mut instances = vec![0usize; meshes.len()];
+    for (m, _) in &placed {
+        *instances
+            .get_mut(*m)
+            .ok_or_else(|| fail(format!("mesh {m} does not exist")))? += 1;
+    }
+    let mut metas: Vec<Vec<Meta>> = Vec::with_capacity(meshes.len());
+    let (mut tris, mut verts) = (0usize, 0usize);
     for (mi, mesh) in meshes.iter().enumerate() {
         let mut out = Vec::new();
-        for p in list_of(mesh, "primitives") {
-            if let Some(prim) = doc.primitive(p, mi)? {
-                out.push(prim);
+        if instances[mi] > 0 {
+            for p in list_of(mesh, "primitives") {
+                if let Some(meta) = doc.meta(p, mi)? {
+                    tris = tris.saturating_add(meta.triangles.saturating_mul(instances[mi]));
+                    verts = verts.saturating_add(meta.vertices.saturating_mul(instances[mi]));
+                    out.push(meta);
+                }
             }
         }
-        prims.push(out);
-    }
-    let (mut tris, mut verts) = (0usize, 0usize);
-    for (m, _) in &placed {
-        let ps = prims
-            .get(*m)
-            .ok_or_else(|| fail(format!("mesh {m} does not exist")))?;
-        for p in ps {
-            tris = tris.saturating_add(p.triangle_count());
-            verts = verts.saturating_add(p.positions.len());
-        }
+        metas.push(out);
     }
     if tris > limits.max_triangles {
         return Err(fail(format!(
@@ -127,12 +129,43 @@ pub fn read_gltf(bytes: &[u8], binary: bool, limits: ImportLimits) -> Result<Mes
         )));
     }
 
+    // Decode each accessor once, however many primitives use it.
+    let mut positions: std::collections::HashMap<usize, Vec<[f64; 3]>> = Default::default();
+    let mut orders: std::collections::HashMap<(usize, usize), Vec<u32>> = Default::default();
+    use std::collections::hash_map::Entry;
+    for meta in metas.iter().flatten() {
+        if let Entry::Vacant(e) = positions.entry(meta.position) {
+            e.insert(doc.positions(meta.position)?);
+        }
+        let n = positions[&meta.position].len();
+        if let Some(i) = meta.indices
+            && let Entry::Vacant(e) = orders.entry((i, n))
+        {
+            e.insert(doc.indices(i, n)?);
+        }
+    }
+    let prims: Vec<Vec<Prim<'_>>> = metas
+        .iter()
+        .map(|ms| {
+            ms.iter()
+                .map(|m| {
+                    let pos = &positions[&m.position];
+                    Prim {
+                        positions: pos,
+                        order: m.indices.map(|i| orders[&(i, pos.len())].as_slice()),
+                        mode: m.mode,
+                    }
+                })
+                .collect()
+        })
+        .collect();
+
     let mut builder = MeshBuilder::new(Unit::M);
     for (m, world) in &placed {
         let flip = det3(world) < 0.0;
         for p in &prims[*m] {
             let mut ids = Vec::with_capacity(p.positions.len());
-            for q in &p.positions {
+            for q in p.positions {
                 let w = apply(world, *q);
                 let f = w.map(|v| v as f32);
                 let id = if f.iter().all(|v| v.is_finite()) {
@@ -242,7 +275,14 @@ fn load_buffers<'a>(doc: &Value, bin: Option<&'a [u8]>) -> Result<Vec<Bytes<'a>>
                 data.get().len()
             )));
         }
-        out.push(data);
+        // The buffer is as long as it declares; container padding or extra bytes are not part of it.
+        out.push(match data {
+            Bytes::Borrowed(b) => Bytes::Borrowed(&b[..len]),
+            Bytes::Owned(mut v) => {
+                v.truncate(len);
+                Bytes::Owned(v)
+            }
+        });
     }
     Ok(out)
 }
@@ -265,21 +305,31 @@ struct Doc<'a> {
     buffers: Vec<Bytes<'a>>,
 }
 
+/// What a primitive needs, read from the JSON without touching buffers.
+struct Meta {
+    position: usize,
+    indices: Option<usize>,
+    mode: u64,
+    vertices: usize,
+    triangles: usize,
+}
+
 /// One primitive's local positions (metres) and its triangle list or strip/fan order.
-struct Prim {
-    positions: Vec<[f64; 3]>,
-    order: Vec<u32>,
+struct Prim<'a> {
+    positions: &'a [[f64; 3]],
+    order: Option<&'a [u32]>,
     mode: u64,
 }
-impl Prim {
-    fn triangle_count(&self) -> usize {
-        match self.mode {
-            4 => self.order.len() / 3,
-            _ => self.order.len().saturating_sub(2),
-        }
-    }
+impl Prim<'_> {
     fn triangles(&self) -> Vec<[u32; 3]> {
-        let o = &self.order;
+        let seq: Vec<u32>;
+        let o = match self.order {
+            Some(o) => o,
+            None => {
+                seq = (0..self.positions.len() as u32).collect();
+                &seq
+            }
+        };
         match self.mode {
             4 => o.chunks_exact(3).map(|c| [c[0], c[1], c[2]]).collect(),
             5 => (0..o.len().saturating_sub(2))
@@ -298,12 +348,21 @@ impl Prim {
     }
 }
 
+fn triangle_count(mode: u64, n: usize) -> usize {
+    if mode == 4 {
+        n / 3
+    } else {
+        n.saturating_sub(2)
+    }
+}
+
 impl Doc<'_> {
     fn list(&self, key: &str) -> &[Value] {
         list_of(self.json, key)
     }
 
-    fn primitive(&self, p: &Value, mesh: usize) -> Result<Option<Prim>, ReadError> {
+    /// A primitive's accessors and counts, from the JSON alone; `None` for points and lines.
+    fn meta(&self, p: &Value, mesh: usize) -> Result<Option<Meta>, ReadError> {
         let mode = p.get("mode").and_then(Value::as_u64).unwrap_or(4);
         if !(4..=6).contains(&mode) {
             return Ok(None); // points and lines carry no surface
@@ -311,15 +370,29 @@ impl Doc<'_> {
         let pos = p
             .pointer("/attributes/POSITION")
             .ok_or_else(|| fail(format!("mesh {mesh}: a primitive has no POSITION")))?;
-        let positions = self.positions(index(pos, "POSITION accessor")?)?;
-        let order = match p.get("indices") {
-            Some(v) => self.indices(index(v, "indices accessor")?, positions.len())?,
-            None => (0..positions.len() as u32).collect(),
+        let position = index(pos, "POSITION accessor")?;
+        let indices = p
+            .get("indices")
+            .map(|v| index(v, "indices accessor"))
+            .transpose()?;
+        let count = |a: usize| -> Result<usize, ReadError> {
+            let acc = self
+                .list("accessors")
+                .get(a)
+                .ok_or_else(|| fail(format!("accessor {a} does not exist")))?;
+            Ok(usize_of(acc.get("count"), "accessor count")?.unwrap_or(0))
         };
-        Ok(Some(Prim {
-            positions,
-            order,
+        let vertices = count(position)?;
+        let order = match indices {
+            Some(i) => count(i)?,
+            None => vertices,
+        };
+        Ok(Some(Meta {
+            position,
+            indices,
             mode,
+            vertices,
+            triangles: triangle_count(mode, order),
         }))
     }
 
