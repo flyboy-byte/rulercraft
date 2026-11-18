@@ -5,3 +5,5 @@
 /target/
 /dist/
 /package/tests/bracket.stl
+/package/tests/l-plate.stl
+/package/tests/round-plate.stl

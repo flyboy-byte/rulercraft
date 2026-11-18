@@ -1,0 +1,97 @@
+{
+ "commands": [
+  {
+   "command": "timeline.add",
+   "params": {
+    "feature": {
+     "id": 1,
+     "name": "Outline",
+     "plane": {
+      "name": "XY",
+      "type": "origin"
+     },
+     "sketch": {
+      "constraints": [],
+      "counters": {
+       "c": 1,
+       "k": 0
+      },
+      "curves": [
+       {
+        "c": 1,
+        "construction": false,
+        "id": "c1",
+        "r": 25.0,
+        "type": "circle"
+       }
+      ],
+      "points": [
+       {
+        "fixed": true,
+        "id": "origin",
+        "pos": [
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "fixed": false,
+        "id": "c1.center",
+        "pos": [
+         0.0,
+         0.0
+        ]
+       }
+      ]
+     },
+     "suppressed": false,
+     "type": "sketch"
+    }
+   }
+  },
+  {
+   "command": "timeline.add",
+   "params": {
+    "feature": {
+     "body_names": [
+      "Plate"
+     ],
+     "extent": {
+      "convention": "total_distance",
+      "direction": "positive",
+      "distance": "6"
+     },
+     "id": 2,
+     "name": "Plate",
+     "operation": "new_body",
+     "param_names": [],
+     "profiles": {
+      "loops": [
+       [
+        "c1"
+       ]
+      ],
+      "type": "curves"
+     },
+     "sketch": 1,
+     "suppressed": false,
+     "type": "extrude"
+    }
+   }
+  },
+  {
+   "command": "solid.cylinder",
+   "params": {
+    "diameter": "8",
+    "height": "8",
+    "base": [
+     10,
+     0,
+     -1
+    ],
+    "operation": "cut",
+    "name": "Hole"
+   }
+  }
+ ]
+}

@@ -54,17 +54,25 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
   face (the base or one below) and an upward face (the top, a pocket floor, a pad), blind when it reaches one.
   One whose surface faces away and stands on an upward face is a **boss**, joined from just inside that face up to
   its top. A boss's top and a blind hole's floor count as explained. A round wall that runs the full thickness
-  facing outward is a round outline, reported. Tolerances: heights within 2 % of the thickness (at least 0.05 mm).
+  facing outward is part of the outline (below), reported as a round outline only when the outline stays a rectangle. Tolerances: heights within 2 % of the thickness (at least 0.05 mm).
+- **Outline.** The base face's outer boundary is traced and the plate is that outline extruded from a sketch, not
+  its enclosing rectangle, when the outline covers less than 98 % of the rectangle. A boundary that fits one circle
+  within the tolerance is a circle; any other is a polygon, its corners the points a straight-edge approximation
+  needs within the tolerance (at most 200). A plate that fills its rectangle stays a box. Holes and bosses must lie
+  inside the traced outline. Curves in a polygon outline are runs of short straight edges, reported as
+  `outline_faceted`; cutouts in the base that are not round holes are reported as `cutout_not_round`.
 - **Parameters.** `length`, `width`, `thickness`, `hole<i>_diameter`, `boss<i>_diameter`, `boss<i>_height`,
   `pocket<i>_depth`, `pad<i>_height` are named parameters (to a micrometre). Pockets hang from `thickness`, so
   changing the thickness keeps their depth.
 - **Loss report.** Everything not rebuilt is an item, never a guess: `slanted_face`, `tilted_round`,
   `round_outside`, `hole_internal`, `boss` (not standing on an upward face), `round_outline`, `pocket_rotated`,
-  `pad_rotated`, `undercut`, `below_base`, and simplifications `outline_rectangle`, `pocket_rectangle`,
+  `pad_rotated`, `undercut`, `below_base`, and simplifications `outline_rectangle`, `outline_faceted`, `cutout_not_round`, `pocket_rectangle`,
   `pad_rectangle` (a face covering less than 98 % of its rectangle). `details` carries the plate, holes, bosses,
   pockets and pads with their measured sizes and fit quality, and the frame that maps the design back onto the scan.
 
-Known answers: the hole block rebuilds as 60 x 30 x 10 with through holes of 3, 5 and 8 mm that map back to
+Known answers: an L-shaped plate (fixtures/known/l-plate.stl, 60 x 20 plus 20 x 20, 8 mm thick, Ø6 hole) rebuilds
+as a six-corner sketch with SolidCraft's own volume, 12,573.805 mm³; a Ø50 x 6 round plate with a Ø8 hole as a circle
+sketch, 11,479.380 mm³. The hole block rebuilds as 60 x 30 x 10 with through holes of 3, 5 and 8 mm that map back to
 x = 10, 30, 50, y = 15, also after the scan is turned and moved. The bracket (fixtures/known/bracket.stl, made by
 SolidCraft from bracket.solidcraft.json) rebuilds as 80 x 50 x 8 with its Ø10 x 6 boss, 20 x 15 x 3 pocket, Ø6
 through hole and Ø4 blind hole each mapped back to where they were designed, also when turned 30° in its plane and

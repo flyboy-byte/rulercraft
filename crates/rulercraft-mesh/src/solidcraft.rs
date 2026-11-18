@@ -17,6 +17,8 @@ use serde_json::{Value, json};
 pub const FORMAT: &str = "solidcraft/57";
 /// A face or axis within this many degrees counts as parallel or square to the base.
 pub const SQUARE_DEG: f64 = 5.0;
+/// The most corners a traced polygon outline may have; a more complex outline stays a rectangle.
+const MAX_OUTLINE_CORNERS: usize = 200;
 
 /// What [`design`] made: the design JSON and the loss report SolidCraft shows after an import.
 #[derive(Debug, Clone, PartialEq)]
@@ -125,6 +127,174 @@ fn min_rect_angle(pts: &[[f64; 2]]) -> f64 {
     best.1
 }
 
+/// The outer boundary of a set of triangles as a closed loop of vertex indices, or `None` when the
+/// boundary is not a set of simple closed chains. The loop of largest enclosed area is the outline.
+fn boundary_outline(
+    tris: &[u32],
+    mesh: &Mesh,
+    flat: &dyn Fn(u32) -> [f64; 2],
+) -> Option<Vec<[f64; 2]>> {
+    use std::collections::{HashMap, HashSet};
+    let mut directed: HashSet<(u32, u32)> = HashSet::new();
+    for &t in tris {
+        let [a, b, c] = mesh.triangles[t as usize];
+        directed.extend([(a, b), (b, c), (c, a)]);
+    }
+    let mut next: HashMap<u32, u32> = HashMap::new();
+    for &(a, b) in &directed {
+        if !directed.contains(&(b, a)) && next.insert(a, b).is_some() {
+            return None; // a vertex where two boundary chains touch
+        }
+    }
+    let mut best: Option<(f64, Vec<[f64; 2]>)> = None;
+    let mut seen: HashSet<u32> = HashSet::new();
+    let mut starts: Vec<u32> = next.keys().copied().collect();
+    starts.sort_unstable();
+    for s in starts {
+        if seen.contains(&s) {
+            continue;
+        }
+        let mut chain = vec![s];
+        seen.insert(s);
+        let mut at = *next.get(&s)?;
+        while at != s {
+            if !seen.insert(at) {
+                return None;
+            }
+            chain.push(at);
+            at = *next.get(&at)?;
+        }
+        let pts: Vec<[f64; 2]> = chain.iter().map(|&i| flat(i)).collect();
+        let area = signed_area(&pts).abs();
+        if best.as_ref().is_none_or(|b| area > b.0) {
+            best = Some((area, pts));
+        }
+    }
+    best.map(|b| b.1)
+}
+
+fn signed_area(p: &[[f64; 2]]) -> f64 {
+    let n = p.len();
+    (0..n)
+        .map(|i| p[i][0] * p[(i + 1) % n][1] - p[(i + 1) % n][0] * p[i][1])
+        .sum::<f64>()
+        / 2.0
+}
+
+/// Distance from `q` to the segment `a`-`b`.
+fn seg_dist(q: [f64; 2], a: [f64; 2], b: [f64; 2]) -> f64 {
+    let (dx, dy) = (b[0] - a[0], b[1] - a[1]);
+    let l2 = dx * dx + dy * dy;
+    let t = if l2 > 0.0 {
+        (((q[0] - a[0]) * dx + (q[1] - a[1]) * dy) / l2).clamp(0.0, 1.0)
+    } else {
+        0.0
+    };
+    (q[0] - a[0] - t * dx).hypot(q[1] - a[1] - t * dy)
+}
+
+/// A closed loop reduced to the corners that matter: every dropped point lies within `tol` of the result.
+fn simplify_loop(p: &[[f64; 2]], tol: f64) -> Vec<[f64; 2]> {
+    let n = p.len();
+    if n < 4 {
+        return p.to_vec();
+    }
+    // Split at the point farthest from the first, so neither half is a loop.
+    let far = (1..n)
+        .max_by(|&a, &b| {
+            let d = |i: usize| (p[i][0] - p[0][0]).hypot(p[i][1] - p[0][1]);
+            d(a).total_cmp(&d(b))
+        })
+        .unwrap_or(1);
+    fn dp(p: &[[f64; 2]], lo: usize, hi: usize, tol: f64, keep: &mut Vec<usize>) {
+        let (mut worst, mut at) = (0.0, None);
+        for i in lo + 1..hi {
+            let d = seg_dist(p[i], p[lo], p[hi % p.len()]);
+            if d > worst {
+                (worst, at) = (d, Some(i));
+            }
+        }
+        if let (true, Some(i)) = (worst > tol, at) {
+            dp(p, lo, i, tol, keep);
+            keep.push(i);
+            dp(p, i, hi, tol, keep);
+        }
+    }
+    let mut keep = vec![0];
+    dp(p, 0, far, tol, &mut keep);
+    keep.push(far);
+    dp(p, far, n, tol, &mut keep);
+    let mut out: Vec<[f64; 2]> = keep.into_iter().map(|i| p[i]).collect();
+    // The split points are arbitrary vertices, perhaps mid-edge: drop any corner that is not one.
+    loop {
+        let m = out.len();
+        let flat = (0..m)
+            .find(|&i| m > 3 && seg_dist(out[i], out[(i + m - 1) % m], out[(i + 1) % m]) <= tol);
+        match flat {
+            Some(i) => {
+                out.remove(i);
+            }
+            None => break,
+        }
+    }
+    out
+}
+
+/// The circle through a loop's points, when they all lie within `tol` of one: `(cx, cy, r)`.
+fn circle_of(p: &[[f64; 2]], tol: f64) -> Option<(f64, f64, f64)> {
+    let n = p.len() as f64;
+    let (cx, cy) = (
+        p.iter().map(|q| q[0]).sum::<f64>() / n,
+        p.iter().map(|q| q[1]).sum::<f64>() / n,
+    );
+    // Kasa fit on the centred points.
+    let (mut suu, mut svv, mut suv, mut suuu, mut svvv, mut suvv, mut svuu) =
+        (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
+    for q in p {
+        let (u, v) = (q[0] - cx, q[1] - cy);
+        suu += u * u;
+        svv += v * v;
+        suv += u * v;
+        suuu += u * u * u;
+        svvv += v * v * v;
+        suvv += u * v * v;
+        svuu += v * u * u;
+    }
+    let det = suu * svv - suv * suv;
+    if det.abs() < 1e-12 {
+        return None;
+    }
+    let (b1, b2) = ((suuu + suvv) / 2.0, (svvv + svuu) / 2.0);
+    let (uc, vc) = ((b1 * svv - b2 * suv) / det, (suu * b2 - suv * b1) / det);
+    let r = (uc * uc + vc * vc + (suu + svv) / n).sqrt();
+    let worst = p
+        .iter()
+        .map(|q| ((q[0] - cx - uc).hypot(q[1] - cy - vc) - r).abs())
+        .fold(0.0, f64::max);
+    (worst <= tol && r.is_finite()).then_some((cx + uc, cy + vc, r))
+}
+
+fn point_in_loop(q: [f64; 2], p: &[[f64; 2]]) -> bool {
+    let mut inside = false;
+    let n = p.len();
+    for i in 0..n {
+        let (a, b) = (p[i], p[(i + 1) % n]);
+        if (a[1] > q[1]) != (b[1] > q[1])
+            && q[0] < (b[0] - a[0]) * (q[1] - a[1]) / (b[1] - a[1]) + a[0]
+        {
+            inside = !inside;
+        }
+    }
+    inside
+}
+
+/// The plate's outline, traced from the base face.
+enum Outline {
+    Rectangle,
+    Circle { x: f64, y: f64, r: f64 },
+    Polygon(Vec<[f64; 2]>),
+}
+
 /// A flat face parallel to the base, in the part frame.
 struct Level {
     index: usize,
@@ -219,6 +389,62 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     let tol = (0.02 * thick).max(0.05);
     let margin = (0.1 * thick).max(0.5);
     let mut losses: Vec<Loss> = Vec::new();
+
+    // The outline: the base face's outer boundary, as a circle or a polygon when it is not a rectangle.
+    let part_xy = |i: u32| {
+        let l = local(pos(i));
+        [l[0] - lo[0], l[1] - lo[1]]
+    };
+    let mut outline = Outline::Rectangle;
+    let mut outline_area = len * wid;
+    if let Some(ring) = boundary_outline(&base.triangles, mesh, &part_xy) {
+        let area = signed_area(&ring).abs();
+        if area < 0.98 * len * wid {
+            if let Some((x, y, r)) = circle_of(&ring, tol) {
+                outline_area = std::f64::consts::PI * r * r;
+                outline = Outline::Circle { x, y, r };
+            } else {
+                let mut poly = simplify_loop(&ring, tol);
+                let poly_area = signed_area(&poly);
+                if (3..=MAX_OUTLINE_CORNERS).contains(&poly.len()) && poly_area.abs() > 0.0 {
+                    if poly_area < 0.0 {
+                        poly.reverse(); // counter-clockwise in the part frame
+                    }
+                    let short = (0..poly.len())
+                        .filter(|&i| {
+                            let (a, b) = (poly[i], poly[(i + 1) % poly.len()]);
+                            (b[0] - a[0]).hypot(b[1] - a[1]) < 6.0 * tol
+                        })
+                        .count();
+                    if short >= 3 {
+                        losses.push(Loss {
+                            severity: "degraded",
+                            title: "Curved outline built from straight edges",
+                            subject: "base outline".into(),
+                            message: format!("{short} very short edges: a curved edge of the outline is a run of straight ones"),
+                            code: "outline_faceted",
+                        });
+                    }
+                    outline_area = poly_area.abs();
+                    outline = Outline::Polygon(poly);
+                }
+            }
+        }
+    }
+    let inside_outline = |x: f64, y: f64, r: f64| match &outline {
+        Outline::Rectangle => {
+            !(x - r < -tol || y - r < -tol || x + r > len + tol || y + r > wid + tol)
+        }
+        Outline::Circle {
+            x: cx,
+            y: cy,
+            r: big,
+        } => (x - cx).hypot(y - cy) + r <= big + tol,
+        Outline::Polygon(p) => {
+            point_in_loop([x, y], p)
+                && (0..p.len()).all(|i| seg_dist([x, y], p[i], p[(i + 1) % p.len()]) >= r - tol)
+        }
+    };
 
     // Every flat face parallel to the base, with its height, side and extent in the part frame.
     let levels: Vec<Level> = parallel
@@ -323,7 +549,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }
         let at = to_part(local(f.axis_point));
         let (x, y, r) = (at[0], at[1], f.diameter / 2.0);
-        if x - r < -tol || y - r < -tol || x + r > len + tol || y + r > wid + tol {
+        if !inside_outline(x, y, r) {
             drop(
                 &mut losses,
                 "Round features outside the plate",
@@ -369,6 +595,9 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                                "sigma": f.sigma, "coverage_deg": f.coverage_deg}),
             );
         } else if t0.abs() <= tol && (t1 - thick).abs() <= tol {
+            if !matches!(outline, Outline::Rectangle) {
+                continue; // a wall of the traced outline: a curved edge, already part of the plate
+            }
             drop(&mut losses, "Round outlines not rebuilt", "round_outline",
                  "its outer wall runs the full thickness: the outline is round, and the plate uses its enclosing rectangle".into());
         } else {
@@ -464,17 +693,28 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     }
 
     // An outline that is not a full rectangle is simplified to its enclosing rectangle.
-    let expected = len * wid - down_hole_area;
+    let expected = outline_area - down_hole_area;
     if base.area < 0.98 * expected {
+        let rectangle = matches!(outline, Outline::Rectangle);
         losses.push(Loss {
             severity: "degraded",
-            title: "Outline simplified to a rectangle",
+            title: if rectangle {
+                "Outline simplified to a rectangle"
+            } else {
+                "Cutouts in the base not rebuilt"
+            },
             subject: "base outline".into(),
             message: format!(
-                "the base face covers {:.1} mm² of the {:.1} mm² its rectangle leaves after holes",
-                base.area, expected
+                "the base face covers {:.1} mm² of the {:.1} mm² its {} leaves after holes",
+                base.area,
+                expected,
+                if rectangle { "rectangle" } else { "outline" }
             ),
-            code: "outline_rectangle",
+            code: if rectangle {
+                "outline_rectangle"
+            } else {
+                "cutout_not_round"
+            },
         });
     }
 
@@ -485,11 +725,52 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         param("width", wid),
         param("thickness", thick),
     ];
-    let mut features: Vec<Value> = vec![json!({
-        "id": 1, "name": "Plate", "suppressed": false, "body_names": ["Plate"], "param_names": [],
-        "type": "box", "corner": [0.0, 0.0, 0.0], "length": "length", "width": "width", "height": "thickness",
-        "operation": "new_body",
-    })];
+    let mut features: Vec<Value> = match &outline {
+        Outline::Rectangle => vec![json!({
+            "id": 1, "name": "Plate", "suppressed": false, "body_names": ["Plate"], "param_names": [],
+            "type": "box", "corner": [0.0, 0.0, 0.0], "length": "length", "width": "width", "height": "thickness",
+            "operation": "new_body",
+        })],
+        traced => {
+            let (points, curves, loop_ids) = match traced {
+                Outline::Circle { x, y, r } => (
+                    vec![
+                        json!({"fixed": true, "id": "origin", "pos": [0.0, 0.0]}),
+                        json!({"fixed": false, "id": "c1.center", "pos": [round_um(*x), round_um(*y)]}),
+                    ],
+                    vec![
+                        json!({"c": 1, "construction": false, "id": "c1", "r": round_um(*r), "type": "circle"}),
+                    ],
+                    vec!["c1".to_string()],
+                ),
+                Outline::Polygon(p) => {
+                    let n = p.len();
+                    let mut pts = vec![json!({"fixed": true, "id": "origin", "pos": [0.0, 0.0]})];
+                    for (i, q) in p.iter().enumerate() {
+                        pts.push(json!({"fixed": false, "id": format!("p{}", i + 1), "pos": [round_um(q[0]), round_um(q[1])]}));
+                    }
+                    let lines = (0..n)
+                        .map(|i| json!({"a": 1 + i, "b": 1 + (i + 1) % n, "construction": false, "id": format!("l{}", i + 1), "type": "line"}))
+                        .collect();
+                    (pts, lines, (0..n).map(|i| format!("l{}", i + 1)).collect())
+                }
+                Outline::Rectangle => (vec![], vec![], vec![]),
+            };
+            let counters = match traced {
+                Outline::Circle { .. } => json!({"c": 1, "k": 0}),
+                _ => json!({"k": 0, "l": curves.len(), "p": points.len() - 1}),
+            };
+            vec![
+                json!({"id": 1, "name": "Outline", "suppressed": false, "param_names": [], "type": "sketch",
+                    "plane": {"name": "XY", "type": "origin"},
+                    "sketch": {"constraints": [], "counters": counters, "curves": curves, "points": points}}),
+                json!({"id": 2, "name": "Plate", "suppressed": false, "body_names": ["Plate"], "param_names": [],
+                    "type": "extrude", "sketch": 1, "operation": "new_body",
+                    "profiles": {"type": "curves", "loops": [loop_ids]},
+                    "extent": {"convention": "total_distance", "direction": "positive", "distance": "thickness"}}),
+            ]
+        }
+    };
     let f64of = |v: &Value, k: &str| v[k].as_f64().unwrap_or(0.0);
     let mut add = |mut f: Value| {
         f["id"] = json!(features.len() + 1);
@@ -571,4 +852,82 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         },
     });
     Ok(Rebuilt { design, report })
+}
+
+#[cfg(test)]
+#[allow(clippy::panic, clippy::unwrap_used, clippy::expect_used)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn area_of_an_l_is_1600() {
+        let l = [
+            [0.0, 0.0],
+            [60.0, 0.0],
+            [60.0, 20.0],
+            [20.0, 20.0],
+            [20.0, 40.0],
+            [0.0, 40.0],
+        ];
+        assert!((signed_area(&l) - 1600.0).abs() < 1e-9);
+        let rev: Vec<_> = l.iter().rev().copied().collect();
+        assert!((signed_area(&rev) + 1600.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn midpoints_on_edges_are_not_corners() {
+        // A 10 x 4 rectangle with a point every 1 mm along each edge: four corners remain.
+        let mut p = Vec::new();
+        for x in 0..10 {
+            p.push([f64::from(x), 0.0]);
+        }
+        for y in 0..4 {
+            p.push([10.0, f64::from(y)]);
+        }
+        for x in (1..=10).rev() {
+            p.push([f64::from(x), 4.0]);
+        }
+        for y in (1..=4).rev() {
+            p.push([0.0, f64::from(y)]);
+        }
+        let s = simplify_loop(&p, 0.01);
+        assert_eq!(s.len(), 4, "{s:?}");
+        assert!((signed_area(&s).abs() - 40.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn a_circle_of_radius_25_is_found_and_a_square_is_not() {
+        let c: Vec<[f64; 2]> = (0..90)
+            .map(|i| {
+                let a = f64::from(i) * std::f64::consts::TAU / 90.0;
+                [3.0 + 25.0 * a.cos(), -4.0 + 25.0 * a.sin()]
+            })
+            .collect();
+        let (x, y, r) = circle_of(&c, 1e-6).unwrap();
+        assert!((x - 3.0).abs() < 1e-6 && (y + 4.0).abs() < 1e-6 && (r - 25.0).abs() < 1e-6);
+        let sq: Vec<[f64; 2]> = (0..40)
+            .map(|i| match i / 10 {
+                0 => [f64::from(i % 10), 0.0],
+                1 => [10.0, f64::from(i % 10)],
+                2 => [10.0 - f64::from(i % 10), 10.0],
+                _ => [0.0, 10.0 - f64::from(i % 10)],
+            })
+            .collect();
+        assert!(circle_of(&sq, 0.05).is_none());
+    }
+
+    #[test]
+    fn a_hole_near_an_inner_corner_is_outside_the_l() {
+        let l = [
+            [0.0, 0.0],
+            [60.0, 0.0],
+            [60.0, 20.0],
+            [20.0, 20.0],
+            [20.0, 40.0],
+            [0.0, 40.0],
+        ];
+        assert!(point_in_loop([10.0, 30.0], &l));
+        assert!(!point_in_loop([40.0, 30.0], &l));
+        assert!((seg_dist([10.0, 30.0], l[3], l[4]) - 10.0).abs() < 1e-9);
+    }
 }
