@@ -1,6 +1,6 @@
 # Intent
 
-Locked 2026-11-07 (D-010; who-for and app updated by D-012). This page changes only through a new numbered
+Locked 2026-11-07 (D-010; who-for and app updated by D-012; the app replaced by SolidCraft, D-015). This page changes only through a new numbered
 decision in DECISIONS.md that says what it supersedes. What v1 means: docs/v1.md. Everything else (roadmap, features, specs) serves it.
 
 ## The promise
@@ -16,10 +16,11 @@ One open engine with several faces, all giving the same numbers:
 - a Rust library (and later a browser build),
 - a command line for scripts and batch checks,
 - an MCP server, so Claude and other agents can drive it,
-- a native desktop app with a 3D view (egui and wgpu, SolidCraft's toolkit), for people who never touch an agent.
+- inside SolidCraft, as its plugin (D-014, D-015): SolidCraft is the user interface, for people who never touch an
+  agent.
 
 The mesh half of a mesh-to-CAD loop. The CAD half is SolidCraft and its kernel SolidCore; the engine stays
-joinable with them as a library, a tool server or an embedded panel.
+joinable with them as a plugin, a library or a tool server.
 
 ## Who it is for
 
@@ -57,5 +58,5 @@ photogrammetry (research only, R6).
 ## How we will know
 
 The exit conditions in ROADMAP.md, above all R1 (real published dimensions match), R2 (a part rebuilt in
-SolidCraft within 0.05 mm of its scan) and R7 (a person who uses the established scan-inspection apps does
-a real job here and finds nothing they need missing). Competitive scope is in docs/specs/product-scope.md.
+SolidCraft within 0.05 mm of its scan) and R7 (a SolidCraft user does v1's four jobs on their own parts
+inside SolidCraft without help). Competitive scope is in docs/specs/product-scope.md.

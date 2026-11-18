@@ -11,9 +11,10 @@ WIT package `craft:plugin@0.2.0`, copied into `plugin/solidcraft/wit/` with its 
 In SolidCraft, the Plugins menu has **RulerCraft › scan-to-part**. Its dialog asks for the scan's units (mm by
 default), then for the file (`.stl`, `.ply`, `.obj`, `.3mf`, `.gltf`, `.glb`). The scan opens as a new, unsaved
 design holding the part RulerCraft rebuilt (docs/specs/mesh-to-cad.md, "SolidCraft design"): a plate with its
-holes cut, every size a named parameter. The Import report window lists what was not rebuilt. File › Open of a
-format SolidCraft reads itself (STL, OBJ, 3MF) keeps opening it as a mesh, as before; the plugin is chosen from
-its menu entry, or with `file.import` and `format: "rulercraft.scan-to-part"`.
+holes cut, every size a named parameter. The Import report window lists what was not rebuilt. SolidCraft reads every
+one of these formats itself (as a mesh, or PLY as a point cloud), so File › Open keeps doing that; the plugin is
+chosen from its menu entry, or with `file.import` (always an importer; `format: "rulercraft.scan-to-part"` when
+another importer claims the extension too).
 
 ## What it does
 
@@ -63,5 +64,5 @@ With SolidCraft's CLI built from tangency-labs/solidcraft 4711df6a and the compo
 allow); `plugin test` passes all four cases; `plugin.install` (with `approve: {memory_mib: 1024}`) then
 `file.import` of the hole block gives the report above with no items, and SolidCraft's private rebuild measures
 17,230.3098 mm³ against the scan's enclosed 17,231.5432 mm³ (−0.007 %, the scan's holes being polygons). The
-Khronos sample `Box.glb` opens as a 1,000 mm cube, equal to the scan's volume to 1e-14 %; SolidCraft reads no
-`.glb` itself, so a plain `file.import` picks this plugin.
+Khronos sample `Box.glb` opens as a 1,000 mm cube, equal to the scan's volume to 1e-14 %; `file.import` always
+uses an importer plugin, so with RulerCraft the only one claiming `.glb` it is picked without naming `format`.

@@ -48,15 +48,15 @@ SolidCraft.
 **Exit:** a written go/no-go with a prototype on photos of one object. Any library used must pass the
 licence rules in AGENTS.md (no copyleft).
 
-## R7 A tool people choose: the app, at parity and beyond
+## R7 v1 in SolidCraft: the plugin, at parity and beyond
 
-**Exit:** Logan, who uses the established scan-inspection apps, does a real job in the RulerCraft app (a
-dimensioned report, a deviation check against the design, an alignment) and finds nothing he needs missing.
+**Exit:** a SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own
+parts inside SolidCraft with the RulerCraft plugin, without help.
 
-The standalone app brought up to the everyday job (constructions, dimensions with tolerances, deviation map,
-alignment, sections, reports, save and undo, big meshes, no-install browser build) while keeping what we win on:
-permissive licence, evidence-backed numbers, scripting, the closed loop to CAD. Scope and order of work:
-docs/specs/product-scope.md. Intent: INTENT.md (D-010).
+SolidCraft is the user interface (D-015); RulerCraft ships as its plugin (D-014). In order: the importer (done), a
+release people can install, real parts (with R1), more shapes rebuilt (outline, bosses, steps, details), a deviation
+check in the import report, inspecting scans inside SolidCraft, and Claude driving it through SolidCraft's MCP.
+Features `sc.*`; phases in docs/v1.md.
 
 ## Not planned (say so before starting)
 

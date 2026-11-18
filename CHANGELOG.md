@@ -4,6 +4,8 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- SolidCraft is RulerCraft's user interface (D-015): the plan for a separate native app is dropped. The plugin is
+  released as a `.zip` on GitHub releases (tags `plugin-v…`); install guide in docs/install-solidcraft-plugin.md (#111).
 - Selection: `--facing` (and MCP/app facing) also counts a vertex when a triangle touching it faces the direction,
   so a box side on a sharp-edged CAD mesh can be selected by facing. Facing selections on scans can gain edge
   vertices of the faced surface (#110).

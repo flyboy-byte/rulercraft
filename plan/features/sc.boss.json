@@ -1,12 +1,11 @@
 {
-  "id": "gui.sections",
+  "id": "sc.boss",
   "milestone": "R7",
-  "title": "App: section and outline views",
-  "spec": "product-scope",
+  "title": "Bosses and pins: outward round regions joined onto the plate",
+  "spec": "mesh-to-cad",
   "status": "planned",
   "depends_on": [
-    "gui.viewer",
-    "section.cut"
+    "sc.importer"
   ],
   "owner": null,
   "pr": null,
