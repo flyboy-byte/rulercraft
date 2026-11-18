@@ -14,7 +14,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | R4 Reverse-engineering workflows with AI | `█████████░` | 90% | 15 | Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft. |
 | R5 Reusable engine | `███░░░░░░░` | 26% | 10 | Another project depends on rulercraft-mesh from crates.io or git, and the engine builds for Wasm and runs the app in a browser with nothing to install. |
 | R6 Any scanner in: point clouds, phones, photos (research first) | `██░░░░░░░░` | 15% | 5 | Point clouds and phone-app exports open and measure correctly on generated scenes, and a written go/no-go with a prototype on photos of one object. |
-| R7 v1 in SolidCraft: the plugin, at parity and beyond | `████░░░░░░` | 41% | 25 | A SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own parts inside SolidCraft with the RulerCraft plugin, without help: rebuild a scanned part as editable CAD, inspect it with stated methods, let Claude measure through SolidCraft, and use the engine from another program. |
+| R7 v1 in SolidCraft: the plugin, at parity and beyond | `████░░░░░░` | 44% | 25 | A SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own parts inside SolidCraft with the RulerCraft plugin, without help: rebuild a scanned part as editable CAD, inspect it with stated methods, let Claude measure through SolidCraft, and use the engine from another program. |
 | R8 Proof at scale: machines break it so users do not | `██░░░░░░░░` | 25% | 10 | Nightly and weekly verification tiers run on their own, every reader has been fuzzed, the engine's mutation score is reported, and every confirmed break has a regression test (docs/specs/verification.md). |
 
 ## R1: Clean meshes: open, fit, measure, over CLI and MCP (88%)
@@ -94,7 +94,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `recon.surface` Points to surface reconstruction, proven on generated scenes | planned | - | unclaimed | Everything. |
 | `scan.phone` Phone capture: read capture-app exports first, own app only if needed | planned | - | unclaimed | Research. |
 
-## R7: v1 in SolidCraft: the plugin, at parity and beyond (41%)
+## R7: v1 in SolidCraft: the plugin, at parity and beyond (44%)
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
@@ -112,11 +112,11 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `sc.agent` Claude drives RulerCraft in SolidCraft: plugin entries as SolidCraft MCP tools, documented | verified | math, known-design, wrong-value | Claude | Measured on headless SolidCraft over MCP; the desktop app bridge (`--connect`) is not exercised here. |
 | `sc.boss` Bosses and pins: outward round regions joined onto the plate | verified | math, known-design, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/112 | Bosses standing on an upward face; a boss under the base or not square to it is reported. |
 | `sc.check` Deviation of the scan from the rebuilt part in the import report, not only volumes | verified | math, known-design, wrong-value | Claude | Measured against the engine's own model of the rebuild, not SolidCraft's surface; points near where two features meet may read slightly low. |
-| `sc.details` Counterbores, countersinks, slots, chamfers and fillets | in-progress | math, known-design, wrong-value | Claude | Counterbores and through windows are verified. Blind or stepped cutouts, countersinks, chamfers and fillets still go to the loss report. |
-| `sc.importer` SolidCraft importer: a scan opens as an editable plate with holes, named sizes and an import report | verified | math, known-design, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/109 | Rectangular, aligned outlines and features only; everything else goes to the report (sc.outline, sc.details). |
+| `sc.details` Counterbores, countersinks, slots, chamfers and fillets | verified | math, known-design, wrong-value | Claude | Counterbores and through windows. Blind or stepped cutouts, countersinks, slots with blind floors, chamfers and fillets still go to the loss report. |
+| `sc.importer` SolidCraft importer: a scan opens as an editable plate with holes, named sizes and an import report | verified | math, known-design, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/109 | Plate-like parts, any straight or circular outline, with bosses, pockets, pads, holes and windows; everything else goes to the report. |
 | `sc.inspect` Inspect inside SolidCraft: command entries that fit and measure picked regions of a scan | planned | - | unclaimed | Everything. SolidCraft's model.mesh stops at 8,192 vertices; find a way within its interface or write the gap down for Logan (D-015). |
 | `sc.outline` Any base outline: the outline traced from the scan and extruded as a sketch, not its bounding box | verified | math, known-design, wrong-value | Claude | Straight and circular outlines. Mixed arcs and lines are straight-edge runs (reported); cutouts that are not round holes are reported, not rebuilt. |
-| `sc.release` Plugin release: the .zip on GitHub releases, an install guide, a release workflow | in-progress | - | Claude | Workflow and guide in this PR; the first release is cut after it merges. |
+| `sc.release` Plugin release: the .zip on GitHub releases, an install guide, a release workflow | in-progress | - | Claude | Workflow and guide are merged. Needs Logan to push tag plugin-v0.1.0 (pushing tags is refused from the Claude session); the workflow then makes the pre-release with its SHA-256. |
 | `sc.steps` Steps and pockets: parallel faces at heights between the base and the top | verified | math, known-design, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/112 | Pockets, steps and pads with rectangular, aligned outlines; turned ones and undercuts are reported. |
 | `section.cut` Sections across a feature and the part's widest outline, measured in 2D | planned | - | unclaimed | Everything. Exit: sections of known solids give the known outline lengths. |
 

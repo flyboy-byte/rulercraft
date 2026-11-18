@@ -10,5 +10,5 @@
   "owner": "Claude",
   "pr": null,
   "verified_by": [],
-  "left": "Workflow and guide in this PR; the first release is cut after it merges."
+  "left": "Workflow and guide are merged. Needs Logan to push tag plugin-v0.1.0 (pushing tags is refused from the Claude session); the workflow then makes the pre-release with its SHA-256."
 }
