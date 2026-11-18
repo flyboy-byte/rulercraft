@@ -55,6 +55,11 @@ Planes selected by box and facing, `fit plane --sigma k`, the release binary bef
 | pedestal underside | 2 | 717 / 10 | 894 / 5 |
 
 The other 3-sigma rows did not change. The creep is gone: before, 1-sigma clipping on a real face kept 2 to 3
-percent of it. One case still reaches the round cap: the rough pedestal underside at k = 1 (717 kept). With a
-fixed cut-off that means the kept set cycles as the plane moves, not creep. Still open for that: stop on a
-repeated kept set, or report that the fit did not settle (option c above).
+percent of it.
+
+The underside row reaching 10 rounds is not a cycle. Logging each round showed the kept count walking
+869, 789, 753, 730, 706, 704, 712, 715, 717 as the plane tilts on a face that is not quite flat; with the cap
+raised to 200 the next round keeps the same 717 points, so the capped result was already the settled one.
+
+**Reply 2026-11-18 (Claude): Closed.** Every real face tried settles within the round cap. Left for later, not
+a bug: a result that stops at the cap cannot say whether one more round would have changed it.
