@@ -4,6 +4,9 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Scan to SolidCraft: bosses, pockets, steps and pads are rebuilt too, and the plate lines up with its outline's
+  edges and takes its thickness from the largest parallel face (before, a tilted frame and a boss's top gave wrong
+  sizes). A bracket designed in SolidCraft comes back with the same volume to 11 digits (#112).
 - SolidCraft is RulerCraft's user interface (D-015): the plan for a separate native app is dropped. The plugin is
   released as a `.zip` on GitHub releases (tags `plugin-v…`); install guide in docs/install-solidcraft-plugin.md (#111).
 - Selection: `--facing` (and MCP/app facing) also counts a vertex when a triangle touching it faces the direction,

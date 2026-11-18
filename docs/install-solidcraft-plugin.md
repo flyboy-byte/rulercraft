@@ -27,8 +27,8 @@ solidcraft-cli --keep-plugin-approvals exec plugin.install \
   otherwise), then the file: `.stl`, `.ply`, `.obj`, `.3mf`, `.gltf` or `.glb`.
 - **File › Open** keeps opening scans with SolidCraft's own readers, as a plain mesh or point cloud; use the
   Plugins menu entry to rebuild a scan as a part.
-- The part opens as a new, unsaved design. Change `length`, `width`, `thickness` or a `hole…_diameter` in
-  **Parameters** and the part rebuilds. Save it as any design.
+- The part opens as a new, unsaved design. Change `length`, `width`, `thickness`, a `hole…_diameter`,
+  `boss…_height` or `pocket…_depth` in **Parameters** and the part rebuilds. Save it as any design.
 - The **Import report** lists what was not rebuilt (bosses, slanted faces, holes not square to the base, an outline
   that is not a rectangle) and, under *From the importer*, the measured sizes, each hole's fit quality, and
   SolidCraft's own check: the rebuilt part's volume next to the scan's.
@@ -38,8 +38,9 @@ From a terminal: `solidcraft-cli exec file.import '{"path":"part.stl","format":"
 
 ## What it rebuilds today
 
-Plate-like parts: a flat base with a rectangular outline, a parallel opposite face, and round holes square to the
-base (through or blind). Anything else is listed in the report rather than guessed. Rebuilding more shapes is the
+Plate-like parts: a flat base with a rectangular outline and a parallel opposite face, with rectangular pockets,
+steps and pads, round bosses and pins, and round holes (through or blind), all square to the base. Anything else
+(round or angled outlines, chamfers, fillets, slanted faces, undercuts) is listed in the report rather than guessed. Rebuilding more shapes is the
 current work (docs/v1.md, phase S2). Without SolidCraft, `rulercraft solidcraft <scan> --out part.json` writes the
 same design from RulerCraft's own command line.
 
