@@ -150,7 +150,7 @@ impl Guest for Plugin {
         let mut report = rebuilt.report;
         let check = check_in_solidcraft(&text, enclosed_volume(&mesh));
         if let Some(d) = report.get_mut("details").and_then(Value::as_object_mut) {
-            d.insert("check".into(), check);
+            d.insert("volume_check".into(), check);
         }
         control::progress(1.0, "Done");
         Ok(report.to_string())

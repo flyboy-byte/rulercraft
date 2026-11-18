@@ -3,12 +3,16 @@
   "milestone": "R7",
   "title": "Claude drives RulerCraft in SolidCraft: plugin entries as SolidCraft MCP tools, documented",
   "spec": "solidcraft-plugin",
-  "status": "planned",
+  "status": "verified",
   "depends_on": [
     "sc.importer"
   ],
-  "owner": null,
+  "owner": "Claude",
   "pr": null,
-  "verified_by": [],
-  "left": "SolidCraft lists installed plugin entries as MCP tools already; check it with the importer and write it up."
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Measured on headless SolidCraft over MCP; the desktop app bridge (`--connect`) is not exercised here."
 }

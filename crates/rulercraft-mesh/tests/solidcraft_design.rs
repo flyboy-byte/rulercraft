@@ -468,6 +468,36 @@ fn a_window_is_a_cut_through_sketch() {
     assert_eq!(cutout["operation"], "cut");
 }
 
+/// Editing `thickness` in SolidCraft must keep the part whole: holes that open on the top reach it and a boss on the
+/// top face stays on it. Checked in SolidCraft: at 12 mm the bracket's Ø6 hole wall is 12 mm long and its boss
+/// still stands 6 mm.
+#[test]
+fn holes_and_bosses_follow_the_thickness() {
+    let r = design(&fixture("bracket.stl"), "bracket").unwrap();
+    let by = |n: &str| {
+        r.design["features"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|f| f["name"] == n)
+            .unwrap_or_else(|| panic!("no {n}"))
+            .clone()
+    };
+    let hole = by("Hole1");
+    let (kind, height) = (
+        &r.report["details"]["holes"][0]["kind"],
+        hole["height"].as_str(),
+    );
+    assert_eq!(kind, "through");
+    assert!(
+        height.is_some_and(|h| h.starts_with("thickness + ")),
+        "{height:?}"
+    );
+    assert!(
+        by("Boss1")["base"][2]
+            .as_str()
+            .is_some_and(|z| z.starts_with("thickness - "))
+
 /// The import report measures the scan against the rebuilt part. Rebuilt from SolidCraft's own part, the scan
 /// lies on it (to float precision); one vertex pulled 2 mm off the top face is found, and only that one.
 #[test]

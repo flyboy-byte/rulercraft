@@ -996,8 +996,14 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         );
         params.push(param(&dp, f64of(b, "diameter")));
         params.push(param(&hp, f64of(b, "standing_height")));
+        // A boss on the plate's own top face follows the thickness; one on a pad or pocket floor stays put.
+        let z: Value = if (f64of(b, "on") - thick).abs() <= tol {
+            json!(format!("thickness - {}", mm(margin)))
+        } else {
+            json!(round_um(f64of(b, "z")))
+        };
         add(json!({"name": format!("Boss{}", i + 1), "type": "cylinder",
-            "base": [round_um(f64of(b, "x")), round_um(f64of(b, "y")), round_um(f64of(b, "z"))],
+            "base": [round_um(f64of(b, "x")), round_um(f64of(b, "y")), z],
             "axis": [0.0, 0.0, 1.0], "radius": format!("{dp} / 2"), "height": format!("{hp} + {}", mm(margin)),
             "operation": "join"}));
     }
@@ -1012,9 +1018,28 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     for (i, h) in holes.iter().enumerate() {
         let p = format!("hole{}_diameter", i + 1);
         params.push(param(&p, f64of(h, "diameter")));
+        // Holes that open on the top follow the thickness, so editing it never leaves a hole short.
+        let (z, height): (Value, Value) = match h["kind"].as_str() {
+            Some("through") => (
+                json!(round_um(f64of(h, "z"))),
+                json!(format!("thickness + {}", mm(2.0 * margin))),
+            ),
+            Some("blind from above") => {
+                let dp = format!("hole{}_depth", i + 1);
+                params.push(param(&dp, thick - f64of(h, "from")));
+                (
+                    json!(format!("thickness - {dp}")),
+                    json!(format!("{dp} + {}", mm(margin))),
+                )
+            }
+            _ => (
+                json!(round_um(f64of(h, "z"))),
+                json!(mm(f64of(h, "height"))),
+            ),
+        };
         add(json!({"name": format!("Hole{}", i + 1), "type": "cylinder",
-            "base": [round_um(f64of(h, "x")), round_um(f64of(h, "y")), round_um(f64of(h, "z"))],
-            "axis": [0.0, 0.0, 1.0], "radius": format!("{p} / 2"), "height": mm(f64of(h, "height")),
+            "base": [round_um(f64of(h, "x")), round_um(f64of(h, "y")), z],
+            "axis": [0.0, 0.0, 1.0], "radius": format!("{p} / 2"), "height": height,
             "operation": "cut"}));
     }
     let next_id = features.len() + 1;
