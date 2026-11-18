@@ -36,8 +36,8 @@ part, reconstruct, measure, compare) and the regression corpus.
 
 | Kind | Formats | State |
 | --- | --- | --- |
-| Meshes | STL, PLY, OBJ, 3MF | read today |
-| Meshes, more | glTF/GLB (common phone-app export), OFF, AMF, VRML | planned (`io.gltf`, others on demand) |
+| Meshes | STL, PLY, OBJ, 3MF, glTF/GLB (common phone-app export) | read today |
+| Meshes, more | OFF, AMF, VRML | on demand |
 | Point clouds | PLY points-only, XYZ/PTS/ASC text, E57 (ASTM standard for scanners), LAS/LAZ, PCD | planned (`io.pointcloud`, `io.e57`) |
 | CAD as a nominal | STEP | through SolidCore later (D-002) |
 | Phone formats | USDZ (Apple) | research; may need a dependency |

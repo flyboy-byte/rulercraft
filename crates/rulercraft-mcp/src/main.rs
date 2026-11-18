@@ -30,7 +30,7 @@ use std::{
     io::Read,
     sync::{Arc, Mutex},
 };
-const GUIDE: &str = "Open a local STL, PLY, OBJ or 3MF with mesh.open (file unit defaults to mm; 3MF model units win), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The datum tool builds a frame from three fitted planes. The reverse tool returns a CAD recipe, hole patterns and symmetry for the open mesh. The thickness tool measures inward normal rays on a consistently wound mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
+const GUIDE: &str = "Open a local STL, PLY, OBJ, 3MF, glTF or GLB with mesh.open (file unit defaults to mm; 3MF model units win; glTF is metres), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The datum tool builds a frame from three fitted planes. The reverse tool returns a CAD recipe, hole patterns and symmetry for the open mesh. The thickness tool measures inward normal rays on a consistently wound mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
 #[derive(Debug, Clone, Copy, Hash, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 enum FileUnit {
@@ -42,7 +42,7 @@ enum FileUnit {
 #[derive(Debug, Clone, Hash, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct OpenArgs {
-    /// Local mesh file path (.stl, .ply, .obj, .3mf).
+    /// Local mesh file path (.stl, .ply, .obj, .3mf, .gltf, .glb).
     path: String,
     /// Coordinate unit in file, default mm.
     unit: Option<FileUnit>,
@@ -56,7 +56,7 @@ struct OpenArgs {
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct CompareArgs {
-    /// Local reference mesh path (.stl, .ply, .obj, .3mf).
+    /// Local reference mesh path (.stl, .ply, .obj, .3mf, .gltf, .glb).
     reference: String,
     /// Coordinate unit in the reference file, default mm.
     unit: Option<FileUnit>,
