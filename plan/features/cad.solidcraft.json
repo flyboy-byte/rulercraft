@@ -11,5 +11,5 @@
   "owner": "claude",
   "pr": null,
   "verified_by": [],
-  "left": "Recipe is done and tested on synthetic parts. Still owed: a CLI/MCP command to produce it, and one replay against a live SolidCraft server (SolidCraft is not built on this machine)."
+  "left": "A scan becomes a SolidCraft design (plate, cut holes, named parameters, loss report) via solidcraft::design and `rulercraft solidcraft`; checked against SolidCraft's own build. Still owed: the importer plugin wrapper, bosses, non-rectangular outlines and slanted faces."
 }
