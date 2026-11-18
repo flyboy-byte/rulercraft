@@ -11,9 +11,8 @@ Last updated 2026-11-18 (afternoon), Claude. Merged on main: everything through 
 - No open findings.
 - Plugin limits: plate-like parts only; bosses, slanted faces, tilted holes and non-rectangular outlines go to
   the import report. Next real step is a scan of a printed plate (R1/R2).
-- `--facing` uses vertex normals, so on a sharp-edged CAD mesh a face whose vertices are all corners cannot be
-  selected by facing (selection.md). Logan okayed letting a vertex count when any adjacent triangle faces the
-  direction; not started, it changes selections on every mesh, so its own PR.
+- `--facing` counts a vertex when any touching triangle faces the direction (#110, okayed by Logan); on scans
+  this adds the faced surface's edge vertices (table in #110).
 - Building SolidCraft here: pin is Rust 1.99.1 (unavailable offline); `RUSTUP_TOOLCHAIN=stable` (1.97, its
   rust-version is 1.95), `-j 1`, `CARGO_PROFILE_DEV_DEBUG=0`, `CARGO_PROFILE_DEV_PACKAGE_SOLIDCORE_OPT_LEVEL=0`
   or the 8 GB box runs out of memory; about 70 minutes, `--no-default-features` keeps plugin support.

@@ -4,6 +4,9 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Selection: `--facing` (and MCP/app facing) also counts a vertex when a triangle touching it faces the direction,
+  so a box side on a sharp-edged CAD mesh can be selected by facing. Facing selections on scans can gain edge
+  vertices of the faced surface (#110).
 - SolidCraft plugin: `plugin/solidcraft` builds RulerCraft as a SolidCraft importer (Plugins › RulerCraft ›
   scan-to-part): a scan opens as an editable part with an import report, checked by SolidCraft's own rebuild (#109).
 - Scan to SolidCraft: `rulercraft solidcraft <mesh> --out design.json` rebuilds a scanned plate as an editable

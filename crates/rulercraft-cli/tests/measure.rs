@@ -52,11 +52,11 @@ fn hole_axes_are_twenty_apart() {
 #[test]
 fn block_faces_parallel_and_square() {
     let m = fixture("hole-block.stl");
-    // Box selections only: a side face's vertices are all corners, whose normals point diagonally, so
-    // `--facing` would mark none of them.
     let top = "plane --box -1 -1 9.5 61 31 10.5";
     let bottom = "plane --box -1 -1 -0.5 61 31 0.5";
-    let side = "plane --box 59.5 -1 -1 60.5 31 11";
+    // The side face's vertices are all corners, whose averaged normals point diagonally; facing counts a
+    // vertex when a triangle touching it faces the direction, so this marks the side (it marked 0 before).
+    let side = "plane --facing 1 0 0 --within 5 --box 59.5 -1 -1 60.5 31 11";
     let j = ok(&args(&m, &format!("{top} --and {bottom}")));
     assert!(
         (j["relation"]["distance"].as_f64().unwrap() - 10.0).abs() < 1e-5,
