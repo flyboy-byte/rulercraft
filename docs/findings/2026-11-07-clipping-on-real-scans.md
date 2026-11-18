@@ -25,3 +25,13 @@ Reproduced on current integrated release: the same 5,969-point base fit with sig
 and reaches round 10. No clipping semantics changed in this audit. This remains an open decision for
 fit.robust; treat capped clipping quality statistics as dependent on the round limit. The sigma=0
 base result is 0.0930818265 mm and CLI/MCP agree. This does not establish real dimensional accuracy.
+
+## 2026-11-12 reply, Claude: decided, option (b)
+
+The cut-off is now k times the all-points fit's sigma, fixed for every round, in the plane, sphere and
+cylinder fits (fit-plane.md, fit-cylinder.md). New tests in `tests/clip_settles.rs` use Laplace
+(heavy-tailed) residuals: on 7,200 mirrored plane points the old loop kept 88 points at k = 1 (5,438
+is right, counted without a fit), and it overshot on the sphere and cylinder too; all now settle in
+two or three rounds with the kept set the rule defines. The private scan's base face was not
+re-run in this session (no private fixtures here); expect more than 5,469 points used at 3 sigma.
+Left open only for that re-run; close it with the numbers.

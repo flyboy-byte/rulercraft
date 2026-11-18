@@ -175,13 +175,12 @@ pub fn fit_cylinder(
     let mut s = solve(&points, &ns, &kept, lim)?;
     let mut rounds = 1;
     if let Some(k) = k {
-        while rounds < lim.max_rounds {
-            let sigma = rms(&points, &kept, &s);
-            if sigma <= quantization {
-                break;
-            }
+        // The cut-off is fixed from the all-points fit; shrinking it every round creeps on heavy tails.
+        let sigma = rms(&points, &kept, &s);
+        let cut = k * sigma;
+        while rounds < lim.max_rounds && sigma > quantization {
             let next: Vec<_> = (0..points.len())
-                .filter(|&i| residual(points[i], &s).abs() <= k * sigma)
+                .filter(|&i| residual(points[i], &s).abs() <= cut)
                 .collect();
             if next == kept || next.len() < 6 {
                 break;

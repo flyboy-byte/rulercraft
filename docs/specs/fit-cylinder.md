@@ -36,7 +36,8 @@ coverage near 120°; a tilted axis (1,2,3) is recovered within 1e-4; a flat patc
 - Axis sign is canonical (largest-magnitude component positive). Axis point is at the midpoint
   of the kept points' axial span. Residuals are signed radial distance minus radius; sigma is RMS.
   A fitted axial span below radius * 1e-8 refuses. Numerical convergence failure refuses.
-- Clipping refits points within k * RMS radial error, k = 1, 2 or 3, bounded by max_rounds.
+- Clipping refits points within k times the all-points fit's RMS radial error (fixed for every
+  round, as for planes), k = 1, 2 or 3, bounded by max_rounds.
   A step that keeps fewer than six points or becomes degenerate stops at the previous fit.
 - Assumed diameter must be positive and extensions nonnegative; they are returned unchanged,
   never used to alter the measured fit. Coverage is 360 minus the widest sampled angular gap,

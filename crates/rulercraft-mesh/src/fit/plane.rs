@@ -133,13 +133,11 @@ pub fn fit_plane(
     let mut plane = solve(&points, &kept)?;
     let mut rounds = 1;
     if let Some(k) = k {
-        while rounds < MAX_ROUNDS {
-            let sigma = rms(&points, &kept, &plane);
-            if sigma == 0.0 {
-                break;
-            }
+        // The cut-off is fixed from the all-points fit; shrinking it every round creeps on heavy tails.
+        let cut = k * rms(&points, &kept, &plane);
+        while rounds < MAX_ROUNDS && cut > 0.0 {
             let next: Vec<usize> = (0..points.len())
-                .filter(|&i| distance(&points[i], &plane).abs() <= k * sigma)
+                .filter(|&i| distance(&points[i], &plane).abs() <= cut)
                 .collect();
             if next == kept || next.len() < 3 {
                 break;

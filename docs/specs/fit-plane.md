@@ -7,9 +7,13 @@ Status: R1 spec. Features: `fit.plane`, later `fit.robust`.
 - Method: total least squares (the plane through the centroid whose normal is the smallest-eigenvalue
   eigenvector of the covariance). With a cut-off, repeat: drop points farther than k·sigma, refit,
   until the kept set stops changing or a few rounds pass.
-- Clipping loop: fit all offered points; then keep every offered point within k·sigma of the current
-  plane and refit; stop when the kept set no longer changes, sigma is 0, or after 10 rounds. If a round
-  would keep fewer than 3 points, the previous fit stands.
+- Clipping loop: fit all offered points and take its sigma, sigma₀; the cut-off is k·sigma₀ and stays
+  fixed. Then keep every offered point within the cut-off of the current plane and refit; stop when the
+  kept set no longer changes, sigma₀ is 0, or after 10 rounds. If a round would keep fewer than 3
+  points, the previous fit stands. (Until 2026-11-12 the cut-off was k times the current fit's sigma,
+  recomputed each round. On a real scan's heavy-tailed residuals that never settled and kept trimming
+  to the round cap; on Laplace-distributed residuals at k = 1 it kept 88 of 7,200 points. Finding
+  2026-11-07-clipping-on-real-scans.)
 - Limit: as for spheres (fit-sphere.md), clipping handles points somewhat off the face, not a few points
   far away with enough leverage to tilt the whole fit; that is `fit.robust` (R3).
 - Output: centre (centroid of the kept points), unit normal, an in-plane basis (u along the direction
