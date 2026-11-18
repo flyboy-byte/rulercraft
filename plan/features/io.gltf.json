@@ -3,11 +3,11 @@
   "milestone": "R6",
   "title": "Read glTF/GLB meshes (common phone-app export)",
   "spec": "scan-sources",
-  "status": "planned",
+  "status": "in-progress",
   "depends_on": [
     "mesh.graph"
   ],
-  "owner": null,
+  "owner": "Claude",
   "pr": null,
   "verified_by": [],
   "left": "Everything."
