@@ -405,3 +405,65 @@ fn a_plain_plate_stays_a_box() {
     let r = design(&fixture("hole-block.stl"), "hole-block").unwrap();
     assert_eq!(r.design["features"][0]["type"], "box");
 }
+
+/// A 40 x 30 x 10 plate with a Ø6 hole and a Ø12 x 4 counterbore on the same axis (SolidCraft: 11,377.965 mm³).
+/// The two coaxial rounds rebuild as two cuts at one position, the wide one blind from the top.
+#[test]
+fn a_counterbore_is_two_coaxial_holes() {
+    let r = design(&fixture("counterbore.stl"), "counterbore").unwrap();
+    assert!(r.report["items"].as_array().unwrap().is_empty());
+    let holes = r.report["details"]["holes"].as_array().unwrap();
+    assert_eq!(holes.len(), 2);
+    let mut dia: Vec<f64> = holes
+        .iter()
+        .map(|h| h["diameter"].as_f64().unwrap())
+        .collect();
+    dia.sort_by(f64::total_cmp);
+    assert!(
+        (dia[0] - 6.0).abs() < 0.01 && (dia[1] - 12.0).abs() < 0.01,
+        "{dia:?}"
+    );
+    let (a, b) = (&holes[0], &holes[1]);
+    let d = (a["x"].as_f64().unwrap() - b["x"].as_f64().unwrap())
+        .hypot(a["y"].as_f64().unwrap() - b["y"].as_f64().unwrap());
+    assert!(d < 0.01, "axes {d} mm apart");
+    let kinds: Vec<&str> = holes.iter().map(|h| h["kind"].as_str().unwrap()).collect();
+    assert!(
+        kinds.contains(&"through") && kinds.iter().any(|k| k.starts_with("blind")),
+        "{kinds:?}"
+    );
+}
+
+/// A 50 x 30 x 6 plate with a 12 x 10 window cut through it (SolidCraft: 8,280 mm³). The window is an inner
+/// loop of both faces that is not a circle, so it rebuilds as a cut sketch, and nothing is reported lost.
+#[test]
+fn a_window_is_a_cut_through_sketch() {
+    let r = design(&fixture("window.stl"), "window").unwrap();
+    assert!(
+        r.report["items"].as_array().unwrap().is_empty(),
+        "{}",
+        r.report["items"]
+    );
+    let cut = &r.report["details"]["cutouts"][0];
+    let (mut lo, mut hi) = ([f64::MAX; 2], [f64::MIN; 2]);
+    for p in cut.as_array().unwrap() {
+        for k in 0..2 {
+            let v = p[k].as_f64().unwrap();
+            lo[k] = lo[k].min(v);
+            hi[k] = hi[k].max(v);
+        }
+    }
+    let mut size = [hi[0] - lo[0], hi[1] - lo[1]];
+    size.sort_by(f64::total_cmp);
+    assert!(
+        (size[0] - 10.0).abs() < 0.01 && (size[1] - 12.0).abs() < 0.01,
+        "{size:?}"
+    );
+    let cutout = r.design["features"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["name"] == "Cutout1")
+        .unwrap();
+    assert_eq!(cutout["operation"], "cut");
+}

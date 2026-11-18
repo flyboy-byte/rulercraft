@@ -19,6 +19,8 @@ pub const FORMAT: &str = "solidcraft/57";
 pub const SQUARE_DEG: f64 = 5.0;
 /// The most corners a traced polygon outline may have; a more complex outline stays a rectangle.
 const MAX_OUTLINE_CORNERS: usize = 200;
+/// A loop needs at least this many points to count as a circle.
+const MIN_CIRCLE_POINTS: usize = 12;
 
 /// What [`design`] made: the design JSON and the loss report SolidCraft shows after an import.
 #[derive(Debug, Clone, PartialEq)]
@@ -127,13 +129,13 @@ fn min_rect_angle(pts: &[[f64; 2]]) -> f64 {
     best.1
 }
 
-/// The outer boundary of a set of triangles as a closed loop of vertex indices, or `None` when the
-/// boundary is not a set of simple closed chains. The loop of largest enclosed area is the outline.
-fn boundary_outline(
+/// The boundary loops of a set of triangles in the plane, largest enclosed area first (the outline, then the
+/// inner loops), or `None` when the boundary is not a set of simple closed chains.
+fn boundary_loops(
     tris: &[u32],
     mesh: &Mesh,
     flat: &dyn Fn(u32) -> [f64; 2],
-) -> Option<Vec<[f64; 2]>> {
+) -> Option<Vec<Vec<[f64; 2]>>> {
     use std::collections::{HashMap, HashSet};
     let mut directed: HashSet<(u32, u32)> = HashSet::new();
     for &t in tris {
@@ -146,7 +148,7 @@ fn boundary_outline(
             return None; // a vertex where two boundary chains touch
         }
     }
-    let mut best: Option<(f64, Vec<[f64; 2]>)> = None;
+    let mut found: Vec<(f64, Vec<[f64; 2]>)> = Vec::new();
     let mut seen: HashSet<u32> = HashSet::new();
     let mut starts: Vec<u32> = next.keys().copied().collect();
     starts.sort_unstable();
@@ -165,12 +167,10 @@ fn boundary_outline(
             at = *next.get(&at)?;
         }
         let pts: Vec<[f64; 2]> = chain.iter().map(|&i| flat(i)).collect();
-        let area = signed_area(&pts).abs();
-        if best.as_ref().is_none_or(|b| area > b.0) {
-            best = Some((area, pts));
-        }
+        found.push((signed_area(&pts).abs(), pts));
     }
-    best.map(|b| b.1)
+    found.sort_by(|a, b| b.0.total_cmp(&a.0));
+    Some(found.into_iter().map(|f| f.1).collect())
 }
 
 fn signed_area(p: &[[f64; 2]]) -> f64 {
@@ -242,6 +242,9 @@ fn simplify_loop(p: &[[f64; 2]], tol: f64) -> Vec<[f64; 2]> {
 
 /// The circle through a loop's points, when they all lie within `tol` of one: `(cx, cy, r)`.
 fn circle_of(p: &[[f64; 2]], tol: f64) -> Option<(f64, f64, f64)> {
+    if p.len() < MIN_CIRCLE_POINTS {
+        return None; // four corners always lie on a circle: a rectangle is not one
+    }
     let n = p.len() as f64;
     let (cx, cy) = (
         p.iter().map(|q| q[0]).sum::<f64>() / n,
@@ -397,14 +400,15 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     };
     let mut outline = Outline::Rectangle;
     let mut outline_area = len * wid;
-    if let Some(ring) = boundary_outline(&base.triangles, mesh, &part_xy) {
-        let area = signed_area(&ring).abs();
+    let base_loops = boundary_loops(&base.triangles, mesh, &part_xy).unwrap_or_default();
+    if let Some(ring) = base_loops.first() {
+        let area = signed_area(ring).abs();
         if area < 0.98 * len * wid {
-            if let Some((x, y, r)) = circle_of(&ring, tol) {
+            if let Some((x, y, r)) = circle_of(ring, tol) {
                 outline_area = std::f64::consts::PI * r * r;
                 outline = Outline::Circle { x, y, r };
             } else {
-                let mut poly = simplify_loop(&ring, tol);
+                let mut poly = simplify_loop(ring, tol);
                 let poly_area = signed_area(&poly);
                 if (3..=MAX_OUTLINE_CORNERS).contains(&poly.len()) && poly_area.abs() > 0.0 {
                     if poly_area < 0.0 {
@@ -692,8 +696,39 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }
     }
 
+    // Cutouts through the plate that are not round: an inner loop of the base that the top face repeats.
+    let mut slots: Vec<Vec<[f64; 2]>> = Vec::new();
+    let mut slot_area = 0.0;
+    let top_loops = boundary_loops(&planes[ti].triangles, mesh, &part_xy).unwrap_or_default();
+    let centroid = |p: &[[f64; 2]]| {
+        let n = p.len() as f64;
+        [
+            p.iter().map(|q| q[0]).sum::<f64>() / n,
+            p.iter().map(|q| q[1]).sum::<f64>() / n,
+        ]
+    };
+    for inner in base_loops.iter().skip(1) {
+        if circle_of(inner, tol).is_some() {
+            continue; // a round hole: its wall is a round region, cut above
+        }
+        let area = signed_area(inner).abs();
+        let c = centroid(inner);
+        let matched = top_loops.iter().skip(1).any(|t| {
+            let (tc, ta) = (centroid(t), signed_area(t).abs());
+            (tc[0] - c[0]).hypot(tc[1] - c[1]) <= 2.0 * tol && (ta - area).abs() <= 0.03 * area
+        });
+        let poly = simplify_loop(inner, tol);
+        if matched
+            && (3..=MAX_OUTLINE_CORNERS).contains(&poly.len())
+            && signed_area(&poly).abs() > 0.0
+        {
+            slot_area += signed_area(&poly).abs();
+            slots.push(poly);
+        }
+    }
+
     // An outline that is not a full rectangle is simplified to its enclosing rectangle.
-    let expected = outline_area - down_hole_area;
+    let expected = outline_area - down_hole_area - slot_area;
     if base.area < 0.98 * expected {
         let rectangle = matches!(outline, Outline::Rectangle);
         losses.push(Loss {
@@ -771,6 +806,25 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             ]
         }
     };
+    for (i, poly) in slots.iter().enumerate() {
+        let n = poly.len();
+        let sid = features.len() + 1;
+        let mut pts = vec![json!({"fixed": true, "id": "origin", "pos": [0.0, 0.0]})];
+        for (k, q) in poly.iter().enumerate() {
+            pts.push(json!({"fixed": false, "id": format!("p{}", k + 1), "pos": [round_um(q[0]), round_um(q[1])]}));
+        }
+        let lines: Vec<Value> = (0..n)
+            .map(|k| json!({"a": 1 + k, "b": 1 + (k + 1) % n, "construction": false, "id": format!("l{}", k + 1), "type": "line"}))
+            .collect();
+        let ids: Vec<String> = (0..n).map(|k| format!("l{}", k + 1)).collect();
+        features.push(json!({"id": sid, "name": format!("Cutout{}_Outline", i + 1), "suppressed": false, "param_names": [],
+            "type": "sketch", "plane": {"name": "XY", "type": "origin"},
+            "sketch": {"constraints": [], "counters": {"k": 0, "l": n, "p": n}, "curves": lines, "points": pts}}));
+        features.push(json!({"id": sid + 1, "name": format!("Cutout{}", i + 1), "suppressed": false, "param_names": [],
+            "type": "extrude", "sketch": sid, "operation": "cut", "targets": ["Plate"],
+            "profiles": {"type": "curves", "loops": [ids]},
+            "extent": {"convention": "total_distance", "direction": "positive", "distance": format!("thickness + {}", mm(margin))}}));
+    }
     let f64of = |v: &Value, k: &str| v[k].as_f64().unwrap_or(0.0);
     let mut add = |mut f: Value| {
         f["id"] = json!(features.len() + 1);
@@ -847,7 +901,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         "details": {
             "base": {"area_mm2": base.area, "sigma": base.plane.sigma, "form_error": base.plane.form_error},
             "plate": {"length": len, "width": wid, "thickness": thick},
-            "holes": holes, "bosses": bosses, "pockets": pockets, "pads": pads,
+            "cutouts": slots, "holes": holes, "bosses": bosses, "pockets": pockets, "pads": pads,
             "frame": {"origin": o, "u": u, "v": v, "normal": n, "outline_min": lo, "z0": 0.0},
         },
     });

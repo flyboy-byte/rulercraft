@@ -4,6 +4,10 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Scan to SolidCraft: windows (non-round cutouts through the plate) are rebuilt as cut sketches; a rectangle of four
+  corners is no longer mistaken for a circle. Checked against SolidCraft: 8,280 mm³ exact.
+- Scan to SolidCraft: counterbored holes are checked against a SolidCraft-made part (11,377.965 mm³, exact): the wide and narrow bores come back as two coaxial cuts.
+
 - Scan to SolidCraft: a plate with any outline (L-shapes, round, angled, with cut corners) is rebuilt as its traced
   outline, not its enclosing rectangle; a round plate is a circle. A stepped cylinder now comes back at its true volume
   (4,272.566 mm³; the old box over its circle gave 5,121 mm³).

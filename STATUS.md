@@ -6,9 +6,9 @@ Overall roadmap progress: **64%** (details in ROADMAP-PROGRESS.md).
 
 | Status | Features |
 | --- | ---: |
-| planned | 24 |
+| planned | 23 |
 | specced | 0 |
-| in-progress | 2 |
+| in-progress | 3 |
 | implemented | 9 |
 | verified | 39 |
 | done | 0 |
@@ -16,6 +16,7 @@ Overall roadmap progress: **64%** (details in ROADMAP-PROGRESS.md).
 ## In progress
 
 - `engine.library` (claude): Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog.
+- `sc.details` (Claude): Counterbores and through windows are verified. Blind or stepped cutouts, countersinks, chamfers and fillets still go to the loss report.
 - `sc.release` (Claude): Workflow and guide in this PR; the first release is cut after it merges.
 
 ## Ready to claim
@@ -30,7 +31,6 @@ Overall roadmap progress: **64%** (details in ROADMAP-PROGRESS.md).
 - `mesh.clean` (R7): Mesh clean-up: hole fill, bad triangle removal, reduction
 - `sc.agent` (R7): Claude drives RulerCraft in SolidCraft: plugin entries as SolidCraft MCP tools, documented
 - `sc.check` (R7): Deviation of the scan from the rebuilt part in the import report, not only volumes
-- `sc.details` (R7): Counterbores, countersinks, slots, chamfers and fillets
 - `sc.inspect` (R7): Inspect inside SolidCraft: command entries that fit and measure picked regions of a scan
 - `scan.phone` (R6): Phone capture: read capture-app exports first, own app only if needed
 - `section.cut` (R7): Sections across a feature and the part's widest outline, measured in 2D

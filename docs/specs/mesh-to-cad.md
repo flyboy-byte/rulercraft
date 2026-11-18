@@ -61,6 +61,10 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
   needs within the tolerance (at most 200). A plate that fills its rectangle stays a box. Holes and bosses must lie
   inside the traced outline. Curves in a polygon outline are runs of short straight edges, reported as
   `outline_faceted`; cutouts in the base that are not round holes are reported as `cutout_not_round`.
+- **Cutouts.** An inner loop of the base face that is not a circle (a circle needs 12 or more boundary points on
+  one circle within the tolerance, since four corners always do) and that the top face repeats at the same place
+  and size is a window cut through the plate: a sketch of its corners, cut full thickness (`details.cutouts`).
+  Counterbores need nothing special: a wide blind round and a narrow through round on one axis are two cuts.
 - **Parameters.** `length`, `width`, `thickness`, `hole<i>_diameter`, `boss<i>_diameter`, `boss<i>_height`,
   `pocket<i>_depth`, `pad<i>_height` are named parameters (to a micrometre). Pockets hang from `thickness`, so
   changing the thickness keeps their depth.
