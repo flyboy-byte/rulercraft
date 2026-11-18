@@ -1,5 +1,13 @@
 {
   "entry": "scan-to-part",
   "file": "stepped-cylinder.stl",
-  "expect": {"model": {"body_count": 1, "total": {"volume_mm3": 8000}}}
+  "expect": {
+    "model": {
+      "body_count": 1,
+      "total": {
+        "volume_mm3": 5121.3791
+      }
+    },
+    "tolerance": 1e-06
+  }
 }

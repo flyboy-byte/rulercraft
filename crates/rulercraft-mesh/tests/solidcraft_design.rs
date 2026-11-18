@@ -145,25 +145,148 @@ fn a_moved_scan_gives_the_same_part() {
     });
 }
 
-/// A turned part: both round faces face outward, so they are bosses, and the round outline becomes
-/// its bounding square. Both are reported.
+/// A turned part: the upper step stands on the lower one, so it is a boss; the lower step's wall is the round
+/// outline, which the plate's enclosing rectangle stands in for. Both simplifications are reported.
 #[test]
-fn stepped_cylinder_reports_what_it_could_not_rebuild() {
+fn stepped_cylinder_rebuilds_its_step_and_reports_the_round_outline() {
     let r = design(&fixture("stepped-cylinder.stl"), "stepped").unwrap();
     let items = r.report["items"].as_array().unwrap();
     let codes: Vec<&str> = items.iter().map(|i| i["code"].as_str().unwrap()).collect();
-    assert_eq!(
-        codes.iter().filter(|c| **c == "boss").count(),
-        2,
-        "{codes:?}"
-    );
-    assert!(codes.contains(&"outline_rectangle"), "{codes:?}");
-    assert_eq!(r.report["details"]["holes"].as_array().unwrap().len(), 0);
+    assert_eq!(codes, ["round_outline", "outline_rectangle"], "{codes:?}");
+    let bosses = r.report["details"]["bosses"].as_array().unwrap();
+    assert_eq!(bosses.len(), 1);
+    assert!((bosses[0]["diameter"].as_f64().unwrap() - 12.0).abs() < 1e-5);
+    assert!((bosses[0]["standing_height"].as_f64().unwrap() - 10.0).abs() < 1e-5);
+    assert_eq!(param(&r.design, "thickness"), "10 mm");
     for i in items {
         for k in ["severity", "title", "subject", "message", "code"] {
             assert!(i[k].as_str().is_some_and(|s| !s.is_empty()), "{k} in {i}");
         }
     }
+}
+
+/// fixtures/known/bracket: an 80 x 50 x 8 plate with a Ø10 x 6 boss at (20, 25), a 20 x 15 x 3 pocket from
+/// (45, 10), a Ø6 through hole at (70, 40) and a Ø4 hole blind from the top to z = 3 at (10, 10), made by
+/// SolidCraft from bracket.solidcraft.json. Every feature maps back to where it was designed.
+fn check_bracket(mesh: &Mesh, back: impl Fn([f64; 3]) -> [f64; 3]) {
+    let r = design(mesh, "bracket").unwrap();
+    let (d, rep) = (&r.design, &r.report);
+    assert_eq!(
+        rep["items"].as_array().unwrap().len(),
+        0,
+        "nothing lost: {}",
+        rep["items"]
+    );
+    let (l, w) = (param(d, "length"), param(d, "width"));
+    assert!(
+        (l == "80 mm" && w == "50 mm") || (l == "50 mm" && w == "80 mm"),
+        "{l} x {w}"
+    );
+    assert_eq!(param(d, "thickness"), "8 mm");
+    assert!((det(rep) - 1.0).abs() < 1e-9);
+    let close = |p: [f64; 3], q: [f64; 3]| (0..3).all(|k| (p[k] - q[k]).abs() < 1e-4);
+    let det_ = &rep["details"];
+    let at = |v: &Value, z: f64| {
+        back(to_scan(
+            rep,
+            [v["x"].as_f64().unwrap(), v["y"].as_f64().unwrap(), z],
+        ))
+    };
+    let bosses = det_["bosses"].as_array().unwrap();
+    assert_eq!(bosses.len(), 1);
+    assert!(
+        close(at(&bosses[0], 8.0), [20.0, 25.0, 8.0]),
+        "boss at {:?}",
+        at(&bosses[0], 8.0)
+    );
+    assert_eq!(param(d, "boss1_diameter"), "10 mm");
+    assert_eq!(param(d, "boss1_height"), "6 mm");
+    let pockets = det_["pockets"].as_array().unwrap();
+    assert_eq!(pockets.len(), 1);
+    assert_eq!(param(d, "pocket1_depth"), "3 mm");
+    // The pocket's rectangle, mapped back, spans x 45..65 and y 10..25 at z = 5 whichever way the frame turned.
+    let p = &pockets[0];
+    let (x0, y0) = (p["x"].as_f64().unwrap(), p["y"].as_f64().unwrap());
+    let (pl, pw) = (p["length"].as_f64().unwrap(), p["width"].as_f64().unwrap());
+    let corners: Vec<[f64; 3]> = [(0.0, 0.0), (pl, 0.0), (0.0, pw), (pl, pw)]
+        .iter()
+        .map(|(a, b)| back(to_scan(rep, [x0 + a, y0 + b, 5.0])))
+        .collect();
+    for want in [
+        [45.0, 10.0, 5.0],
+        [65.0, 10.0, 5.0],
+        [45.0, 25.0, 5.0],
+        [65.0, 25.0, 5.0],
+    ] {
+        assert!(
+            corners.iter().any(|c| close(*c, want)),
+            "pocket corner {want:?} in {corners:?}"
+        );
+    }
+    let holes = det_["holes"].as_array().unwrap();
+    assert_eq!(holes.len(), 2);
+    for h in holes {
+        let dia = h["diameter"].as_f64().unwrap();
+        if (dia - 6.0).abs() < 1e-5 {
+            assert_eq!(h["kind"], "through");
+            assert!(close(at(h, 4.0), [70.0, 40.0, 4.0]));
+        } else {
+            assert!((dia - 4.0).abs() < 1e-5, "Ø{dia}");
+            assert_eq!(h["kind"], "blind from above");
+            assert!((h["from"].as_f64().unwrap() - 3.0).abs() < 1e-5);
+            assert!(close(at(h, 4.0), [10.0, 10.0, 4.0]));
+        }
+    }
+    // Build order: plate, boss joined, pocket and holes cut.
+    let ops: Vec<(&str, &str)> = d["features"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|f| {
+            (
+                f["type"].as_str().unwrap(),
+                f["operation"].as_str().unwrap(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        ops,
+        [
+            ("box", "new_body"),
+            ("cylinder", "join"),
+            ("box", "cut"),
+            ("cylinder", "cut"),
+            ("cylinder", "cut")
+        ]
+    );
+}
+
+#[test]
+fn bracket_rebuilds_boss_pocket_and_holes() {
+    check_bracket(&fixture("bracket.stl"), |p| p);
+}
+
+/// Turned 30° in its own plane and tilted and moved: the outline's rectangle still lines up with its edges.
+#[test]
+fn a_turned_bracket_gives_the_same_part() {
+    let mut m = fixture("bracket.stl");
+    let (cz, sz) = (30f64.to_radians().cos(), 30f64.to_radians().sin());
+    let (c, s) = (0.6f64, 0.8f64);
+    for p in &mut m.positions {
+        let q = p.map(f64::from);
+        let r = [cz * q[0] - sz * q[1], sz * q[0] + cz * q[1], q[2]];
+        *p = [
+            r[0] + 7.0,
+            c * r[1] - s * r[2] - 3.0,
+            s * r[1] + c * r[2] + 11.0,
+        ]
+        .map(|x| x as f32);
+    }
+    check_bracket(&m, |p| {
+        let (x, y, z) = (p[0] - 7.0, p[1] + 3.0, p[2] - 11.0);
+        let r = [x, c * y + s * z, -s * y + c * z];
+        [cz * r[0] + sz * r[1], -sz * r[0] + cz * r[1], r[2]]
+    });
 }
 
 /// One flat sheet has no second face, so no thickness: refused, not guessed.

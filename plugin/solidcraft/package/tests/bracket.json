@@ -1,0 +1,13 @@
+{
+  "entry": "scan-to-part",
+  "file": "bracket.stl",
+  "expect": {
+    "model": {
+      "body_count": 1,
+      "total": {
+        "volume_mm3": 31282.2124
+      }
+    },
+    "tolerance": 1e-06
+  }
+}

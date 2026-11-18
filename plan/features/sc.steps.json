@@ -3,12 +3,16 @@
   "milestone": "R7",
   "title": "Steps and pockets: parallel faces at heights between the base and the top",
   "spec": "mesh-to-cad",
-  "status": "planned",
+  "status": "verified",
   "depends_on": [
     "sc.importer"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "owner": "Claude",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/112",
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Pockets, steps and pads with rectangular, aligned outlines; turned ones and undercuts are reported."
 }

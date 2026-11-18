@@ -38,27 +38,38 @@ as the plain JSON design SolidCraft opens (format `solidcraft/57`; later SolidCr
 It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a plugin"), and the CLI's
 `rulercraft solidcraft <mesh> [--units U] [--out design.json]` gives the same result without the plugin.
 
-- **Base.** Flat and round regions are found as by `segment`; the largest flat region is the base. Its frame
-  (u, v, normal) is made right-handed so the part is never mirrored.
-- **Plate.** A box over the base outline (the base face's own points, min to max along u and v), as thick as
-  the parallel face (within 5°) farthest from the base. The box's corner is the design's origin. With no
-  parallel face the scan is refused: the thickness is unknown.
-- **Holes.** A round region square to the base (within 5°) whose surface faces its axis (its vertex normals
-  point inward) is a hole, cut as a cylinder at its fitted position and diameter. A hole whose wall reaches both
-  faces (within 2 % of the thickness, at least 0.05 mm) is cut through, past both faces; one that reaches one
-  face is cut blind from that face to the wall's end.
-- **Parameters.** `length`, `width`, `thickness` and `hole<i>_diameter` are named parameters (to a
-  micrometre), and the features use them, so the part is edited by changing a number.
-- **Loss report.** Everything not rebuilt is an item, never a guess: slanted faces (`slanted_face`), round
-  features not square to the base (`tilted_round`), bosses and pins (`boss`, surface facing away from the
-  axis), holes outside the outline (`hole_outside`) or opening on neither face (`hole_internal`), and an
-  outline that is not a full rectangle (`outline_rectangle`, when the base face covers less than 98 % of what
-  its rectangle leaves after through holes). `details` carries the measured sizes, each hole's sigma and
-  coverage, and the frame that maps the design back onto the scan.
+- **Base and frame.** Flat and round regions are found as by `segment`; the largest flat region is the base. The
+  opposite face is the largest other face parallel to it (within 5°); the frame's normal points from the base into
+  the part, so the base is at height 0 and the opposite face at the thickness. The in-plane axes follow the base
+  outline's edges: the rotation of the smallest rectangle around the base face's points (rotating calipers over
+  their convex hull). The frame is right-handed so the part is never mirrored. With no parallel face the scan is
+  refused: the thickness is unknown.
+- **Plate.** A box over that rectangle, from the base to the opposite face; the box's corner is the origin.
+- **Other parallel faces.** An upward face between base and top is a **pocket or step floor**: a box cut from it
+  through the top over its own rectangle. An upward face above the top is a **pad**: a box joined from the top. A
+  face whose edges are turned to the plate's by more than 1° is reported, as is a downward face inside the plate
+  (an undercut) or any other face outside the plate.
+- **Round regions** square to the base (within 5°): one whose surface faces its axis (vertex normals point
+  inward) is a **hole**, cut at its fitted position and diameter; it is through when its wall reaches a downward
+  face (the base or one below) and an upward face (the top, a pocket floor, a pad), blind when it reaches one.
+  One whose surface faces away and stands on an upward face is a **boss**, joined from just inside that face up to
+  its top. A boss's top and a blind hole's floor count as explained. A round wall that runs the full thickness
+  facing outward is a round outline, reported. Tolerances: heights within 2 % of the thickness (at least 0.05 mm).
+- **Parameters.** `length`, `width`, `thickness`, `hole<i>_diameter`, `boss<i>_diameter`, `boss<i>_height`,
+  `pocket<i>_depth`, `pad<i>_height` are named parameters (to a micrometre). Pockets hang from `thickness`, so
+  changing the thickness keeps their depth.
+- **Loss report.** Everything not rebuilt is an item, never a guess: `slanted_face`, `tilted_round`,
+  `round_outside`, `hole_internal`, `boss` (not standing on an upward face), `round_outline`, `pocket_rotated`,
+  `pad_rotated`, `undercut`, `below_base`, and simplifications `outline_rectangle`, `pocket_rectangle`,
+  `pad_rectangle` (a face covering less than 98 % of its rectangle). `details` carries the plate, holes, bosses,
+  pockets and pads with their measured sizes and fit quality, and the frame that maps the design back onto the scan.
 
 Known answers: the hole block rebuilds as 60 x 30 x 10 with through holes of 3, 5 and 8 mm that map back to
-x = 10, 30, 50, y = 15, also after the scan is turned and moved; the stepped cylinder reports two bosses and a
-simplified outline; a lone sheet is refused.
+x = 10, 30, 50, y = 15, also after the scan is turned and moved. The bracket (fixtures/known/bracket.stl, made by
+SolidCraft from bracket.solidcraft.json) rebuilds as 80 x 50 x 8 with its Ø10 x 6 boss, 20 x 15 x 3 pocket, Ø6
+through hole and Ø4 blind hole each mapped back to where they were designed, also when turned 30° in its plane and
+tilted and moved; SolidCraft measures the rebuilt bracket at 31,282.21237390821 mm³, its original 31,282.212373908205.
+The stepped cylinder rebuilds its upper step as a boss and reports its round outline; a lone sheet is refused.
 
 Checked in SolidCraft itself (its CLI built from tangency-labs/solidcraft at 4711df6a, 2026-11-18, `solidcraft-cli eval` of
 the written design): the hole block's design rebuilds with volume 17,230.30980 mm³ (60 x 30 x 10 less three

@@ -12,5 +12,5 @@
     "known-design",
     "wrong-value"
   ],
-  "left": "Plate-like parts only; everything else goes to the report (sc.outline, sc.boss, sc.steps, sc.details)."
+  "left": "Rectangular, aligned outlines and features only; everything else goes to the report (sc.outline, sc.details)."
 }

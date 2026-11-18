@@ -46,8 +46,9 @@ refuses a component that imports WASI or network interfaces, and zips `plugin.js
 own `plugin check` and `plugin test` on the package.
 
 `plugin test` runs `package/tests/*.json` through SolidCraft's real `file.import`, with known answers: the hole
-block rebuilds as one body of 17,230.3098 mm³ (and 1,000 times that read as centimetres), the stepped cylinder
-as one 8,000 mm³ body, and a lone sheet is refused as `unsupported` naming the thickness.
+block rebuilds as one body of 17,230.3098 mm³ (and 1,000 times that read as centimetres), the bracket as its
+designed 31,282.2124 mm³, the stepped cylinder as 5,121.3791 mm³ (its rectangle stands in for the round outline),
+and a lone sheet is refused as `unsupported` naming the thickness.
 
 The workflow `.github/workflows/solidcraft-plugin.yml` builds the package and uploads it as an artifact. It is not
 part of the fast gate: it runs when started by hand or on a pull request that changes `plugin/`.
