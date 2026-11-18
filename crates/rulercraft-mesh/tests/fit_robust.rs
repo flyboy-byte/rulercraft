@@ -117,7 +117,7 @@ fn sphere_cloud() -> Vec<[f32; 3]> {
     while p.len() < 200 {
         let v = [lcg(&mut s), lcg(&mut s), lcg(&mut s)];
         let n = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
-        if n < 0.3 || n > 1.0 {
+        if !(0.3..=1.0).contains(&n) {
             continue;
         }
         // Upper cap only (z above 0.3): a patch, as a scan would give.
