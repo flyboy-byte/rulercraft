@@ -13,7 +13,10 @@ signed distance to `reference`, plus count, mean, RMS, largest outside/inside, m
 absolute distance, and how many are beyond `tolerance`. Distance is exact (bounding-box tree, checked
 against brute force on random triangles). Sign follows the closest reference triangle's face normal, so
 the reference should have consistent outward winding; beside an edge or corner the sign may follow either
-neighbour, but the size never changes. An empty reference or a bad tolerance is refused. Percentiles use
+neighbour, but the size never changes. Zero-area reference triangles (three distinct but collinear corners)
+have no normal, so they are left out of the reference; in a closed mesh their points are on their neighbours'
+edges anyway, so no distance changes, only the undefined sign goes. An empty reference, one whose triangles all
+have zero area, or a bad tolerance is refused (finding 2026-11-07-degenerate-deviation-sign). Percentiles use
 nearest rank. Alignment before comparing is `align.*`.
 
 `deviation::patches(graph, distances, tolerance)` groups vertices beyond the tolerance into patches:
