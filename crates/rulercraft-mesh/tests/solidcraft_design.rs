@@ -148,11 +148,15 @@ fn a_moved_scan_gives_the_same_part() {
 /// A turned part: the upper step stands on the lower one, so it is a boss; the lower step's wall is the round
 /// outline, which the plate's enclosing rectangle stands in for. Both simplifications are reported.
 #[test]
-fn stepped_cylinder_rebuilds_its_step_and_reports_the_round_outline() {
+fn stepped_cylinder_rebuilds_its_step_on_a_circular_base() {
     let r = design(&fixture("stepped-cylinder.stl"), "stepped").unwrap();
     let items = r.report["items"].as_array().unwrap();
-    let codes: Vec<&str> = items.iter().map(|i| i["code"].as_str().unwrap()).collect();
-    assert_eq!(codes, ["round_outline", "outline_rectangle"], "{codes:?}");
+    // Its round outline is traced now: a circle, nothing lost.
+    assert!(items.is_empty(), "{items:?}");
+    assert_eq!(
+        feature(&r.design, "sketch")["sketch"]["curves"][0]["type"],
+        "circle"
+    );
     let bosses = r.report["details"]["bosses"].as_array().unwrap();
     assert_eq!(bosses.len(), 1);
     assert!((bosses[0]["diameter"].as_f64().unwrap() - 12.0).abs() < 1e-5);
@@ -304,4 +308,100 @@ fn a_lone_sheet_is_refused() {
     };
     let e = design(&m, "sheet").unwrap_err().to_string();
     assert!(e.contains("thickness"), "{e}");
+}
+
+fn feature<'a>(d: &'a Value, ty: &str) -> &'a Value {
+    d["features"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|f| f["type"] == ty)
+        .unwrap_or_else(|| panic!("no {ty} feature"))
+}
+
+/// Shoelace area of a sketch's line loop, mm².
+fn sketch_area(d: &Value) -> (usize, f64) {
+    let pts: Vec<[f64; 2]> = feature(d, "sketch")["sketch"]["points"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|p| p["id"] != "origin")
+        .map(|p| [p["pos"][0].as_f64().unwrap(), p["pos"][1].as_f64().unwrap()])
+        .collect();
+    let n = pts.len();
+    let a: f64 = (0..n)
+        .map(|i| pts[i][0] * pts[(i + 1) % n][1] - pts[(i + 1) % n][0] * pts[i][1])
+        .sum();
+    (n, a / 2.0)
+}
+
+/// SolidCraft built the L (60 x 20 plus 20 x 20, 8 mm thick, Ø6 hole at (10, 30)) as a sketch extruded:
+/// 12,573.805 mm³. The rebuild must trace the six corners, not box the part.
+#[test]
+fn an_l_plate_keeps_its_outline() {
+    let r = design(&fixture("l-plate.stl"), "l-plate").unwrap();
+    let (n, area) = sketch_area(&r.design);
+    assert_eq!(n, 6, "corners");
+    assert!((area - 1600.0).abs() < 0.5, "outline area {area}");
+    assert_eq!(feature(&r.design, "extrude")["operation"], "new_body");
+    assert_eq!(param(&r.design, "thickness"), "8 mm");
+    let h = &r.report["details"]["holes"][0];
+    assert!((h["diameter"].as_f64().unwrap() - 6.0).abs() < 0.01);
+    let codes: Vec<&str> = r.report["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|i| i["code"].as_str().unwrap())
+        .collect();
+    assert!(codes.is_empty(), "nothing lost: {codes:?}");
+    // The hole sits in the 20 mm arm: 10 mm from its two outer edges, whichever way the frame turned.
+    let at = [h["x"].as_f64().unwrap(), h["y"].as_f64().unwrap()];
+    let p = sketch_points(&r.design);
+    let inside = point_in(at, &p);
+    assert!(inside, "hole at {at:?} is inside the traced outline");
+}
+
+fn sketch_points(d: &Value) -> Vec<[f64; 2]> {
+    feature(d, "sketch")["sketch"]["points"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|p| p["id"] != "origin")
+        .map(|p| [p["pos"][0].as_f64().unwrap(), p["pos"][1].as_f64().unwrap()])
+        .collect()
+}
+
+fn point_in(q: [f64; 2], p: &[[f64; 2]]) -> bool {
+    let mut inside = false;
+    for i in 0..p.len() {
+        let (a, b) = (p[i], p[(i + 1) % p.len()]);
+        if (a[1] > q[1]) != (b[1] > q[1])
+            && q[0] < (b[0] - a[0]) * (q[1] - a[1]) / (b[1] - a[1]) + a[0]
+        {
+            inside = !inside;
+        }
+    }
+    inside
+}
+
+/// A Ø50 x 6 round plate with a Ø8 hole 10 mm off centre (SolidCraft: 11,479.380 mm³) is a circle sketch.
+#[test]
+fn a_round_plate_is_a_circle() {
+    let r = design(&fixture("round-plate.stl"), "round-plate").unwrap();
+    let c = &feature(&r.design, "sketch")["sketch"]["curves"][0];
+    assert_eq!(c["type"], "circle");
+    assert!((c["r"].as_f64().unwrap() - 25.0).abs() < 0.01, "{c}");
+    assert!(r.report["items"].as_array().unwrap().is_empty());
+    let h = &r.report["details"]["holes"][0];
+    let centre = &feature(&r.design, "sketch")["sketch"]["points"][1]["pos"];
+    let d = (h["x"].as_f64().unwrap() - centre[0].as_f64().unwrap())
+        .hypot(h["y"].as_f64().unwrap() - centre[1].as_f64().unwrap());
+    assert!((d - 10.0).abs() < 0.01, "hole {d} mm from the centre");
+}
+
+/// A rectangle still builds as a box: tracing must not turn every plate into a sketch.
+#[test]
+fn a_plain_plate_stays_a_box() {
+    let r = design(&fixture("hole-block.stl"), "hole-block").unwrap();
+    assert_eq!(r.design["features"][0]["type"], "box");
 }

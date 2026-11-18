@@ -4,6 +4,10 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Scan to SolidCraft: a plate with any outline (L-shapes, round, angled, with cut corners) is rebuilt as its traced
+  outline, not its enclosing rectangle; a round plate is a circle. A stepped cylinder now comes back at its true volume
+  (4,272.566 mm³; the old box over its circle gave 5,121 mm³).
+
 - Scan to SolidCraft: bosses, pockets, steps and pads are rebuilt too, and the plate lines up with its outline's
   edges and takes its thickness from the largest parallel face (before, a tilted frame and a boss's top gave wrong
   sizes). A bracket designed in SolidCraft comes back with the same volume to 11 digits (#112).

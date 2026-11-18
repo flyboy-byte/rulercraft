@@ -3,12 +3,16 @@
   "milestone": "R7",
   "title": "Any base outline: the outline traced from the scan and extruded as a sketch, not its bounding box",
   "spec": "mesh-to-cad",
-  "status": "planned",
+  "status": "verified",
   "depends_on": [
     "sc.importer"
   ],
-  "owner": null,
+  "owner": "Claude",
   "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Straight and circular outlines. Mixed arcs and lines are straight-edge runs (reported); cutouts that are not round holes are reported, not rebuilt."
 }
