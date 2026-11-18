@@ -3,10 +3,11 @@
 **Measure any mesh, and turn it back into editable CAD, with Claude doing the driving.**
 
 > [!NOTE]
-> As of 2026-11-18: reads STL/PLY/OBJ/3MF/glTF/GLB; fits planes, spheres and cylinders (also robust versions); finds
-> flat and round regions; measures wall thickness and deviation from a reference; aligns meshes; suggests a CAD
-> recipe. All through a CLI, an MCP server and a browser prototype app. Nothing has yet been checked against a
-> real printed or published part (ROADMAP R1), and the native app and the SolidCraft hand-off are still ahead.
+> As of 2026-11-18: **use it inside SolidCraft** — the RulerCraft plugin opens a scan (STL/PLY/OBJ/3MF/glTF/GLB) as an
+> editable part, a plate with its holes and named sizes, with a report of what it could not rebuild
+> ([install and use](docs/install-solidcraft-plugin.md)). The engine also fits planes, spheres and cylinders, finds flat
+> and round regions, and measures distances, thickness and deviation, through a CLI and an MCP server. Nothing has
+> yet been checked against a real printed or scanned part (ROADMAP R1).
 > Progress is tracked in
 > [STATUS.md](STATUS.md) and [ROADMAP-PROGRESS.md](ROADMAP-PROGRESS.md).
 

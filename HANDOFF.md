@@ -47,8 +47,8 @@ draft PR (feature id, or an area tag: fix:, improve:, perf:, test:, docs:), work
 ## Next, if nobody says otherwise
 - R1 exit is the most valuable thing on the board and needs Logan's hands: print fixtures/known/hole-block.stl, caliper
   it, scan it, fit the scan. Engine work has run ahead of real-part evidence.
-- P0 of docs/v1.md: native app shell (`app.shell`) and wgpu viewport with SolidCraft's theme (SolidCraft: ~/solidcraft,
-  MIT OR Apache-2.0, egui/eframe 0.36, wgpu 30, theme in crates/ui-egui/src/theme.rs), then parity with the prototype.
+- v1 is delivered inside SolidCraft (D-015): next in docs/v1.md order, `sc.outline`, `sc.boss`, `sc.steps` (each
+  checked in SolidCraft's own CLI as #108 was), then `sc.check`, `sc.inspect`, `sc.agent`.
 - Verification without more CI: `verify.regress` (R8) as an ordinary test file in the existing gate.
 
 ## Owed and waiting on Logan

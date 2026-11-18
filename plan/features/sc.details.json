@@ -1,11 +1,12 @@
 {
-  "id": "gui.report",
+  "id": "sc.details",
   "milestone": "R7",
-  "title": "App: measurement report (CSV) and screenshot export",
-  "spec": "product-scope",
+  "title": "Counterbores, countersinks, slots, chamfers and fillets",
+  "spec": "mesh-to-cad",
   "status": "planned",
   "depends_on": [
-    "gui.dimensions"
+    "sc.boss",
+    "sc.steps"
   ],
   "owner": null,
   "pr": null,

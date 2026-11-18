@@ -1,0 +1,14 @@
+{
+  "id": "sc.agent",
+  "milestone": "R7",
+  "title": "Claude drives RulerCraft in SolidCraft: plugin entries as SolidCraft MCP tools, documented",
+  "spec": "solidcraft-plugin",
+  "status": "planned",
+  "depends_on": [
+    "sc.importer"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "SolidCraft lists installed plugin entries as MCP tools already; check it with the importer and write it up."
+}

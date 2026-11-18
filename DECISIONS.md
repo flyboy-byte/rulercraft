@@ -210,3 +210,23 @@ approved by Logan. The package is built for `wasm32-unknown-unknown` with no WAS
 requires. Nothing is sent to SolidCraft's maintainers or repository. This supersedes D-008's addendum and D-011
 point 3 where they say nothing is built against a plugin interface; the other hand-offs (library, MCP, recipe
 JSON, `rulercraft solidcraft`) stay.
+
+## D-015 SolidCraft is the user interface; no separate native app (2026-11-18)
+
+**Decision (Logan, 2026-11-18: "we're going to use SolidCraft as main deployment and hence UI").** People use
+RulerCraft inside SolidCraft, through its plugin (D-014). The separate native desktop app of D-012 (egui/wgpu window,
+viewport, installers) is dropped, and the features planned only for it are removed from the plan. RulerCraft's own
+faces are the library, the CLI and the MCP server, for scripts, CI and agents; the browser viewer (`rulercraft-gui`)
+stays as a developer tool and test harness.
+
+**What it supersedes.** INTENT.md's "native desktop app" face (D-012) and v1's "native app" (docs/v1.md); the R7
+milestone becomes "v1 in SolidCraft". D-011's look and GPU points no longer have an app to apply to. v1's four jobs
+stay, delivered in SolidCraft.
+
+**Why.** SolidCraft already has the window, 3D view, selection, undo, files and installers a native app would have to
+build, and its plugins reach its users where they already work. Effort goes into what only RulerCraft does: reading
+scans and turning them into trustworthy numbers and editable parts.
+
+**Limits.** SolidCraft's plugin interface decides what is possible: plugins ship no UI code (dialogs come from input
+schemas), and a command plugin reads at most 8,192 vertices of a mesh body. Where that blocks a job, the gap is
+written down for Logan, who decides whether to raise it with SolidCraft's maintainers; we contact no one.
