@@ -56,6 +56,8 @@ draft PR (feature id, or an area tag: fix:, improve:, perf:, test:, docs:), work
 - Never switch branches in a shared checkout; `git worktree add /tmp/<name> -b <branch> origin/main`, remove after merge.
 - Every rule gets a wrong-value run a test fails on, or the rule goes. Undo a wrong-value edit with the reverse edit, not
   `git checkout <file>`: that also throws away the uncommitted fix (happened 2026-11-12, caught by grep).
+- Two checkouts sharing one CARGO_TARGET_DIR can hand you the other checkout's binary (cargo kept the old build;
+  `cmp` showed identical files). Give each checkout its own target dir before comparing behaviour.
 - Merge commits only; wait for CI on the exact head commit before merging; on generated-file conflicts merge main and
   `python3 tools/plan.py render`; take main's HANDOFF.
 - Never name other apps in the repo.
