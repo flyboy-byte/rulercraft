@@ -1,0 +1,16 @@
+{
+  "id": "sc.importer",
+  "milestone": "R7",
+  "title": "SolidCraft importer: a scan opens as an editable plate with holes, named sizes and an import report",
+  "spec": "solidcraft-plugin",
+  "status": "verified",
+  "depends_on": [],
+  "owner": "Claude",
+  "pr": "https://github.com/flyboy-byte/rulercraft/pull/109",
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Plate-like parts only; everything else goes to the report (sc.outline, sc.boss, sc.steps, sc.details)."
+}

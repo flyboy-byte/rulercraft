@@ -1,0 +1,14 @@
+{
+  "id": "sc.outline",
+  "milestone": "R7",
+  "title": "Any base outline: the outline traced from the scan and extruded as a sketch, not its bounding box",
+  "spec": "mesh-to-cad",
+  "status": "planned",
+  "depends_on": [
+    "sc.importer"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}

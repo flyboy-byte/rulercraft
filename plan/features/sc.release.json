@@ -1,0 +1,14 @@
+{
+  "id": "sc.release",
+  "milestone": "R7",
+  "title": "Plugin release: the .zip on GitHub releases, an install guide, a release workflow",
+  "spec": "solidcraft-plugin",
+  "status": "in-progress",
+  "depends_on": [
+    "sc.importer"
+  ],
+  "owner": "Claude",
+  "pr": null,
+  "verified_by": [],
+  "left": "Workflow and guide in this PR; the first release is cut after it merges."
+}

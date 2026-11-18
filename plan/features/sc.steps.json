@@ -1,0 +1,14 @@
+{
+  "id": "sc.steps",
+  "milestone": "R7",
+  "title": "Steps and pockets: parallel faces at heights between the base and the top",
+  "spec": "mesh-to-cad",
+  "status": "planned",
+  "depends_on": [
+    "sc.importer"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Everything."
+}
