@@ -59,3 +59,9 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
 Known answers: the hole block rebuilds as 60 x 30 x 10 with through holes of 3, 5 and 8 mm that map back to
 x = 10, 30, 50, y = 15, also after the scan is turned and moved; the stepped cylinder reports two bosses and a
 simplified outline; a lone sheet is refused.
+
+Checked in SolidCraft itself (its CLI built from tangency-labs/solidcraft at 4711df6a, 2026-11-18, `solidcraft-cli eval` of
+the written design): the hole block's design rebuilds with volume 17,230.30980 mm³ (60 x 30 x 10 less three
+10 mm cylinders of 3, 5 and 8 mm: 17,230.30980 by hand), surface 5,748.717 mm² (5,748.717 by hand) and 9 faces;
+the turned and moved scan gives the same three numbers. The JSON shape (parameters with `unit` and `model`,
+numeric corners and bases) was copied from a design SolidCraft saved from the equivalent commands.

@@ -51,11 +51,15 @@ impl Loss {
     }
 }
 
-/// A number as SolidCraft expression text, to a micrometre.
-fn mm(v: f64) -> String {
+/// A length rounded to a micrometre (no negative zero).
+fn round_um(v: f64) -> f64 {
     let r = (v * 1000.0).round() / 1000.0;
-    let r = if r == 0.0 { 0.0 } else { r };
-    format!("{r}")
+    if r == 0.0 { 0.0 } else { r }
+}
+
+/// A length as SolidCraft expression text, to a micrometre.
+fn mm(v: f64) -> String {
+    format!("{}", round_um(v))
 }
 
 fn acute_deg(a: [f64; 3], b: [f64; 3]) -> f64 {
@@ -236,26 +240,27 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     }
 
     // The design: parameters for every size, a box, then one cut cylinder per hole.
+    let param = |name: &str, v: f64| json!({"name": name, "expr": format!("{} mm", mm(v)), "unit": "mm", "model": false});
     let mut params = vec![
-        json!({"name": "length", "expr": format!("{} mm", mm(len))}),
-        json!({"name": "width", "expr": format!("{} mm", mm(wid))}),
-        json!({"name": "thickness", "expr": format!("{} mm", mm(thick))}),
+        param("length", len),
+        param("width", wid),
+        param("thickness", thick),
     ];
     let mut features = vec![json!({
         "id": 1, "name": "Plate", "suppressed": false, "body_names": ["Plate"],
-        "param_names": [], "type": "box", "corner": ["0", "0", "0"],
+        "param_names": [], "type": "box", "corner": [0.0, 0.0, 0.0],
         "length": "length", "width": "width", "height": "thickness", "operation": "new_body",
     })];
     for (i, h) in holes.iter().enumerate() {
         let p = format!("hole{}_diameter", i + 1);
         let d = h["diameter"].as_f64().unwrap_or(0.0);
-        params.push(json!({"name": p, "expr": format!("{} mm", mm(d))}));
+        params.push(param(&p, d));
         let z = h["z"].as_f64().unwrap_or(0.0);
         let height = h["height"].as_f64().unwrap_or(0.0);
         features.push(json!({
-            "id": i + 2, "name": format!("Hole{}", i + 1), "suppressed": false, "body_names": [],
+            "id": i + 2, "name": format!("Hole{}", i + 1), "suppressed": false,
             "param_names": [], "type": "cylinder",
-            "base": [mm(h["x"].as_f64().unwrap_or(0.0)), mm(h["y"].as_f64().unwrap_or(0.0)), mm(z)],
+            "base": [round_um(h["x"].as_f64().unwrap_or(0.0)), round_um(h["y"].as_f64().unwrap_or(0.0)), round_um(z)],
             "axis": [0.0, 0.0, 1.0], "radius": format!("{p} / 2"), "height": mm(height),
             "operation": "cut",
         }));
@@ -263,7 +268,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     let next_id = features.len() + 1;
     let design = json!({
         "format": FORMAT, "name": name, "units": "mm", "params": params, "features": features,
-        "next_id": next_id, "reserved_body_names": ["Plate"], "next_component_color_index": 0,
+        "next_id": next_id, "next_component_color_index": 0,
     });
 
     let through = holes.iter().filter(|h| h["kind"] == "through").count();
