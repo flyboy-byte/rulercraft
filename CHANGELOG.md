@@ -4,6 +4,8 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- CLI: `rulercraft measure` fits two selections and prints their distance and angle with the convention used, the
+  same numbers as the MCP measure tool. Cylinder fits on the CLI now also report `extend_before`/`extend_after` (#107).
 - Fits: 1-, 2- and 3-sigma clipping (the CLI default is 3) now uses a cut-off fixed from the all-points fit, so it
   settles instead of trimming to the round limit. On scans, clipped fits keep more points and report a larger, more
   honest sigma and form error than before (#101).
