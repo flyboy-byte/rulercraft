@@ -3,7 +3,7 @@
 **Measure any mesh, and turn it back into editable CAD, with Claude doing the driving.**
 
 > [!NOTE]
-> As of 2026-11-12: reads STL/PLY/OBJ/3MF; fits planes, spheres and cylinders (also robust versions); finds
+> As of 2026-11-18: reads STL/PLY/OBJ/3MF/glTF/GLB; fits planes, spheres and cylinders (also robust versions); finds
 > flat and round regions; measures wall thickness and deviation from a reference; aligns meshes; suggests a CAD
 > recipe. All through a CLI, an MCP server and a browser prototype app. Nothing has yet been checked against a
 > real printed or published part (ROADMAP R1), and the native app and the SolidCraft hand-off are still ahead.

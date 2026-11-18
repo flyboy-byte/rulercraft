@@ -98,8 +98,8 @@ fn covariance_far_from_the_origin_keeps_the_plane_normal() {
     }
     let c = covariance(points.iter().copied()).unwrap();
     assert_eq!(c.count, 441);
-    for k in 0..3 {
-        assert!(close(c.centroid[k], 1e6, 1e-6));
+    for v in c.centroid {
+        assert!(close(v, 1e6, 1e-6));
     }
     let e = symmetric_eigen3(c.matrix).unwrap();
     assert!(close(dot(e.vectors[0], n).abs(), 1.0, 1e-9));

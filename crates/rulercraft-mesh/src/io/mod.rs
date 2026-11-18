@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Bounded mesh import selected by file extension.
+pub mod gltf;
 pub mod obj;
 pub mod ply;
 pub mod threemf;
@@ -49,8 +50,11 @@ pub fn format_name(name: &str) -> Result<&'static str, ReadError> {
         "ply" => Ok("ply"),
         "obj" => Ok("obj"),
         "3mf" => Ok("3mf"),
+        "gltf" => Ok("gltf"),
+        "glb" => Ok("glb"),
         _ => Err(ReadError(
-            "unknown extension: supported extensions are .stl, .ply, .obj, .3mf".into(),
+            "unknown extension: supported extensions are .stl, .ply, .obj, .3mf, .gltf, .glb"
+                .into(),
         )),
     }
 }
@@ -67,6 +71,8 @@ pub fn read_mesh(
         "ply" => ply::read_ply(bytes, unit, limits),
         "3mf" => threemf::read_threemf(bytes, limits),
         "obj" => obj::read_obj(bytes, unit, limits),
+        "gltf" => gltf::read_gltf(bytes, false, limits),
+        "glb" => gltf::read_gltf(bytes, true, limits),
         _ => {
             let m = crate::stl::read_stl_with_vertex_limit(
                 bytes,

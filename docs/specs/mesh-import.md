@@ -1,12 +1,12 @@
 # Mesh import
 
-Status: R1 spec. Features: `io.stl`, `io.ply`, `io.obj`, `io.3mf`.
+Status: R1 spec. Features: `io.stl`, `io.ply`, `io.obj`, `io.3mf`, `io.gltf`.
 
 ## Behaviour
 
 - Input is bytes plus a file name (the extension picks the reader; `.stl`, `.ply`, `.obj`, `.3mf`,
-  case-insensitive; a name without a dot and extension is refused) and the file's unit (`mm` default, also `cm`, `m`, `in`). Everything is converted
-  to millimetres on read. 3MF carries its own unit in the file and that wins.
+  `.gltf`, `.glb`, case-insensitive; a name without a dot and extension is refused) and the file's unit (`mm` default, also `cm`, `m`, `in`). Everything is converted
+  to millimetres on read. 3MF carries its own unit in the file and that wins; glTF is metres by its standard, so its unit option is ignored.
 - Output is a triangle mesh: positions (f32 triples, mm) and triangles (three vertex indices each),
   plus a short summary: vertex count, triangle count, bounding box, and which reader was used.
 - Vertices that are exactly equal (bitwise after unit conversion, with -0 treated as 0) are merged
@@ -100,6 +100,31 @@ PLY description: https://sites.cc.gatech.edu/projects/large_models/ply.html (for
   escapes or cross-part components. The existing dispatcher and `info`/`fit` accept `.3mf`.
 
 Format description: https://github.com/3MFConsortium/spec_core/blob/master/3MF%20Core%20Specification.md
+
+## glTF and GLB (io.gltf)
+
+glTF 2.0 is the open Khronos format many phone scanning apps export. `.glb` is the binary container (12-byte
+header, a JSON chunk, an optional BIN chunk); `.gltf` is the JSON alone.
+
+- Units: positions are metres (the standard says so); converted to mm. The unit option does not apply.
+- Geometry: the `scene` named by the file, else the first scene; every node of its trees, each with its world
+  transform (a column-major `matrix`, or translation · rotation · scale with a unit quaternion). A node that
+  has a mesh contributes each primitive drawn as triangles (mode 4, the default), a triangle strip (5) or a fan
+  (6); point and line primitives (modes 0 to 3) are skipped. A file with meshes but no scenes yields each
+  mesh once, untransformed. A transform with negative determinant reverses triangle order, so outward
+  normals stay outward.
+- Strip triangle i is (i, i+1, i+2), with the first two swapped when i is odd; fan triangle i is (0, i+1, i+2).
+- POSITION must be a float VEC3 accessor; indices are unsigned byte, short or int SCALAR; no indices means
+  0, 1, 2 and so on. Accessor byte offsets and strides come from the accessor and its buffer view.
+- Buffers: the GLB BIN chunk, or a `data:` URI with base64 data. A buffer stored in a separate file is refused
+  with a message to export a `.glb` (the reader gets bytes, not a folder).
+- Refused, each with a plain message: a version other than 2, a bad GLB header or chunk, any entry in
+  `extensionsRequired` (named; compressed meshes need one), sparse or non-float positions, an index or a byte
+  range outside its accessor, view or buffer, a node used twice (nodes form trees), a nonfinite transform or
+  position, and more expanded triangles or vertices than ImportLimits allows (counted before building).
+- MeshBuilder merges equal vertices and drops degenerate triangles, as for the other readers.
+
+Format description: https://registry.khronos.org/glTF/specs/2.0/glTF-2.0.html
 
 ## CLI file loading (2026-11-07)
 
