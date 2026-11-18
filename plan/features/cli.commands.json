@@ -13,5 +13,5 @@
     "math",
     "wrong-value"
   ],
-  "left": "fit cylinder, measure, save/open join the command layer and CLI as those features land."
+  "left": "fit and measure (two fits and their relation) are on the CLI; save/open join as project features land."
 }

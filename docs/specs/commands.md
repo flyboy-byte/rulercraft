@@ -25,6 +25,12 @@ CLI (2026-11-07): `rulercraft info <mesh>` prints the import summary; `rulercraf
 prints compact segmentation summaries and defaults to cylinder regions for scan meshes. Errors go to
 stderr with exit code 2 and nothing on stdout.
 
+CLI measure (2026-11-18): `rulercraft measure <mesh> <kind> [fit options] --and <kind> [fit options]` fits both
+selections exactly as `fit` does and prints `{mesh, first: {selected, fit}, second: {selected, fit}, relation:
+{distance, components, angle_deg, convention}}`, the relation from `measure::relate` that the MCP measure tool uses.
+`--units` may be given in either fit (both measure one mesh); two different units are refused. Errors name which fit
+failed. Fit JSON is the same for `fit`, `measure` and MCP, including a cylinder's `extend_before`/`extend_after`.
+
 CLI fit options: `--within` specifies the facing angle and requires `--facing`; without a direction the command refuses with `--within requires --facing`. Either option order is accepted.
 
 `rulercraft --version` and `rulercraft -V` print `rulercraft <package-version>` and exit successfully.

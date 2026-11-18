@@ -6,6 +6,7 @@ mod deviation_cli;
 use rulercraft_mesh::commands::{FitKind, FitRequest, Fitted, Selection, fit};
 use rulercraft_mesh::fit::Clip;
 use rulercraft_mesh::graph::MeshGraph;
+use rulercraft_mesh::measure::{Element, relate};
 use rulercraft_mesh::segment::{join_strips, segment_cylinders, segment_planes};
 use rulercraft_mesh::{ImportLimits, Mesh, Unit, read_mesh};
 use serde_json::{Value, json};
@@ -22,6 +23,7 @@ const USAGE: &str = "Usage:
   rulercraft thickness <mesh> [selection options] [--offset N] [--limit N] [--max-distance MM]
   rulercraft fit <plane|sphere|cylinder> <mesh> [--units U] [--box X Y Z X Y Z] [--near X Y Z R]
                  [--facing DX DY DZ] [--within DEG] [--sigma 0|1|2|3] [--known-diameter D]
+  rulercraft measure <mesh> <plane|sphere|cylinder> [fit options] --and <plane|sphere|cylinder> [fit options]
 Meshes: .stl .ply .obj .3mf .gltf .glb. Lengths in mm (after --units), angles in degrees. Selection filters combine;
 with none the whole mesh is used. --within defaults to 30, --sigma to 3 (0 keeps every point).";
 
@@ -105,6 +107,40 @@ fn fit_request(kind: &str, rest: &[String]) -> Result<(Unit, FitRequest), String
     Ok((unit, request))
 }
 
+/// A fit as JSON (the same fields as the MCP fit tool) and as a measurable element.
+fn fitted(f: &Fitted) -> (Value, Element) {
+    match f {
+        Fitted::Plane(p) => (
+            json!({
+                "kind": "plane", "center": p.center, "normal": p.normal, "basis_u": p.basis_u, "basis_v": p.basis_v,
+                "span_u": p.span_u, "span_v": p.span_v, "sigma": p.sigma, "form_error": p.form_error,
+                "min_distance": p.min_distance, "max_distance": p.max_distance,
+                "used": p.used, "offered": p.offered, "rounds": p.rounds,
+            }),
+            Element::from(p),
+        ),
+        Fitted::Sphere(s) => (
+            json!({
+                "kind": "sphere", "center": s.center, "radius": s.radius, "diameter": s.diameter, "sigma": s.sigma,
+                "form_error": s.form_error, "min_residual": s.min_residual, "max_residual": s.max_residual,
+                "used": s.used, "offered": s.offered, "rounds": s.rounds, "cap_angle_deg": s.cap_angle_deg,
+                "free_diameter": s.free_diameter,
+            }),
+            Element::from(s),
+        ),
+        Fitted::Cylinder(c) => (
+            json!({
+                "kind": "cylinder", "axis_point": c.axis_point, "axis": c.axis, "radius": c.radius,
+                "diameter": c.diameter, "length": c.length, "coverage_deg": c.coverage_deg, "sigma": c.sigma,
+                "form_error": c.form_error, "min_residual": c.min_residual, "max_residual": c.max_residual,
+                "used": c.used, "offered": c.offered, "rounds": c.rounds, "assumed_diameter": c.assumed_diameter,
+                "extend_before": c.extend_before, "extend_after": c.extend_after,
+            }),
+            Element::from(c),
+        ),
+    }
+}
+
 fn fit_command(args: &[String]) -> Result<String, String> {
     let [kind, path, rest @ ..] = args else {
         return Err(USAGE.into());
@@ -113,27 +149,59 @@ fn fit_command(args: &[String]) -> Result<String, String> {
     let mesh = load(path, unit)?;
     let graph = MeshGraph::build(&mesh);
     let out = fit(&mesh, &graph, &request).map_err(|e| e.to_string())?;
-    let fitted: Value = match out.fitted {
-        Fitted::Plane(p) => json!({
-            "kind": "plane", "center": p.center, "normal": p.normal, "basis_u": p.basis_u, "basis_v": p.basis_v,
-            "span_u": p.span_u, "span_v": p.span_v, "sigma": p.sigma, "form_error": p.form_error,
-            "min_distance": p.min_distance, "max_distance": p.max_distance,
-            "used": p.used, "offered": p.offered, "rounds": p.rounds,
-        }),
-        Fitted::Sphere(s) => json!({
-            "kind": "sphere", "center": s.center, "radius": s.radius, "diameter": s.diameter, "sigma": s.sigma,
-            "form_error": s.form_error, "min_residual": s.min_residual, "max_residual": s.max_residual,
-            "used": s.used, "offered": s.offered, "rounds": s.rounds, "cap_angle_deg": s.cap_angle_deg,
-            "free_diameter": s.free_diameter,
-        }),
-        Fitted::Cylinder(c) => json!({
-            "kind": "cylinder", "axis_point": c.axis_point, "axis": c.axis, "radius": c.radius,
-            "diameter": c.diameter, "length": c.length, "coverage_deg": c.coverage_deg, "sigma": c.sigma,
-            "form_error": c.form_error, "min_residual": c.min_residual, "max_residual": c.max_residual,
-            "used": c.used, "offered": c.offered, "rounds": c.rounds, "assumed_diameter": c.assumed_diameter,
-        }),
+    let (value, _) = fitted(&out.fitted);
+    Ok(json!({ "mesh": path, "selected": out.selected, "fit": value }).to_string())
+}
+
+/// `measure <mesh> <kind> [fit options] --and <kind> [fit options]`: two fits and their relation.
+fn measure_command(args: &[String]) -> Result<String, String> {
+    let [path, rest @ ..] = args else {
+        return Err(USAGE.into());
     };
-    Ok(json!({ "mesh": path, "selected": out.selected, "fit": fitted }).to_string())
+    let split = rest
+        .iter()
+        .position(|a| a == "--and")
+        .ok_or("measure needs two fits: <kind> [fit options] --and <kind> [fit options]")?;
+    let (first, second) = (&rest[..split], &rest[split + 1..]);
+    if second.iter().any(|a| a == "--and") {
+        return Err("measure takes exactly two fits; `--and` appears more than once".into());
+    }
+    let parse = |part: &[String], name: &str| -> Result<(Unit, FitRequest, bool), String> {
+        let [kind, options @ ..] = part else {
+            return Err(format!(
+                "measure: the {name} fit needs a kind (plane, sphere or cylinder)"
+            ));
+        };
+        let (unit, request) = fit_request(kind, options).map_err(|e| format!("{name} fit: {e}"))?;
+        Ok((unit, request, options.iter().any(|a| a == "--units")))
+    };
+    let (u1, a, said1) = parse(first, "first")?;
+    let (u2, b, said2) = parse(second, "second")?;
+    if said1 && said2 && u1 != u2 {
+        return Err("give --units once: both fits measure the same mesh".into());
+    }
+    let unit = if said2 { u2 } else { u1 };
+    let mesh = load(path, unit)?;
+    let graph = MeshGraph::build(&mesh);
+    let one = fit(&mesh, &graph, &a).map_err(|e| format!("first fit: {e}"))?;
+    let two = fit(&mesh, &graph, &b).map_err(|e| format!("second fit: {e}"))?;
+    let ((v1, e1), (v2, e2)) = (fitted(&one.fitted), fitted(&two.fitted));
+    let r = relate(&e1, &e2);
+    if r.distance
+        .into_iter()
+        .chain(r.angle_deg)
+        .chain(r.components.into_iter().flatten())
+        .any(|v| !v.is_finite())
+    {
+        return Err("measurement produced a non-finite result".into());
+    }
+    Ok(json!({
+        "mesh": path,
+        "first": {"selected": one.selected, "fit": v1},
+        "second": {"selected": two.selected, "fit": v2},
+        "relation": {"distance": r.distance, "components": r.components, "angle_deg": r.angle_deg, "convention": r.convention},
+    })
+    .to_string())
 }
 
 fn thickness_command(args: &[String]) -> Result<String, String> {
@@ -284,6 +352,9 @@ fn run(args: &[String]) -> Result<String, String> {
     }
     if command == "fit" {
         return fit_command(rest);
+    }
+    if command == "measure" {
+        return measure_command(rest);
     }
     if command == "segment" {
         return segment_command(rest);

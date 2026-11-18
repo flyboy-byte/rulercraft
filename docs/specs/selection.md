@@ -8,7 +8,9 @@ Marks the vertices a fit runs on.
   on any axis.
 - **Near:** every vertex within a radius of a point.
 - **Facing:** optionally keep only vertices whose normal is within an angle (default 30°) of a given
-  direction (any non-zero length). A zero direction is refused.
+  direction (any non-zero length). A zero direction is refused. Vertex normals are area-weighted averages of the
+  triangles around a vertex, so on a sharp-edged CAD mesh a face whose vertices are all corners (a box side)
+  has no vertex facing it; select such faces by box.
 - **Explicit list** of vertex indices; an index past the vertex count is refused, naming it.
 - Results are returned as a count, and optionally the indices (capped, evenly thinned, with the step
   stated) so a large selection does not flood an agent.

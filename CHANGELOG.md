@@ -4,6 +4,8 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- CLI: `rulercraft measure` fits two selections and prints their distance and angle with the convention used, the
+  same numbers as the MCP measure tool. Cylinder fits on the CLI now also report `extend_before`/`extend_after` (#107).
 - Reading: glTF 2.0 (`.gltf` with embedded buffers) and GLB, the usual phone-scan export, with node transforms;
   positions are metres by the standard. Compressed (Draco) files and buffers kept in separate files are refused
   with a message saying what to export instead (#106).
