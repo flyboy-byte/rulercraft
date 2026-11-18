@@ -1,20 +1,20 @@
 # Handoff
 
-Last updated 2026-11-12, Claude. Merged on main: everything through #99. Open, all mine, independent of each other:
-#100 (fix: a test-only clippy lint that fails on Rust 1.97), #101 (fix: sigma clipping settles; decides the clipping
-finding, option b), #102 (fix: zero-area reference triangles left out of deviation; closes that finding), #103 (docs:
-newcomer pass, changelog lines for #101/#102, this file). #101 and #102 are marked draft only because the session could
-not edit PR state; their code and tests are complete and their reports are in this file's "Open right now".
+Last updated 2026-11-18, Claude. Merged on main: everything through #103. Open, all mine:
+- #104 fix: Rust 1.100 (stable since 2026-11-09) flags a loop in tests/math_core.rs, so main's CI is red until it
+  merges. Test-only; its CI passed on 1.100. Merge first.
+- #105 docs: real-scan check of the clipping fix (two public research scans, local only) and the clipping finding
+  closed; this file. Red only on the #104 lint.
+- #106 io.gltf: glTF 2.0 / GLB reader (phone-scan export). Carries #104's commit so its CI ran the full gate on
+  1.100: green. Checked on the Khronos sample models (cloned locally from KhronosGroup/glTF-Sample-Assets, not
+  committed) and 3,000 corrupted GLBs without a crash.
 
 ## Open right now
-- #101: the old loop recomputed the cut-off from each round's sigma, so heavy-tailed residuals crept to the 10-round cap;
-  at k = 1 on 7,200 Laplace plane points it kept 88 (5,438 is right). Now the cut-off is k × the all-points sigma, fixed.
-  Tests: tests/clip_settles.rs (failed on main). The CLI clips at 3 sigma by default, so default fits on scans change:
-  more points kept, larger sigma and form error. Still owed: re-run the private scan's base face (5,969 points; expect
-  more than 5,469 used, under 10 rounds) and close the finding with those numbers.
-- #102: tests/deviation.rs adds an all-collinear reference (refused both sides) and a collinear triangle on a valid
-  face's edge (below the face read +1, now -1). `Reference::new` also feeds ICP and the recipe check, which now refuse an
-  all-zero-area reference too. Near-zero slivers keep their roundoff normal; not addressed.
+- No open findings.
+- Real-scan clipping table is in docs/findings/2026-11-07-clipping-on-real-scans.md. A fit that stops at the round
+  cap cannot report whether one more round would change it; noted, not a bug.
+- glTF with buffers in a separate `.bin` refuses (the reader gets bytes, not a folder). Reading the sibling file in
+  the CLI/MCP loaders is the obvious follow-up if real phone exports need it.
 - Build output: `/tmp` can be a small tmpfs. Put build output under `$HOME/.cache`.
 
 ## Read first
