@@ -10,6 +10,10 @@
   ],
   "owner": "Claude",
   "pr": null,
-  "verified_by": [],
-  "left": "Counterbores are verified (two coaxial holes). Countersinks, slots (non-round cutouts), chamfers and fillets still go to the loss report."
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Counterbores and through windows are verified. Blind or stepped cutouts, countersinks, chamfers and fillets still go to the loss report."
 }

@@ -1,0 +1,142 @@
+{
+ "commands": [
+  {
+   "command": "solid.box",
+   "params": {
+    "length": "50",
+    "width": "30",
+    "height": "6",
+    "name": "Plate",
+    "body_name": "Part"
+   }
+  },
+  {
+   "command": "timeline.add",
+   "params": {
+    "feature": {
+     "id": 2,
+     "name": "CutSketch",
+     "plane": {
+      "name": "XY",
+      "type": "origin"
+     },
+     "sketch": {
+      "constraints": [],
+      "counters": {
+       "k": 0,
+       "l": 4,
+       "p": 4
+      },
+      "curves": [
+       {
+        "a": 1,
+        "b": 2,
+        "construction": false,
+        "id": "l1",
+        "type": "line"
+       },
+       {
+        "a": 2,
+        "b": 3,
+        "construction": false,
+        "id": "l2",
+        "type": "line"
+       },
+       {
+        "a": 3,
+        "b": 4,
+        "construction": false,
+        "id": "l3",
+        "type": "line"
+       },
+       {
+        "a": 4,
+        "b": 1,
+        "construction": false,
+        "id": "l4",
+        "type": "line"
+       }
+      ],
+      "points": [
+       {
+        "fixed": true,
+        "id": "origin",
+        "pos": [
+         0.0,
+         0.0
+        ]
+       },
+       {
+        "fixed": false,
+        "id": "p1",
+        "pos": [
+         10.0,
+         10.0
+        ]
+       },
+       {
+        "fixed": false,
+        "id": "p2",
+        "pos": [
+         22.0,
+         10.0
+        ]
+       },
+       {
+        "fixed": false,
+        "id": "p3",
+        "pos": [
+         22.0,
+         20.0
+        ]
+       },
+       {
+        "fixed": false,
+        "id": "p4",
+        "pos": [
+         10.0,
+         20.0
+        ]
+       }
+      ]
+     },
+     "suppressed": false,
+     "type": "sketch"
+    }
+   }
+  },
+  {
+   "command": "timeline.add",
+   "params": {
+    "feature": {
+     "id": 3,
+     "name": "Window",
+     "operation": "cut",
+     "param_names": [],
+     "profiles": {
+      "type": "curves",
+      "loops": [
+       [
+        "l1",
+        "l2",
+        "l3",
+        "l4"
+       ]
+      ]
+     },
+     "sketch": 2,
+     "suppressed": false,
+     "targets": [
+      "Part"
+     ],
+     "type": "extrude",
+     "extent": {
+      "convention": "total_distance",
+      "direction": "positive",
+      "distance": "6"
+     }
+    }
+   }
+  }
+ ]
+}

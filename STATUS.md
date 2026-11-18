@@ -16,7 +16,7 @@ Overall roadmap progress: **64%** (details in ROADMAP-PROGRESS.md).
 ## In progress
 
 - `engine.library` (claude): Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog.
-- `sc.details` (Claude): Counterbores are verified (two coaxial holes). Countersinks, slots (non-round cutouts), chamfers and fillets still go to the loss report.
+- `sc.details` (Claude): Counterbores and through windows are verified. Blind or stepped cutouts, countersinks, chamfers and fillets still go to the loss report.
 - `sc.release` (Claude): Workflow and guide in this PR; the first release is cut after it merges.
 
 ## Ready to claim
