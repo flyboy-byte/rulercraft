@@ -29,19 +29,22 @@ solidcraft-cli --keep-plugin-approvals exec plugin.install \
   Plugins menu entry to rebuild a scan as a part.
 - The part opens as a new, unsaved design. Change `length`, `width`, `thickness`, a `hole…_diameter`,
   `boss…_height` or `pocket…_depth` in **Parameters** and the part rebuilds. Save it as any design.
-- The **Import report** lists what was not rebuilt (bosses, slanted faces, holes not square to the base, an outline
-  that is not a rectangle) and, under *From the importer*, the measured sizes, each hole's fit quality, and
-  SolidCraft's own check: the rebuilt part's volume next to the scan's.
-- Agents connected to SolidCraft's MCP server see the importer as a tool too.
+- The **Import report** lists what was not rebuilt (slanted faces such as chamfers and countersinks, holes not square
+  to the base, undercuts) and, under *From the importer*, the measured sizes, each hole's fit quality, how far the
+  scan's points lie from the rebuilt part (`check`), and SolidCraft's own check: the rebuilt part's volume next to
+  the scan's (`volume_check`).
+- Agents connected to SolidCraft's MCP server import a scan with the same `file.import` command; see
+  [agents-and-solidcraft.md](agents-and-solidcraft.md).
 
 From a terminal: `solidcraft-cli exec file.import '{"path":"part.stl","format":"rulercraft.scan-to-part"}'`.
 
 ## What it rebuilds today
 
-Plate-like parts: a flat base with a rectangular outline and a parallel opposite face, with rectangular pockets,
-steps and pads, round bosses and pins, and round holes (through or blind), all square to the base. Anything else
-(round or angled outlines, chamfers, fillets, slanted faces, undercuts) is listed in the report rather than guessed. Rebuilding more shapes is the
-current work (docs/v1.md, phase S2). Without SolidCraft, `rulercraft solidcraft <scan> --out part.json` writes the
+Plate-like parts: a flat base and a parallel opposite face, with any straight-edged or circular outline, rectangular
+pockets, steps and pads, round bosses and pins, round holes (through, blind or counterbored), and windows cut
+through. All of it square to the base. Anything else (chamfers, fillets, countersinks, slanted faces, undercuts,
+curved outlines that mix arcs and lines, which become short straight edges) is listed in the report rather than
+guessed. Only parts SolidCraft itself made have been tried so far; a real scan is the next test (docs/v1.md, S1). Without SolidCraft, `rulercraft solidcraft <scan> --out part.json` writes the
 same design from RulerCraft's own command line.
 
 ## Remove

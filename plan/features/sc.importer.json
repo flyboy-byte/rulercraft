@@ -12,5 +12,5 @@
     "known-design",
     "wrong-value"
   ],
-  "left": "Rectangular, aligned outlines and features only; everything else goes to the report (sc.outline, sc.details)."
+  "left": "Plate-like parts, any straight or circular outline, with bosses, pockets, pads, holes and windows; everything else goes to the report."
 }

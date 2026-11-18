@@ -4,7 +4,7 @@
 
 > [!NOTE]
 > As of 2026-11-18: **use it inside SolidCraft** — the RulerCraft plugin opens a scan (STL/PLY/OBJ/3MF/glTF/GLB) as an
-> editable part, a plate with its holes and named sizes, with a report of what it could not rebuild
+> editable part, a plate with its outline, holes, bosses, pockets and named sizes, with a report of what it could not rebuild
 > ([install and use](docs/install-solidcraft-plugin.md)). The engine also fits planes, spheres and cylinders, finds flat
 > and round regions, and measures distances, thickness and deviation, through a CLI and an MCP server. Nothing has
 > yet been checked against a real printed or scanned part (ROADMAP R1).

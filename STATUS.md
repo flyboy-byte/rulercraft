@@ -8,16 +8,15 @@ Overall roadmap progress: **66%** (details in ROADMAP-PROGRESS.md).
 | --- | ---: |
 | planned | 21 |
 | specced | 0 |
-| in-progress | 3 |
+| in-progress | 2 |
 | implemented | 9 |
-| verified | 41 |
+| verified | 42 |
 | done | 0 |
 
 ## In progress
 
 - `engine.library` (claude): Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog.
-- `sc.details` (Claude): Counterbores and through windows are verified. Blind or stepped cutouts, countersinks, chamfers and fillets still go to the loss report.
-- `sc.release` (Claude): Workflow and guide in this PR; the first release is cut after it merges.
+- `sc.release` (Claude): Workflow and guide are merged. Needs Logan to push tag plugin-v0.1.0 (pushing tags is refused from the Claude session); the workflow then makes the pre-release with its SHA-256.
 
 ## Ready to claim
 

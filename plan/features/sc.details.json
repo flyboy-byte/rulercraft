@@ -3,7 +3,7 @@
   "milestone": "R7",
   "title": "Counterbores, countersinks, slots, chamfers and fillets",
   "spec": "mesh-to-cad",
-  "status": "in-progress",
+  "status": "verified",
   "depends_on": [
     "sc.boss",
     "sc.steps"
@@ -15,5 +15,5 @@
     "known-design",
     "wrong-value"
   ],
-  "left": "Counterbores and through windows are verified. Blind or stepped cutouts, countersinks, chamfers and fillets still go to the loss report."
+  "left": "Counterbores and through windows. Blind or stepped cutouts, countersinks, slots with blind floors, chamfers and fillets still go to the loss report."
 }

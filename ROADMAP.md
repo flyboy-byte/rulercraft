@@ -54,8 +54,10 @@ licence rules in AGENTS.md (no copyleft).
 parts inside SolidCraft with the RulerCraft plugin, without help.
 
 SolidCraft is the user interface (D-015); RulerCraft ships as its plugin (D-014). In order: the importer (done), a
-release people can install, real parts (with R1), more shapes rebuilt (outline, bosses, steps, details), a deviation
-check in the import report, inspecting scans inside SolidCraft, and Claude driving it through SolidCraft's MCP.
+release people can install (built, waiting on a tag), real parts (with R1, still owed), more shapes rebuilt (outline,
+bosses, steps and details: done on designed parts), a deviation check in the import report (done), inspecting scans
+inside SolidCraft (blocked on SolidCraft's mesh-size limit), and Claude driving it through SolidCraft's MCP (done,
+docs/agents-and-solidcraft.md).
 Features `sc.*`; phases in docs/v1.md.
 
 ## Not planned (say so before starting)
