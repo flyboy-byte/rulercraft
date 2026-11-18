@@ -14,7 +14,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | R4 Reverse-engineering workflows with AI | `█████████░` | 90% | 15 | Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft. |
 | R5 Reusable engine | `███░░░░░░░` | 26% | 10 | Another project depends on rulercraft-mesh from crates.io or git, and the engine builds for Wasm and runs the app in a browser with nothing to install. |
 | R6 Any scanner in: point clouds, phones, photos (research first) | `██░░░░░░░░` | 15% | 5 | Point clouds and phone-app exports open and measure correctly on generated scenes, and a written go/no-go with a prototype on photos of one object. |
-| R7 v1 in SolidCraft: the plugin, at parity and beyond | `███░░░░░░░` | 31% | 25 | A SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own parts inside SolidCraft with the RulerCraft plugin, without help: rebuild a scanned part as editable CAD, inspect it with stated methods, let Claude measure through SolidCraft, and use the engine from another program. |
+| R7 v1 in SolidCraft: the plugin, at parity and beyond | `███░░░░░░░` | 32% | 25 | A SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own parts inside SolidCraft with the RulerCraft plugin, without help: rebuild a scanned part as editable CAD, inspect it with stated methods, let Claude measure through SolidCraft, and use the engine from another program. |
 | R8 Proof at scale: machines break it so users do not | `██░░░░░░░░` | 25% | 10 | Nightly and weekly verification tiers run on their own, every reader has been fuzzed, the engine's mutation score is reported, and every confirmed break has a regression test (docs/specs/verification.md). |
 
 ## R1: Clean meshes: open, fit, measure, over CLI and MCP (88%)
@@ -94,7 +94,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `recon.surface` Points to surface reconstruction, proven on generated scenes | planned | - | unclaimed | Everything. |
 | `scan.phone` Phone capture: read capture-app exports first, own app only if needed | planned | - | unclaimed | Research. |
 
-## R7: v1 in SolidCraft: the plugin, at parity and beyond (31%)
+## R7: v1 in SolidCraft: the plugin, at parity and beyond (32%)
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
@@ -112,7 +112,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `sc.agent` Claude drives RulerCraft in SolidCraft: plugin entries as SolidCraft MCP tools, documented | planned | - | unclaimed | SolidCraft lists installed plugin entries as MCP tools already; check it with the importer and write it up. |
 | `sc.boss` Bosses and pins: outward round regions joined onto the plate | verified | math, known-design, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/112 | Bosses standing on an upward face; a boss under the base or not square to it is reported. |
 | `sc.check` Deviation of the scan from the rebuilt part in the import report, not only volumes | planned | - | unclaimed | Volumes are compared today through SolidCraft's evaluate; per-point deviation needs the rebuilt surface. |
-| `sc.details` Counterbores, countersinks, slots, chamfers and fillets | planned | - | unclaimed | Everything. |
+| `sc.details` Counterbores, countersinks, slots, chamfers and fillets | in-progress | - | Claude | Counterbores are verified (two coaxial holes). Countersinks, slots (non-round cutouts), chamfers and fillets still go to the loss report. |
 | `sc.importer` SolidCraft importer: a scan opens as an editable plate with holes, named sizes and an import report | verified | math, known-design, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/109 | Rectangular, aligned outlines and features only; everything else goes to the report (sc.outline, sc.details). |
 | `sc.inspect` Inspect inside SolidCraft: command entries that fit and measure picked regions of a scan | planned | - | unclaimed | Everything. SolidCraft's model.mesh stops at 8,192 vertices; find a way within its interface or write the gap down for Logan (D-015). |
 | `sc.outline` Any base outline: the outline traced from the scan and extruded as a sketch, not its bounding box | verified | math, known-design, wrong-value | Claude | Straight and circular outlines. Mixed arcs and lines are straight-edge runs (reported); cutouts that are not round holes are reported, not rebuilt. |

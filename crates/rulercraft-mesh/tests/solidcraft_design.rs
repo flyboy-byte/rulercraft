@@ -405,3 +405,22 @@ fn a_plain_plate_stays_a_box() {
     let r = design(&fixture("hole-block.stl"), "hole-block").unwrap();
     assert_eq!(r.design["features"][0]["type"], "box");
 }
+
+/// A 40 x 30 x 10 plate with a Ø6 hole and a Ø12 x 4 counterbore on the same axis (SolidCraft: 11,377.965 mm³).
+/// The two coaxial rounds rebuild as two cuts at one position, the wide one blind from the top.
+#[test]
+fn a_counterbore_is_two_coaxial_holes() {
+    let r = design(&fixture("counterbore.stl"), "counterbore").unwrap();
+    assert!(r.report["items"].as_array().unwrap().is_empty());
+    let holes = r.report["details"]["holes"].as_array().unwrap();
+    assert_eq!(holes.len(), 2);
+    let mut dia: Vec<f64> = holes.iter().map(|h| h["diameter"].as_f64().unwrap()).collect();
+    dia.sort_by(f64::total_cmp);
+    assert!((dia[0] - 6.0).abs() < 0.01 && (dia[1] - 12.0).abs() < 0.01, "{dia:?}");
+    let (a, b) = (&holes[0], &holes[1]);
+    let d = (a["x"].as_f64().unwrap() - b["x"].as_f64().unwrap())
+        .hypot(a["y"].as_f64().unwrap() - b["y"].as_f64().unwrap());
+    assert!(d < 0.01, "axes {d} mm apart");
+    let kinds: Vec<&str> = holes.iter().map(|h| h["kind"].as_str().unwrap()).collect();
+    assert!(kinds.contains(&"through") && kinds.iter().any(|k| k.starts_with("blind")), "{kinds:?}");
+}

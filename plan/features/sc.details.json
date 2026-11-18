@@ -3,13 +3,13 @@
   "milestone": "R7",
   "title": "Counterbores, countersinks, slots, chamfers and fillets",
   "spec": "mesh-to-cad",
-  "status": "planned",
+  "status": "in-progress",
   "depends_on": [
     "sc.boss",
     "sc.steps"
   ],
-  "owner": null,
+  "owner": "Claude",
   "pr": null,
   "verified_by": [],
-  "left": "Everything."
+  "left": "Counterbores are verified (two coaxial holes). Countersinks, slots (non-round cutouts), chamfers and fillets still go to the loss report."
 }
