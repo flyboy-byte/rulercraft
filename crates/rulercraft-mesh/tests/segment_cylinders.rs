@@ -195,3 +195,41 @@ fn a_thin_walled_tubes_end_ring_is_not_part_of_its_side() {
         "an end-ring triangle joined the side"
     );
 }
+
+/// A scan-like sheet: a 140 x 140 grid (39,200 triangles) whose heights wobble by a hash, so every triangle is
+/// "curving" and a seed, and no patch is a cylinder. Seeding the same ground again and again made this quadratic
+/// (minutes); each triangle now seeds at most once, and not after its region was handed back. No region is found, and
+/// it takes well under a second in a release build (a generous bound here, for slow debug runners).
+#[test]
+fn a_bumpy_sheet_where_every_triangle_seeds_is_linear() {
+    let n = 140u32;
+    let wobble = |i: u32, j: u32| {
+        let h = (i.wrapping_mul(73_856_093) ^ j.wrapping_mul(19_349_663)) % 1000;
+        f64::from(h) / 1000.0 * 0.02
+    };
+    let mut positions = Vec::new();
+    for j in 0..=n {
+        for i in 0..=n {
+            positions
+                .push([f64::from(i) * 0.4, f64::from(j) * 0.4, wobble(i, j)].map(|c| c as f32));
+        }
+    }
+    let at = |i: u32, j: u32| j * (n + 1) + i;
+    let mut triangles = Vec::new();
+    for j in 0..n {
+        for i in 0..n {
+            triangles.push([at(i, j), at(i + 1, j), at(i + 1, j + 1)]);
+            triangles.push([at(i, j), at(i + 1, j + 1), at(i, j + 1)]);
+        }
+    }
+    let m = Mesh {
+        positions,
+        triangles,
+        degenerate_dropped: 0,
+    };
+    let start = std::time::Instant::now();
+    let s = segment(&m);
+    let took = start.elapsed();
+    assert!(s.regions.is_empty(), "{} regions", s.regions.len());
+    assert!(took.as_secs() < 60, "took {took:?}");
+}
