@@ -147,7 +147,7 @@ fn refusals_exit_2_with_a_message_and_no_stdout() {
             vec!["fit", "plane", p, "--box", "0", "5", "0", "1", "1", "1"],
             "minimum is past its maximum on y",
         ),
-        (vec!["fit", "cone", p], "unknown fit kind"),
+        (vec!["fit", "torus", p], "unknown fit kind"),
         (
             vec!["fit", "plane", p, "--known-diameter", "5"],
             "only applies to a sphere or cylinder",

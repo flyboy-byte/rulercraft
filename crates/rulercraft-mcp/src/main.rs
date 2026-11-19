@@ -131,6 +131,8 @@ enum Kind {
     Plane,
     Sphere,
     Cylinder,
+    Cone,
+    Circle,
 }
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
@@ -160,6 +162,8 @@ impl FitArgs {
                 Kind::Plane => FitKind::Plane,
                 Kind::Sphere => FitKind::Sphere,
                 Kind::Cylinder => FitKind::Cylinder,
+                Kind::Cone => FitKind::Cone,
+                Kind::Circle => FitKind::Circle,
             },
             selection: self
                 .selection
@@ -282,6 +286,20 @@ impl Loaded {
                 let e = Element::from(&c);
                 (
                     json!({"kind":"cylinder","axis_point":c.axis_point,"axis":c.axis,"radius":c.radius,"diameter":c.diameter,"length":c.length,"coverage_deg":c.coverage_deg,"sigma":c.sigma,"form_error":c.form_error,"min_residual":c.min_residual,"max_residual":c.max_residual,"used":c.used,"offered":c.offered,"rounds":c.rounds,"assumed_diameter":c.assumed_diameter,"extend_before":c.extend_before,"extend_after":c.extend_after}),
+                    e,
+                )
+            }
+            Fitted::Cone(c) => {
+                let e = Element::from(&c);
+                (
+                    json!({"kind":"cone","axis_point":c.axis_point,"axis":c.axis,"half_angle_deg":c.half_angle_deg,"included_angle_deg":2.0*c.half_angle_deg,"radius":c.radius,"diameter_small":c.diameter_small,"diameter_large":c.diameter_large,"apex":c.apex,"length":c.length,"sigma":c.sigma,"form_error":c.form_error,"min_residual":c.min_residual,"max_residual":c.max_residual,"used":c.used,"offered":c.offered,"rounds":c.rounds}),
+                    e,
+                )
+            }
+            Fitted::Circle(c) => {
+                let e = Element::from(&c);
+                (
+                    json!({"kind":"circle","center":c.center,"normal":c.normal,"radius":c.radius,"diameter":c.diameter,"coverage_deg":c.coverage_deg,"sigma":c.sigma,"form_error":c.form_error,"min_residual":c.min_residual,"max_residual":c.max_residual,"flatness_sigma":c.flatness_sigma,"used":c.used,"offered":c.offered,"rounds":c.rounds}),
                     e,
                 )
             }

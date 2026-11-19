@@ -4,6 +4,9 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Cone and circle fits: `fit cone` gives a countersink's or taper's angle, end diameters and apex; `fit circle` a
+  rim's or edge's centre and diameter. Both on the CLI and MCP server, and in `measure`.
+
 - Fuzzing: every reader and the fit command layer are fuzzed in every test run, with a long run by hand.
 
 - Point clouds: `fit` and `measure` read .xyz, .pts and .asc text clouds and PLY files with only vertices, and fit

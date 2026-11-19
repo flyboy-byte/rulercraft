@@ -16,15 +16,15 @@ const USAGE: &str = "Usage:
   rulercraft --version
   rulercraft deviation <measured> <reference> [--units U] [--reference-units U] [--tolerance MM] [--offset N] [--limit N]
   rulercraft project create <project.json> <mesh> [--units U]
-  rulercraft project fit <project.json> <id> <plane|sphere|cylinder> [fit options]
+  rulercraft project fit <project.json> <id> <plane|sphere|cylinder|cone|circle> [fit options]
   rulercraft project info <project.json>
   rulercraft info <mesh> [--units mm|cm|m|in]
   rulercraft segment <mesh> [--kind planes|cylinders|strips] [--units mm|cm|m|in]
   rulercraft thickness <mesh> [selection options] [--offset N] [--limit N] [--max-distance MM]
-  rulercraft fit <plane|sphere|cylinder> <mesh> [--units U] [--box X Y Z X Y Z] [--near X Y Z R]
+  rulercraft fit <plane|sphere|cylinder|cone|circle> <mesh> [--units U] [--box X Y Z X Y Z] [--near X Y Z R]
                  [--facing DX DY DZ] [--within DEG] [--sigma 0|1|2|3] [--known-diameter D]
   rulercraft solidcraft <mesh> [--units U] [--out design.json]
-  rulercraft measure <mesh> <plane|sphere|cylinder> [fit options] --and <plane|sphere|cylinder> [fit options]
+  rulercraft measure <mesh> <plane|sphere|cylinder|cone|circle> [fit options] --and <plane|sphere|cylinder|cone|circle> [fit options]
 Meshes: .stl .ply .obj .3mf .gltf .glb. fit and measure also read point clouds: .xyz .pts .asc and PLY vertices
 (select with --box or --near; a cloud has no normals for --facing). Lengths in mm (after --units), angles in degrees. Selection filters combine;
 with none the whole mesh is used. --within defaults to 30, --sigma to 3 (0 keeps every point).";
@@ -79,9 +79,11 @@ fn fit_request(kind: &str, rest: &[String]) -> Result<(Unit, FitRequest), String
         "plane" => FitKind::Plane,
         "sphere" => FitKind::Sphere,
         "cylinder" => FitKind::Cylinder,
+        "cone" => FitKind::Cone,
+        "circle" => FitKind::Circle,
         other => {
             return Err(format!(
-                "unknown fit kind `{other}`: use plane, sphere or cylinder"
+                "unknown fit kind `{other}`: use plane, sphere, cylinder, cone or circle"
             ));
         }
     };
@@ -158,6 +160,25 @@ fn fitted(f: &Fitted) -> (Value, Element) {
                 "form_error": c.form_error, "min_residual": c.min_residual, "max_residual": c.max_residual,
                 "used": c.used, "offered": c.offered, "rounds": c.rounds, "assumed_diameter": c.assumed_diameter,
                 "extend_before": c.extend_before, "extend_after": c.extend_after,
+            }),
+            Element::from(c),
+        ),
+        Fitted::Cone(c) => (
+            json!({
+                "kind": "cone", "axis_point": c.axis_point, "axis": c.axis, "half_angle_deg": c.half_angle_deg,
+                "included_angle_deg": 2.0 * c.half_angle_deg, "radius": c.radius,
+                "diameter_small": c.diameter_small, "diameter_large": c.diameter_large, "apex": c.apex,
+                "length": c.length, "sigma": c.sigma, "form_error": c.form_error, "min_residual": c.min_residual,
+                "max_residual": c.max_residual, "used": c.used, "offered": c.offered, "rounds": c.rounds,
+            }),
+            Element::from(c),
+        ),
+        Fitted::Circle(c) => (
+            json!({
+                "kind": "circle", "center": c.center, "normal": c.normal, "radius": c.radius, "diameter": c.diameter,
+                "coverage_deg": c.coverage_deg, "sigma": c.sigma, "form_error": c.form_error,
+                "min_residual": c.min_residual, "max_residual": c.max_residual, "flatness_sigma": c.flatness_sigma,
+                "used": c.used, "offered": c.offered, "rounds": c.rounds,
             }),
             Element::from(c),
         ),

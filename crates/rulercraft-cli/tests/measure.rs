@@ -91,11 +91,62 @@ fn bad_requests_are_refused() {
         ("plane --and", "second fit needs a kind"),
         ("plane --and plane --and plane", "more than once"),
         ("plane --units cm --and plane --units in", "--units once"),
-        ("cone --and plane", "first fit: unknown fit kind"),
+        ("torus --and plane", "first fit: unknown fit kind"),
         ("plane --and sphere --near 0 0 0 0.001", "second fit:"),
     ] {
         let (code, _, err) = run(&args(&m, rest));
         assert_eq!(code, Some(2), "{rest}");
         assert!(err.contains(want), "{rest}: want `{want}` in {err}");
     }
+}
+
+/// fit.shapes through the CLI: the countersink SolidCraft made (Ø6 hole, 90° to Ø12 at the top, z = 10) gives its
+/// cone exactly, apex 3 mm below the countersink's narrow end; the hole block's Ø3 hole gives its rim circle.
+#[test]
+fn cone_and_circle_fits_on_known_parts() {
+    let v = ok(&[
+        "fit",
+        "cone",
+        &fixture("countersink.stl"),
+        "--near",
+        "20",
+        "15",
+        "8.5",
+        "6.2",
+        "--box",
+        "0",
+        "0",
+        "6.95",
+        "40",
+        "30",
+        "11",
+        "--sigma",
+        "0",
+    ]);
+    let f = &v["fit"];
+    let n = |k: &str| f[k].as_f64().unwrap();
+    assert!((n("included_angle_deg") - 90.0).abs() < 1e-4, "{f}");
+    assert!(
+        (n("diameter_small") - 6.0).abs() < 1e-4 && (n("diameter_large") - 12.0).abs() < 1e-4,
+        "{f}"
+    );
+    assert!((f["apex"][2].as_f64().unwrap() - 4.0).abs() < 1e-4, "{f}");
+    let v = ok(&[
+        "fit",
+        "circle",
+        &fixture("hole-block.stl"),
+        "--box",
+        "8.4",
+        "13.4",
+        "9.9",
+        "11.6",
+        "16.6",
+        "10.1",
+        "--sigma",
+        "0",
+    ]);
+    assert!(
+        (v["fit"]["diameter"].as_f64().unwrap() - 3.0).abs() < 1e-5,
+        "{v}"
+    );
 }
