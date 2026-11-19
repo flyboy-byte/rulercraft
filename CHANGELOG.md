@@ -4,6 +4,10 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Scan to SolidCraft on scans: L-shaped and round outlines, windows, countersinks, chamfers and fillets are found on
+  scan-like meshes too (they had needed CAD-exact faces), each within 0.1 mm on the test part, and every synthetic
+  scan of the known parts rebuilds within 0.25 % of the true volume.
+
 - Scan to SolidCraft on real scans: sizes come from the walls (a scan's faces stop short of their softened edges),
   holes and bosses keep their real depths and heights, softened edges are summarised in one report item instead of
   hundreds, and a noisy 134,000-triangle scan takes 3 seconds, not a minute. Checked on a test part meshed like a

@@ -108,10 +108,30 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
     an edge whose radius is within the reach, whose arc is under twice it, or covering under 45°; and slanted
     faces, outside rounds and slivers on the base's or top's rim with under 1 % of the base's area. Those are
     counted in one `small_faces` item.
+  - Outlines and windows: a traced boundary is simplified within the reach (not the tolerance) on a rough mesh;
+    each edge then moves onto the wall that bounds it (normal within 10° of the side away from the material, within
+    the reach, overlapping along the edge), edges on one wall merge, and a short edge no wall bounds between two that
+    walls do is a softened corner whose neighbours meet instead. A round outline takes the circle of the outer wall's
+    own round region when one lies on it. Boundary chains that touch at a vertex (common on a noisy face) are walked
+    through it. A window needs at least 1 % of the base's area.
+  - Countersinks: when a hole's wall stops short of the top and no cone was found from facets, the triangles around
+    its axis between the two that face up and in at 20° to 75° are fit with radius a straight line in height (points
+    off it dropped, fit again); widening upward at a half-angle of 20° to 75°, all the way round, meeting the hole's
+    wall within twice the reach of its end, it is the countersink.
+  - Bevels take their sizes from where their own fitted plane meets the top and the wall. Fillets: on each straight
+    top edge, the triangles beside it facing 15° to 75° from the base's normal and within 20° of the edge's outward
+    side; as a fillet touches the top and the wall, each point gives a radius, and the median is the fillet's. It is
+    one when 60 % of the points lie within twice the tolerance of that circle (RMS within the tolerance), across 30°
+    of arc, larger than the reach, and its facets do not mostly (half or more within 6° of their middle) face one way,
+    which would be a bevel. A slanted face, a bevel's face or a tilted round counts as explained when three quarters
+    (a round: half) of it is already rebuilt or on a large flat face.
   Known answer (crates/rulercraft-mesh/tests/scan_like.rs): a 60 x 40 x 8 plate with a Ø6 through hole, a Ø4 hole
   5 deep, a Ø10 boss 5 tall and a 16 x 10 pocket 3 deep, meshed by surface nets at 0.5 mm, turned 23° about a
   tilted axis, 0.02 mm noise on every vertex: every size within 0.05 mm (the pocket's within 0.1 mm), nothing
-  dropped, the scan within 0.1 mm of the rebuilt part (95th percentile).
+  dropped, the scan within 0.1 mm of the rebuilt part (95th percentile). And a 50 x 30 x 8 plate with a 2 x 1 bevel,
+  an R2 round, a Ø5 hole countersunk 90° to Ø10 and a 10 x 8 window, meshed at 0.4 mm, turned and with noise: each
+  found within 0.1 mm. Synthetic scans of the SolidCraft-made fixtures (marching cubes at 0.35 mm, 0.02 mm noise,
+  turned 17°) rebuild within 0.25 % of SolidCraft's own volume for each.
 - **Check.** The rebuilt part is also a signed-distance field (plate outline, pads and bosses joined, holes,
   pockets and cutouts taken away), and the scan's points (at most 200,000, evenly spaced) are measured against
   it: `details.check` has `points`, `mean_mm`, `rms_mm`, `p95_mm`, `max_mm` and `within_tolerance` (the share of

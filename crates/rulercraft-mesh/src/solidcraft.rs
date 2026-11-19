@@ -203,32 +203,49 @@ fn boundary_loops(
         let [a, b, c] = mesh.triangles[t as usize];
         directed.extend([(a, b), (b, c), (c, a)]);
     }
-    let mut next: HashMap<u32, u32> = HashMap::new();
-    for &(a, b) in &directed {
-        if !directed.contains(&(b, a)) && next.insert(a, b).is_some() {
-            return None; // a vertex where two boundary chains touch
-        }
+    // Boundary edges by their start; a vertex where boundary chains touch (common on a noisy scan) has several, and
+    // each is walked once, taking the unused edges in order.
+    let mut next: HashMap<u32, Vec<u32>> = HashMap::new();
+    let mut edges: Vec<(u32, u32)> = directed
+        .iter()
+        .copied()
+        .filter(|&(a, b)| !directed.contains(&(b, a)))
+        .collect();
+    edges.sort_unstable();
+    for &(a, b) in &edges {
+        next.entry(a).or_default().push(b);
     }
     let mut found: Vec<(f64, Vec<[f64; 2]>)> = Vec::new();
-    let mut seen: HashSet<u32> = HashSet::new();
-    let mut starts: Vec<u32> = next.keys().copied().collect();
-    starts.sort_unstable();
-    for s in starts {
-        if seen.contains(&s) {
-            continue;
+    for &(s, first) in &edges {
+        if !next.get(&s).is_some_and(|v| v.contains(&first)) {
+            continue; // already walked
         }
+        let take = |next: &mut HashMap<u32, Vec<u32>>, from: u32, to: Option<u32>| -> Option<u32> {
+            let v = next.get_mut(&from)?;
+            let k = match to {
+                Some(t) => v.iter().position(|&x| x == t)?,
+                None => 0,
+            };
+            (k < v.len()).then(|| v.swap_remove(k))
+        };
         let mut chain = vec![s];
-        seen.insert(s);
-        let mut at = *next.get(&s)?;
+        let mut at = take(&mut next, s, Some(first))?;
+        let mut steps = 0usize;
         while at != s {
-            if !seen.insert(at) {
+            chain.push(at);
+            steps += 1;
+            if steps > edges.len() {
                 return None;
             }
-            chain.push(at);
-            at = *next.get(&at)?;
+            at = match take(&mut next, at, None) {
+                Some(n) => n,
+                None => break, // an open chain: not a loop
+            };
         }
-        let pts: Vec<[f64; 2]> = chain.iter().map(|&i| flat(i)).collect();
-        found.push((signed_area(&pts).abs(), pts));
+        if at == s && chain.len() >= 3 {
+            let pts: Vec<[f64; 2]> = chain.iter().map(|&i| flat(i)).collect();
+            found.push((signed_area(&pts).abs(), pts));
+        }
     }
     found.sort_by(|a, b| b.0.total_cmp(&a.0));
     Some(found.into_iter().map(|f| f.1).collect())
@@ -593,6 +610,10 @@ impl Chamfer {
     }
 }
 
+/// An edge of a traced polygon being moved onto a wall: a point and direction for its line, the wall it lies on (if
+/// any), its length, and the index of its first corner.
+type SnapLine = ([f64; 2], [f64; 2], Option<usize>, f64, usize);
+
 /// A flat face square to the base, in the frame: unit normal and centre across the base, extent, heights, area.
 struct Wall {
     n: [f64; 2],
@@ -602,6 +623,123 @@ struct Wall {
     zlo: f64,
     zhi: f64,
     area: f64,
+}
+
+/// A countersink around a hole of radius `r` at `(x, y)` whose wall stops at `t1`, below the top at `top`: the slanted
+/// triangles around its axis between the two, their radius a straight line in height (fit, points off it dropped,
+/// fit again), widening upward at a half-angle of 20° to 75°, going all the way round. `corners` gives a triangle's
+/// corners in the part frame.
+#[allow(clippy::too_many_arguments)]
+fn countersink_around(
+    x: f64,
+    y: f64,
+    r: f64,
+    t1: f64,
+    top: f64,
+    reach: f64,
+    tol: f64,
+    slanted: &[bool],
+    corners: &dyn Fn(u32) -> [[f64; 3]; 3],
+) -> Option<(Cone, Vec<u32>)> {
+    let widest = r + 4.0 * (top - t1) + reach;
+    let mut tris = Vec::new();
+    let mut rz: Vec<[f64; 2]> = Vec::new();
+    for (t, &sl) in slanted.iter().enumerate() {
+        if !sl {
+            continue;
+        }
+        let q = corners(t as u32);
+        // Facing up and in toward the axis, as a countersink's cone does (20° to 75° from the base's normal).
+        let (e1, e2) = (
+            [q[1][0] - q[0][0], q[1][1] - q[0][1], q[1][2] - q[0][2]],
+            [q[2][0] - q[0][0], q[2][1] - q[0][1], q[2][2] - q[0][2]],
+        );
+        let f = [
+            e1[1] * e2[2] - e1[2] * e2[1],
+            e1[2] * e2[0] - e1[0] * e2[2],
+            e1[0] * e2[1] - e1[1] * e2[0],
+        ];
+        let fl = (f[0] * f[0] + f[1] * f[1] + f[2] * f[2]).sqrt();
+        let c = [0, 1].map(|k| (q[0][k] + q[1][k] + q[2][k]) / 3.0);
+        let inward = f[0] * (x - c[0]) + f[1] * (y - c[1]) > 0.0;
+        let up = if fl > 0.0 {
+            (f[2] / fl).clamp(-1.0, 1.0).acos().to_degrees()
+        } else {
+            90.0
+        };
+        let ok = inward
+            && (20.0..=75.0).contains(&up)
+            && q.iter().all(|p| {
+                let rho = (p[0] - x).hypot(p[1] - y);
+                rho >= r - reach && rho <= widest && p[2] >= t1 - reach && p[2] <= top + reach
+            });
+        if ok {
+            tris.push(t as u32);
+            rz.extend(q.iter().map(|p| [(p[0] - x).hypot(p[1] - y), p[2]]));
+        }
+    }
+    let line = |pts: &[[f64; 2]]| {
+        let n = pts.len() as f64;
+        let (sz, sr) = (
+            pts.iter().map(|q| q[1]).sum::<f64>(),
+            pts.iter().map(|q| q[0]).sum::<f64>(),
+        );
+        let szz = pts.iter().map(|q| q[1] * q[1]).sum::<f64>();
+        let szr = pts.iter().map(|q| q[1] * q[0]).sum::<f64>();
+        let den = n * szz - sz * sz;
+        (den > 0.0).then(|| {
+            let m = (n * szr - sz * sr) / den;
+            (m, (sr - m * sz) / n)
+        })
+    };
+    if rz.len() < 12 {
+        return None;
+    }
+    let (mut m, mut k) = line(&rz)?;
+    for _ in 0..4 {
+        let kept: Vec<[f64; 2]> = rz
+            .iter()
+            .copied()
+            .filter(|q| (k + m * q[1] - q[0]).abs() <= 2.0 * tol)
+            .collect();
+        if kept.len() < 12 || kept.len() == rz.len() {
+            break;
+        }
+        (m, k) = line(&kept)?;
+        rz = kept;
+    }
+    let rms = (rz
+        .iter()
+        .map(|q| (k + m * q[1] - q[0]).powi(2))
+        .sum::<f64>()
+        / rz.len() as f64)
+        .sqrt();
+    if !(rms <= tol && m >= 20f64.to_radians().tan() && m <= 75f64.to_radians().tan()) {
+        return None;
+    }
+    // Where the cone meets the hole's wall, and its radius at the top.
+    let z0 = (r - k) / m;
+    let r1 = k + m * top;
+    if !(z0 > t1 - 2.0 * reach && z0 < top - tol && r1 > r) {
+        return None;
+    }
+    let cone = Cone {
+        x,
+        y,
+        z0,
+        r0: r,
+        z1: top,
+        r1,
+    };
+    // All the way round.
+    let mut bins = [false; 36];
+    for &t in &tris {
+        for p in corners(t) {
+            let ang = (p[1] - y).atan2(p[0] - x).to_degrees().rem_euclid(360.0);
+            bins[((ang / 10.0) as usize).min(35)] = true;
+        }
+    }
+    (bins.iter().filter(|&&f| f).count() >= 32).then_some((cone, tris))
 }
 
 /// The plate's outline, traced from the base face.
@@ -715,6 +853,26 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }
     };
     let o = flat_center(base);
+    // A flat face's normal from the same triangles, area-weighted: the region's fit leans toward any fillet facets
+    // it took in.
+    let flat_normal = |r: &crate::segment::PlaneRegion| {
+        let mut sum = [0.0; 3];
+        for &t in &r.triangles {
+            let f = graph.face_normals[t as usize];
+            if acute_deg(f, r.plane.normal) > 1.0 {
+                continue;
+            }
+            let [i, j, k] = mesh.triangles[t as usize];
+            let (a, b, c) = (pos(i), pos(j), pos(k));
+            let cr = cross(sub(b, a), sub(c, a));
+            let w = dot(cr, cr).sqrt() / 2.0;
+            let s = if dot(f, r.plane.normal) < 0.0 { -w } else { w };
+            for q in 0..3 {
+                sum[q] += s * f[q];
+            }
+        }
+        normalize(sum).unwrap_or(r.plane.normal)
+    };
     let mut n = base.plane.normal;
     let u0 = base.plane.basis_u;
     let mut v0 = if dot(cross(u0, base.plane.basis_v), n) < 0.0 {
@@ -794,6 +952,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     let margin = (0.1 * thick).max(0.5);
     // How much of its rectangle a face must cover to count as one: noise leaves small gaps in a scan's faces.
     let full = if rough > 2.0 { 0.93 } else { 0.98 };
+
     let square = if rough > 2.0 { 2.5 } else { 1.0 };
     // How far a scan's softened edge can pull a face's boundary or a round's end from where the edge really is:
     // three of the mesh's typical edge lengths, at most 1 mm, at least the tolerance. On a CAD mesh faces meet
@@ -819,7 +978,8 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         .iter()
         .filter(|p| (acute_deg(p.plane.normal, n) - 90.0).abs() <= SQUARE_DEG)
         .filter_map(|p| {
-            let (nx, ny) = (dot(p.plane.normal, u), dot(p.plane.normal, v));
+            let wn = flat_normal(p);
+            let (nx, ny) = (dot(wn, u), dot(wn, v));
             let l = nx.hypot(ny);
             let c = local(flat_center(p));
             let (lo, hi) = extent(&p.vertices);
@@ -874,7 +1034,114 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     };
     let (lo, hi) = snap(blo, bhi, 0.0, thick, false);
     let (len, wid) = (hi[0] - lo[0], hi[1] - lo[1]);
+    // How far a traced boundary may stray from a straight edge or a circle: a scan's face boundary is ragged.
+    let ptol = if rough > 2.0 { reach } else { tol };
     let to_part = |l: [f64; 3]| [l[0] - lo[0], l[1] - lo[1], l[2]];
+    // A counter-clockwise polygon in the part frame with each edge moved onto the wall that bounds it: its normal
+    // within 10° of the side away from the material (a traced edge is ragged), within `reach` of the edge, beside it
+    // along the edge. Corners are where the moved edges meet. `material_inside` for an outline, not for a window.
+    let snap_poly = |poly: &[[f64; 2]], material_inside: bool| -> Vec<[f64; 2]> {
+        let m = poly.len();
+        // Each edge: a point and direction for its line, the wall it lies on (if any), its length, its first corner.
+        let lines: Vec<SnapLine> = (0..m)
+            .map(|i| {
+                let (a, b) = (poly[i], poly[(i + 1) % m]);
+                let l = (b[0] - a[0]).hypot(b[1] - a[1]);
+                if l <= 0.0 {
+                    return (a, [1.0, 0.0], None, 0.0, i);
+                }
+                let dir = [(b[0] - a[0]) / l, (b[1] - a[1]) / l];
+                let out = [dir[1], -dir[0]];
+                let want = if material_inside {
+                    out
+                } else {
+                    [-out[0], -out[1]]
+                };
+                let best = walls
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, w)| {
+                        let c = [w.c[0] - lo[0], w.c[1] - lo[1]];
+                        let d = [c[0] - a[0], c[1] - a[1]];
+                        // The wall's extent along the edge overlaps the edge.
+                        let ts = [
+                            [w.lo[0], w.lo[1]],
+                            [w.hi[0], w.lo[1]],
+                            [w.lo[0], w.hi[1]],
+                            [w.hi[0], w.hi[1]],
+                        ]
+                        .map(|q| (q[0] - lo[0] - a[0]) * dir[0] + (q[1] - lo[1] - a[1]) * dir[1]);
+                        let (t0, t1) = ts
+                            .iter()
+                            .fold((f64::INFINITY, f64::NEG_INFINITY), |(x, y), &t| {
+                                (x.min(t), y.max(t))
+                            });
+                        w.n[0] * want[0] + w.n[1] * want[1] >= 10f64.to_radians().cos()
+                            && (d[0] * out[0] + d[1] * out[1]).abs() <= reach
+                            && t1 > -reach
+                            && t0 < l + reach
+                            && w.zhi - w.zlo > tol
+                    })
+                    .max_by(|x, y| x.1.area.total_cmp(&y.1.area));
+                match best {
+                    Some((k, w)) => {
+                        let d = [-w.n[1], w.n[0]];
+                        let s = if d[0] * dir[0] + d[1] * dir[1] < 0.0 {
+                            -1.0
+                        } else {
+                            1.0
+                        };
+                        (
+                            [w.c[0] - lo[0], w.c[1] - lo[1]],
+                            [s * d[0], s * d[1]],
+                            Some(k),
+                            l,
+                            i,
+                        )
+                    }
+                    None => (a, dir, None, l, i),
+                }
+            })
+            .collect();
+        // Edges on the same wall as the one before are one edge; a short edge no wall bounds, between two that walls
+        // do, is a softened corner, and its neighbours meet instead.
+        let mut kept: Vec<SnapLine> = Vec::new();
+        for i in 0..m {
+            let (prev, this, next) = (lines[(i + m - 1) % m], lines[i], lines[(i + 1) % m]);
+            let softened =
+                this.2.is_none() && this.3 < 3.0 * reach && prev.2.is_some() && next.2.is_some();
+            if softened || (this.2.is_some() && kept.last().is_some_and(|k| k.2 == this.2)) {
+                continue;
+            }
+            kept.push(this);
+        }
+        if kept.len() > 1 && kept[0].2.is_some() && kept[0].2 == kept[kept.len() - 1].2 {
+            kept.remove(0);
+        }
+        let k = kept.len();
+        if k < 3 {
+            return poly.to_vec();
+        }
+        (0..k)
+            .map(|i| {
+                let ((p1, d1, ..), (p2, d2, _, _, at)) = (kept[(i + k - 1) % k], kept[i]);
+                let traced = poly[at];
+                let cr = d1[0] * d2[1] - d1[1] * d2[0];
+                if cr.abs() < 1e-6 {
+                    return traced;
+                }
+                let w = [p2[0] - p1[0], p2[1] - p1[1]];
+                let s = (w[0] * d2[1] - w[1] * d2[0]) / cr;
+                let q = [p1[0] + s * d1[0], p1[1] + s * d1[1]];
+                // A corner the walls move far (they did not bound this corner's edges) keeps its traced place.
+                if (q[0] - traced[0]).hypot(q[1] - traced[1]) <= 3.0 * reach {
+                    q
+                } else {
+                    traced
+                }
+            })
+            .collect()
+    };
     let mut losses: Vec<Loss> = Vec::new();
 
     // The outline: the base face's outer boundary, as a circle or a polygon when it is not a rectangle.
@@ -888,20 +1155,34 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     if let Some(ring) = base_loops.first() {
         let area = signed_area(ring).abs();
         if area < 0.98 * base_len * base_wid {
-            if let Some((x, y, r)) = circle_of(ring, tol) {
+            if let Some((x, y, r)) = circle_of(ring, ptol) {
+                // The outer wall's own circle, when one was found round it: the base face stops short of it on a
+                // scan.
+                let (x, y, r) = cylinders
+                    .iter()
+                    .filter(|c| acute_deg(c.cylinder.axis, n) <= SQUARE_DEG)
+                    .map(|c| {
+                        let at = to_part(local(c.cylinder.axis_point));
+                        (c.area, at[0], at[1], c.cylinder.diameter / 2.0)
+                    })
+                    .filter(|c| (c.1 - x).hypot(c.2 - y) <= reach && (c.3 - r).abs() <= reach)
+                    .max_by(|a, b| a.0.total_cmp(&b.0))
+                    .map_or((x, y, r), |c| (c.1, c.2, c.3));
                 outline_area = std::f64::consts::PI * r * r;
                 outline = Outline::Circle { x, y, r };
             } else {
-                let mut poly = simplify_loop(ring, tol);
+                let mut poly = simplify_loop(ring, ptol);
                 let poly_area = signed_area(&poly);
                 if (3..=MAX_OUTLINE_CORNERS).contains(&poly.len()) && poly_area.abs() > 0.0 {
                     if poly_area < 0.0 {
                         poly.reverse(); // counter-clockwise in the part frame
                     }
+                    let poly = snap_poly(&poly, true);
+                    let poly_area = signed_area(&poly);
                     let short = (0..poly.len())
                         .filter(|&i| {
                             let (a, b) = (poly[i], poly[(i + 1) % poly.len()]);
-                            (b[0] - a[0]).hypot(b[1] - a[1]) < 6.0 * tol
+                            (b[0] - a[0]).hypot(b[1] - a[1]) < 6.0 * ptol
                         })
                         .count();
                     if short >= 3 {
@@ -1040,6 +1321,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }
     }
     let mut cone_used = vec![false; cones.len()];
+    let mut countersink_tris: Vec<u32> = Vec::new();
     // Faces under a hundredth of the base's area go in one item: on a scan, the softened edges.
     let small = 0.01 * base.area;
     let (mut small_count, mut small_area) = (0usize, 0.0);
@@ -1112,6 +1394,16 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }
         let at = to_part(local(f.axis_point));
         let (x, y, r) = (at[0], at[1], f.diameter / 2.0);
+        if let Outline::Circle {
+            x: cx,
+            y: cy0,
+            r: big,
+        } = outline
+        {
+            if (x - cx).hypot(y - cy0) <= reach && (r - big).abs() <= reach {
+                continue; // a piece of the round outline's own wall
+            }
+        }
         if !inside_outline(x, y, r) {
             if cy.area < small {
                 small_count += 1;
@@ -1157,13 +1449,27 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                     && c.r1 > c.r0
                     && (c.z1 - thick).abs() <= reach
             });
-            let countersink = csk.map(|ci| {
+            let mut countersink = csk.map(|ci| {
                 cone_used[ci] = true;
                 let c = cones[ci].0;
                 t1 = thick;
                 json!({"diameter": 2.0 * c.r1, "depth": c.z1 - c.z0,
                        "angle_deg": 2.0 * ((c.r1 - c.r0) / (c.z1 - c.z0)).atan().to_degrees()})
             });
+            // On a scan the cone's facets are too noisy to find on their own: look around the hole instead, when its
+            // wall stops short of the top.
+            if countersink.is_none() && t1 < thick - reach {
+                if let Some((c, tris)) =
+                    countersink_around(x, y, r, t1, thick, reach, tol, &slanted, &|t| {
+                        mesh.triangles[t as usize].map(|i| to_part(local(pos(i))))
+                    })
+                {
+                    t1 = thick;
+                    countersink_tris.extend(tris);
+                    countersink = Some(json!({"diameter": 2.0 * c.r1, "depth": c.z1 - c.z0,
+                        "angle_deg": 2.0 * ((c.r1 - c.r0) / (c.z1 - c.z0)).atan().to_degrees()}));
+                }
+            }
             let (top_h, bottom_h) = (nearest(&up_heights, t1), nearest(&down_heights, t0));
             let (top, bottom) = (top_h.is_some(), bottom_h.is_some());
             t1 = top_h.unwrap_or(t1);
@@ -1266,37 +1572,96 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                 p[2],
             ]
         };
+        // Triangles beside the edge facing partway between the wall and the top (15° to 75° from the base's normal,
+        // across the base within 20° of the edge's outward side): the middle of a round, even with noise.
         let mut tris = Vec::new();
         let mut section: Vec<[f64; 2]> = Vec::new();
-        for &t in &bevel_tris {
-            let f = graph.face_normals[t as usize];
+        for (t, &sl) in slanted.iter().enumerate() {
+            if !sl {
+                continue;
+            }
+            let f = graph.face_normals[t];
             let (hx, hy) = (dot(f, u), dot(f, v));
             let hl = hx.hypot(hy);
+            let up = acute_deg(f, n);
             if hl <= 0.0
-                || (hx * out[0] + hy * out[1]) / hl < 1.0f64.to_radians().cos()
                 || dot(f, n) <= 0.0
+                || !(15.0..=75.0).contains(&up)
+                || (hx * out[0] + hy * out[1]) / hl < 20f64.to_radians().cos()
             {
                 continue;
             }
-            let q = mesh.triangles[t as usize].map(|i| st(to_part(local(pos(i)))));
-            if q.iter()
-                .all(|q| q[0] <= tol && q[0] >= -thick && q[1] >= -tol && q[1] <= l + tol)
-            {
-                tris.push(t);
+            let q = mesh.triangles[t].map(|i| st(to_part(local(pos(i)))));
+            if q.iter().all(|q| {
+                q[0] <= reach && q[0] >= -thick && q[2] >= 0.0 && q[1] >= -tol && q[1] <= l + tol
+            }) {
+                tris.push(t as u32);
                 section.extend(q.iter().map(|q| [q[0], q[2]]));
             }
         }
         // A fillet's cross-section is a quarter circle at most: `circle_of` wants points round it, so fit it
-        // and check the centre and radius here instead.
+        // here, dropping points off it (noise, a stray facet) and fitting again.
         if tris.len() < 4 {
             continue;
         }
-        let Some((cs, cz, r)) = fit_circle(&section) else {
-            continue;
-        };
-        let on = section
+        // A fillet touches the top and the wall, so its centre is `r` in from both and each point gives its own
+        // radius: (s + r)² + (z - top + r)² = r². The median of those is the radius; stray points do not move it.
+        let mut each: Vec<f64> = section
             .iter()
-            .all(|q| ((q[0] - cs).hypot(q[1] - cz) - r).abs() <= tol);
+            .filter_map(|q| {
+                let (a, b) = (q[0], q[1] - thick);
+                (a < 0.0 && b < 0.0).then(|| -(a + b) + (2.0 * a * b).sqrt())
+            })
+            .collect();
+        if each.len() < 6 {
+            continue;
+        }
+        each.sort_by(f64::total_cmp);
+        let r = each[each.len() / 2];
+        let (cs, cz) = (-r, thick - r);
+        let off = |q: &[f64; 2]| ((q[0] - cs).hypot(q[1] - cz) - r).abs();
+        let inliers: Vec<[f64; 2]> = section
+            .iter()
+            .copied()
+            .filter(|q| off(q) <= 2.0 * tol)
+            .collect();
+        let rms = (inliers.iter().map(|q| off(q).powi(2)).sum::<f64>()
+            / inliers.len().max(1) as f64)
+            .sqrt();
+        // Most of its points on that circle, across a real arc (not a flat bevel, whose points give every radius).
+        let span = {
+            let angles: Vec<f64> = inliers
+                .iter()
+                .map(|q| (q[1] - cz).atan2(q[0] - cs).to_degrees())
+                .collect();
+            let (lo_a, hi_a) = angles
+                .iter()
+                .fold((f64::INFINITY, f64::NEG_INFINITY), |(x, y), &a| {
+                    (x.min(a), y.max(a))
+                });
+            hi_a - lo_a
+        };
+        // And its facets turn along it: a bevel's all face one way, however well a circle passes near its points.
+        let turn = {
+            let mut ups: Vec<f64> = tris
+                .iter()
+                .map(|&t| acute_deg(graph.face_normals[t as usize], n))
+                .collect();
+            ups.sort_by(f64::total_cmp);
+            // Half or more within 6° of the middle facing: one face, a bevel with softened sides.
+            let mid = ups[ups.len() / 2];
+            let together = ups.iter().filter(|&&x| (x - mid).abs() <= 6.0).count();
+            if together * 2 >= ups.len() {
+                0.0
+            } else {
+                ups[ups.len() * 9 / 10] - ups[ups.len() / 10]
+            }
+        };
+        let on = inliers.len() * 10 >= section.len() * 6
+            && rms <= tol
+            && span >= 30.0
+            && turn >= 20.0
+            && r > reach.max(tol);
         if on && (cs + r).abs() <= 2.0 * tol && (cz - (thick - r)).abs() <= 2.0 * tol && r < thick {
             rounded.extend(tris.iter().copied());
             chamfers.push((
@@ -1343,17 +1708,24 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     // Each bevel is one of the flat regions, slanted to the base: grown regions stay together on a scan, where single
     // facets point every way.
     {
-        let planes_of: Vec<([f64; 3], Vec<u32>)> = planes
+        let planes_of: Vec<([f64; 3], Vec<u32>, [f64; 3])> = planes
             .iter()
             .filter(|p| {
                 let a = acute_deg(p.plane.normal, n);
                 a > SQUARE_DEG
                     && a < 90.0 - SQUARE_DEG
-                    && !p.triangles.iter().any(|t| rounded.contains(t))
+                    // Not a fillet's: a bevel can share a few triangles with a fillet's corner where they meet.
+                    && p.triangles.iter().filter(|t| rounded.contains(t)).count() * 2 < p.triangles.len()
             })
-            .map(|p| (p.plane.normal, p.triangles.clone()))
+            .map(|p| {
+                (
+                    p.plane.normal,
+                    p.triangles.clone(),
+                    to_part(local(flat_center(p))),
+                )
+            })
             .collect();
-        for (f, tris) in planes_of {
+        for (f, tris, center) in planes_of {
             if dot(f, n) <= 0.0 {
                 continue; // facing down: a bevel under the plate, which changes the base's outline
             }
@@ -1411,8 +1783,28 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                         dir,
                         out,
                         len: l,
-                        across: -smin,
-                        down: thick - zlo,
+                        // Where the bevel's own plane meets the top and the wall: its extent on a scan runs
+                        // into the softened rims on both sides.
+                        across: {
+                            let (fs, fz) = (dot(f, u) * out[0] + dot(f, v) * out[1], dot(f, n));
+                            let cs = (center[0] - a[0]) * out[0] + (center[1] - a[1]) * out[1];
+                            let top_s = cs - fz * (thick - center[2]) / fs;
+                            if top_s.is_finite() && top_s < 0.0 {
+                                -top_s
+                            } else {
+                                -smin
+                            }
+                        },
+                        down: {
+                            let (fs, fz) = (dot(f, u) * out[0] + dot(f, v) * out[1], dot(f, n));
+                            let cs = (center[0] - a[0]) * out[0] + (center[1] - a[1]) * out[1];
+                            let wall_z = center[2] + fs * cs / fz;
+                            if wall_z.is_finite() && wall_z < thick {
+                                thick - wall_z
+                            } else {
+                                thick - zlo
+                            }
+                        },
                         top: thick,
                         round: false,
                     })
@@ -1427,6 +1819,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     let explained_tris: std::collections::HashSet<u32> = chamfers
         .iter()
         .flat_map(|(_, tris)| tris.iter().copied())
+        .chain(countersink_tris.iter().copied())
         .chain(fillet_corners.iter().copied())
         .chain(
             cones
@@ -1437,6 +1830,44 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         )
         .collect();
     for (loss, k) in tilted.into_iter().zip(tilted_of) {
+        // Mostly on faces already rebuilt (a bevel, a countersink): a strip fit across their softened sides.
+        let tris = &cylinders[k].triangles;
+        if tris
+            .iter()
+            .filter(|t| explained_tris.contains(t) || on_big_face[**t as usize])
+            .count()
+            * 2
+            >= tris.len()
+        {
+            continue;
+        }
+        // Or lying along a rebuilt bevel or fillet, nearly all of it within that edge's band: its softened sides.
+        let verts: Vec<[f64; 3]> = cylinders[k]
+            .vertices
+            .iter()
+            .map(|&i| to_part(local(pos(i))))
+            .collect();
+        let along_edge = chamfers.iter().any(|(c, _)| {
+            let inside = verts
+                .iter()
+                .filter(|p| {
+                    let d = [p[0] - c.a[0], p[1] - c.a[1]];
+                    let (s, t) = (
+                        d[0] * c.out[0] + d[1] * c.out[1],
+                        d[0] * c.dir[0] + d[1] * c.dir[1],
+                    );
+                    s <= reach
+                        && s >= -c.across - reach
+                        && p[2] >= c.top - c.down - reach
+                        && t >= -reach
+                        && t <= c.len + reach
+                })
+                .count();
+            inside * 10 >= verts.len() * 9
+        });
+        if along_edge {
+            continue;
+        }
         // A thin round lying along an edge is that edge softened, however long.
         // So is one whose arc is no wider than that, whatever radius noise gives its fit.
         let c = &cylinders[k].cylinder;
@@ -1470,10 +1901,15 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         if k != bi
             && ang > SQUARE_DEG
             && ang < 90.0 - SQUARE_DEG
-            && !p
+            // Explained when three quarters of it is (a rebuilt bevel's, round's or countersink's triangles, or not
+            // slanted): on a scan a face spills over where two of them meet.
+            && p
                 .triangles
                 .iter()
-                .all(|t| explained_tris.contains(t) || !slanted[*t as usize])
+                .filter(|t| explained_tris.contains(t) || !slanted[**t as usize])
+                .count()
+                * 4
+                < p.triangles.len() * 3
         {
             if p.area < small {
                 small_count += 1;
@@ -1497,7 +1933,33 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         if l.index == ti || explained.contains(&l.index) {
             continue;
         }
-        if l.area < small && (l.height.abs() <= reach || (l.height - thick).abs() <= reach) {
+        let (lx, ly) = ((l.lo[0] + l.hi[0]) / 2.0, (l.lo[1] + l.hi[1]) / 2.0);
+        let in_band = chamfers.iter().any(|(c, _)| {
+            let d = [lx - c.a[0], ly - c.a[1]];
+            let (s, t) = (
+                d[0] * c.out[0] + d[1] * c.out[1],
+                d[0] * c.dir[0] + d[1] * c.dir[1],
+            );
+            s <= reach
+                && s >= -c.across - reach
+                && l.height >= c.top - c.down - reach
+                && t >= -c.across - reach
+                && t <= c.len + c.across + reach
+        });
+        let in_countersink = holes.iter().any(|h| {
+            let c = &h["countersink"];
+            c.is_object()
+                && (lx - h["x"].as_f64().unwrap_or(f64::NAN))
+                    .hypot(ly - h["y"].as_f64().unwrap_or(f64::NAN))
+                    <= c["diameter"].as_f64().unwrap_or(0.0) / 2.0 + reach
+                && l.height >= thick - c["depth"].as_f64().unwrap_or(0.0) - reach
+        });
+        if l.area < small
+            && (in_band
+                || in_countersink
+                || l.height.abs() <= reach
+                || (l.height - thick).abs() <= reach)
+        {
             // A sliver on the softened rim of the base or the top.
             small_count += 1;
             small_area += l.area;
@@ -1623,17 +2085,23 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         ]
     };
     for inner in base_loops.iter().skip(1) {
-        if circle_of(inner, tol).is_some() {
+        if circle_of(inner, ptol).is_some() {
             continue; // a round hole: its wall is a round region, cut above
         }
         let area = signed_area(inner).abs();
         let c = centroid(inner);
+        let same = if rough > 2.0 { 0.1 } else { 0.03 };
         let matched = top_loops.iter().skip(1).any(|t| {
             let (tc, ta) = (centroid(t), signed_area(t).abs());
-            (tc[0] - c[0]).hypot(tc[1] - c[1]) <= 2.0 * tol && (ta - area).abs() <= 0.03 * area
+            (tc[0] - c[0]).hypot(tc[1] - c[1]) <= 2.0 * ptol && (ta - area).abs() <= same * area
         });
-        let poly = simplify_loop(inner, tol);
+        let mut poly = simplify_loop(inner, ptol);
+        if signed_area(&poly) < 0.0 {
+            poly.reverse();
+        }
+        let poly = snap_poly(&poly, false);
         if matched
+            && area >= small
             && (3..=MAX_OUTLINE_CORNERS).contains(&poly.len())
             && signed_area(&poly).abs() > 0.0
         {

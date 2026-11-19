@@ -171,8 +171,39 @@ fn part(p: V3) -> f64 {
     solid.max(-cuts)
 }
 
+/// A cone along z: radius `r0` at `z0` widening to `r1` at `z1` (a countersink's shape), closed at both ends.
+fn cone(p: V3, x: f64, y: f64, r0: f64, z0: f64, r1: f64, z1: f64) -> f64 {
+    let rho = (p[0] - x).hypot(p[1] - y);
+    let along = (rho - r0 - (r1 - r0) * (p[2] - z0) / (z1 - z0))
+        / (1.0 + ((r1 - r0) / (z1 - z0)).powi(2)).sqrt();
+    along.max(z0 - p[2]).max(p[2] - z1)
+}
+
+/// The second test part: a 50 x 30 x 8 plate; its top edge along y = 0 bevelled 2 across and 1 down; its top edge
+/// along x = 50 rounded R2; a Ø5 hole at (15, 15) countersunk 90° to Ø10; a 10 x 8 window from (30, 12).
+fn detailed(p: V3) -> f64 {
+    let plate = boxd(p, [0.0, 0.0, 0.0], [50.0, 30.0, 8.0]);
+    // Taken by the bevel: where y / 2 + (8 - z) < 1.
+    let bevel = (p[1] / 2.0 + (8.0 - p[2]) - 1.0) / 1.25f64.sqrt();
+    // Taken by the round: beyond its quarter circle, centred 2 in from the wall and 2 down from the top.
+    let round = (2.0 - (p[0] - 48.0).hypot(p[2] - 6.0))
+        .max(48.0 - p[0])
+        .max(6.0 - p[2]);
+    let cuts = bar(p, 15.0, 15.0, 2.5, -1.0, 9.0)
+        .min(cone(p, 15.0, 15.0, 2.5, 5.5, 5.5, 8.5))
+        .min(boxd(p, [30.0, 12.0, -1.0], [40.0, 20.0, 9.0]))
+        .min(bevel)
+        .min(round);
+    plate.max(-cuts)
+}
+
 /// The part turned 23° about a tilted axis and moved, meshed at `cell`, with noise of about `noise` on each vertex.
 fn scanned(cell: f64, noise: f64) -> Mesh {
+    scanned_part(&part, [60.0, 40.0, 13.0], cell, noise)
+}
+
+/// Any part within `size` from the origin, placed and meshed as `scanned` does.
+fn scanned_part(part: &dyn Fn(V3) -> f64, size: V3, cell: f64, noise: f64) -> Mesh {
     let axis = {
         let a = [1.0, 2.0, 3.0];
         let l = 14f64.sqrt();
@@ -200,9 +231,9 @@ fn scanned(cell: f64, noise: f64) -> Mesh {
     let (mut lo, mut hi) = ([f64::INFINITY; 3], [f64::NEG_INFINITY; 3]);
     for corner in 0..8 {
         let q = [
-            if corner & 1 == 0 { -1.0 } else { 61.0 },
-            if corner & 2 == 0 { -1.0 } else { 41.0 },
-            if corner & 4 == 0 { -1.0 } else { 14.0 },
+            if corner & 1 == 0 { -1.0 } else { size[0] + 1.0 },
+            if corner & 2 == 0 { -1.0 } else { size[1] + 1.0 },
+            if corner & 4 == 0 { -1.0 } else { size[2] + 1.0 },
         ];
         let r = rotate(q, s);
         for k in 0..3 {
@@ -303,4 +334,70 @@ fn a_noisy_turned_scan_rebuilds_to_its_true_sizes() {
     // The rebuilt part sits on the scan to within its noise.
     let check = &report["details"]["check"];
     assert!(num(&check["p95_mm"]) < 0.1, "{check}");
+}
+
+#[test]
+fn a_noisy_scan_keeps_its_bevel_round_countersink_and_window() {
+    let mesh = scanned_part(&detailed, [50.0, 30.0, 8.0], 0.4, 0.02);
+    let r = design(&mesh, "detailed").unwrap();
+    let report = &r.report;
+    let dropped: Vec<&Value> = report["items"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|i| i["severity"] == "dropped")
+        .collect();
+    assert!(dropped.is_empty(), "{dropped:?}");
+    let det = &report["details"];
+    eprintln!(
+        "DBG chamfers {} fillets {} items {}",
+        det["chamfers"], det["fillets"], report["items"]
+    );
+    let chamfers = det["chamfers"].as_array().unwrap();
+    assert_eq!(chamfers.len(), 1, "{chamfers:?}");
+    assert!(
+        (num(&chamfers[0]["width"]) - 2.0).abs() < 0.1,
+        "{}",
+        chamfers[0]
+    );
+    assert!(
+        (num(&chamfers[0]["height"]) - 1.0).abs() < 0.1,
+        "{}",
+        chamfers[0]
+    );
+    let fillets = det["fillets"].as_array().unwrap();
+    assert_eq!(fillets.len(), 1, "{fillets:?}");
+    assert!(
+        (num(&fillets[0]["radius"]) - 2.0).abs() < 0.1,
+        "{}",
+        fillets[0]
+    );
+    let hole = &det["holes"][0];
+    assert!((num(&hole["diameter"]) - 5.0).abs() < 0.05, "{hole}");
+    let csk = &hole["countersink"];
+    assert!((num(&csk["diameter"]) - 10.0).abs() < 0.1, "{hole}");
+    assert!((num(&csk["depth"]) - 2.5).abs() < 0.1, "{hole}");
+    let cutouts = det["cutouts"].as_array().unwrap();
+    assert_eq!(cutouts.len(), 1, "{cutouts:?}");
+    let pts: Vec<[f64; 2]> = cutouts[0]
+        .as_array()
+        .unwrap()
+        .iter()
+        .map(|p| [num(&p[0]), num(&p[1])])
+        .collect();
+    let span = |k: usize| {
+        let (a, b) = pts
+            .iter()
+            .fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), p| {
+                (a.min(p[k]), b.max(p[k]))
+            });
+        b - a
+    };
+    let mut size = [span(0), span(1)];
+    size.sort_by(f64::total_cmp);
+    assert!(
+        (size[0] - 8.0).abs() < 0.1 && (size[1] - 10.0).abs() < 0.1,
+        "{size:?}"
+    );
+    assert!(num(&det["check"]["p95_mm"]) < 0.1, "{}", det["check"]);
 }
