@@ -380,11 +380,19 @@ pub fn segment_cylinders(
     };
 
     let mut owner = vec![u32::MAX; nt];
+    // A triangle seeds at most once, and not after a region it belonged to was handed back: on a scan nearly every
+    // triangle is curving, and seeding the same ground again and again made this quadratic in the mesh size.
+    let mut tried = vec![false; nt];
     let mut regions = Vec::new();
     for seed in 0..nt as u32 {
-        if owner[seed as usize] != u32::MAX || !usable(seed) || !curving(seed) {
+        if owner[seed as usize] != u32::MAX
+            || tried[seed as usize]
+            || !usable(seed)
+            || !curving(seed)
+        {
             continue;
         }
+        tried[seed as usize] = true;
         // Seed patch: the seed and every free triangle within two edge-steps.
         let mut patch = vec![seed];
         for _ in 0..2 {
@@ -466,6 +474,7 @@ pub fn segment_cylinders(
             _ => {
                 for &t in &members {
                     owner[t as usize] = u32::MAX;
+                    tried[t as usize] = true;
                 }
             }
         }

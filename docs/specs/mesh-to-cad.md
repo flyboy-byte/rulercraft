@@ -41,8 +41,13 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
 - **Base and frame.** Flat and round regions are found as by `segment`; the largest flat region is the base. The
   opposite face is the largest other face parallel to it (within 5°); the frame's normal points from the base into
   the part, so the base is at height 0 and the opposite face at the thickness. The in-plane axes follow the base
-  outline's edges: the rotation of the smallest rectangle around the base face's points (rotating calipers over
-  their convex hull). The frame is right-handed so the part is never mirrored. With no parallel face the scan is
+  outline's edges. They come from the walls square to the base (within 5°): the area-weighted mean of their facings
+  taken four-fold, so walls at right angles agree, counting walls of at least a tenth of the largest wall's area
+  (round holes' facets are small walls at every angle) and only those within 1° of the peak. When fewer than half
+  the counted wall area agrees (a hexagon), or there are no walls, the rotation of the smallest rectangle around the
+  base face's points (rotating calipers over their convex hull) decides; it also picks which quarter turn is used.
+  On a scan the base face's ragged boundary can turn the smallest rectangle by a fraction of a degree; the walls do
+  not. The frame is right-handed so the part is never mirrored. With no parallel face the scan is
   refused: the thickness is unknown.
 - **Plate.** A box over that rectangle, from the base to the opposite face; the box's corner is the origin.
 - **Other parallel faces.** An upward face between base and top is a **pocket or step floor**: a box cut from it

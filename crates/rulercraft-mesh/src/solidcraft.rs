@@ -76,6 +76,61 @@ fn acute_deg(a: [f64; 3], b: [f64; 3]) -> f64 {
 
 /// Rotation (radians, in [0, π/2)) of the smallest-area rectangle around `pts`, by rotating calipers over
 /// the convex hull. Ties keep the smaller angle, so the result never depends on point order.
+/// The direction of the walls square to the base, in the base's `(u0, v0)` axes: the area-weighted mean of their
+/// facings taken four-fold, so walls at right angles agree. `None` when there are no such walls or fewer than half
+/// their area agrees within 1° (a hexagon, say), and the enclosing rectangle decides instead. On a scan the base
+/// face's ragged boundary can turn the smallest rectangle by a fraction of a degree; the walls do not.
+fn wall_angle(
+    planes: &[crate::segment::PlaneRegion],
+    n: [f64; 3],
+    u0: [f64; 3],
+    v0: [f64; 3],
+) -> Option<f64> {
+    let square: Vec<&crate::segment::PlaneRegion> = planes
+        .iter()
+        .filter(|p| (acute_deg(p.plane.normal, n) - 90.0).abs() <= SQUARE_DEG)
+        .collect();
+    // Facets of round holes and bosses are small flat walls at every angle: only walls of a tenth of the largest count.
+    let largest = square.iter().map(|p| p.area).fold(0.0, f64::max);
+    let walls: Vec<(f64, f64)> = square
+        .iter()
+        .filter(|p| p.area >= 0.1 * largest)
+        .map(|p| {
+            let (x, y) = (dot(p.plane.normal, u0), dot(p.plane.normal, v0));
+            (p.area, 4.0 * y.atan2(x))
+        })
+        .collect();
+    let total: f64 = walls.iter().map(|w| w.0).sum();
+    if walls.is_empty() || total <= 0.0 {
+        return None;
+    }
+    let near = |a: f64, b: f64| (a - b).sin().atan2((a - b).cos()).abs() <= 4f64.to_radians();
+    // The peak: the wall whose neighbours within 1° (4° four-fold) hold the most area.
+    let peak = walls
+        .iter()
+        .map(|w| {
+            (
+                walls
+                    .iter()
+                    .filter(|o| near(o.1, w.1))
+                    .map(|o| o.0)
+                    .sum::<f64>(),
+                w.1,
+            )
+        })
+        .max_by(|a, b| a.0.total_cmp(&b.0))?;
+    if peak.0 < 0.5 * total {
+        return None;
+    }
+    let (sx, sy) = walls
+        .iter()
+        .filter(|o| near(o.1, peak.1))
+        .fold((0.0, 0.0), |(x, y), o| {
+            (x + o.0 * o.1.cos(), y + o.0 * o.1.sin())
+        });
+    Some((sy.atan2(sx) / 4.0).rem_euclid(std::f64::consts::FRAC_PI_2))
+}
+
 fn min_rect_angle(pts: &[[f64; 2]]) -> f64 {
     let mut p: Vec<[f64; 2]> = pts
         .iter()
@@ -624,7 +679,18 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             [dot(d, u0), dot(d, v0)]
         })
         .collect();
-    let a = min_rect_angle(&flat);
+    let a = wall_angle(&planes, n, u0, v0).map_or_else(
+        || min_rect_angle(&flat),
+        |w| {
+            // The same direction as the rectangle's, a quarter turn at most: keeps length and width as before.
+            let r = min_rect_angle(&flat);
+            let q = std::f64::consts::FRAC_PI_2;
+            [w - q, w, w + q]
+                .into_iter()
+                .min_by(|x, y| (x - r).abs().total_cmp(&(y - r).abs()))
+                .unwrap_or(w)
+        },
+    );
     let (c, s) = (a.cos(), a.sin());
     let u = [0, 1, 2].map(|k| c * u0[k] + s * v0[k]);
     let v = [0, 1, 2].map(|k| -s * u0[k] + c * v0[k]);
@@ -655,6 +721,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         ));
     }
     let to_part = |l: [f64; 3]| [l[0] - lo[0], l[1] - lo[1], l[2]];
+
     let tol = (0.02 * thick).max(0.05);
     let margin = (0.1 * thick).max(0.5);
     let mut losses: Vec<Loss> = Vec::new();
@@ -1064,17 +1131,18 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     rounded.extend(fillet_corners.iter().copied());
     for group in &bevel_groups {
         // One group can hold several bevels meeting at corners: split it by facing.
-        let mut planes_of: Vec<([f64; 3], Vec<u32>)> = Vec::new();
+        // Binned by facing (bins about 1° wide), so a noisy group with every facet its own way stays linear.
+        let mut bins: std::collections::BTreeMap<[i64; 3], Vec<u32>> = Default::default();
         for &t in group.iter().filter(|t| !rounded.contains(t)) {
             let f = graph.face_normals[t as usize];
-            match planes_of
-                .iter_mut()
-                .find(|(m, _)| acute_deg(*m, f) <= 1.0 && dot(*m, f) > 0.0)
-            {
-                Some((_, ts)) => ts.push(t),
-                None => planes_of.push((f, vec![t])),
-            }
+            bins.entry(f.map(|c| (c * 57.3).round() as i64))
+                .or_default()
+                .push(t);
         }
+        let planes_of: Vec<([f64; 3], Vec<u32>)> = bins
+            .into_values()
+            .map(|ts| (graph.face_normals[ts[0] as usize], ts))
+            .collect();
         for (f, tris) in planes_of {
             if dot(f, n) <= 0.0 {
                 continue; // facing down: a bevel under the plate, which changes the base's outline

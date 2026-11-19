@@ -4,6 +4,10 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Faster and steadier on real scans: finding round regions no longer slows to minutes on a dense scan (a 134,000
+  triangle scan of the bracket went from over 8 minutes to 3 seconds), and a scanned plate's axes follow its walls
+  instead of the ragged edge of its base face, which had turned the frame by 0.7° and grown every size.
+
 - Scan to SolidCraft: rounded top edges are rebuilt as fillets with a named radius, corner patches included. A
   plate's thickness no longer reads slightly thin when its top edges are rounded.
 
