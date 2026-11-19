@@ -2201,12 +2201,15 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     for poly in &slots {
         solid.cuts.push((Shape::Poly(poly.clone()), 0.0, thick));
     }
-    let step = (mesh.positions.len() / MAX_CHECK_POINTS).max(1);
+    let vertex_count = mesh.positions.len();
+    let check_count = vertex_count.min(MAX_CHECK_POINTS);
     let distances = scan_distances(
         &solid,
-        (0..mesh.positions.len())
-            .step_by(step)
-            .map(|i| to_part(local(pos(i as u32)))),
+        (0..check_count).map(|i| {
+            // One vertex per equal interval of the input sequence. Use u64 on wasm32, too.
+            let index = (i as u64 * vertex_count as u64 / check_count as u64) as u32;
+            to_part(local(pos(index)))
+        }),
     );
     let check = check_report(distances, tol);
     let p95 = check["p95_mm"].as_f64().unwrap_or(0.0);
