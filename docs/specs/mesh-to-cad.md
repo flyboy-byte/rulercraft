@@ -88,6 +88,30 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
   two fillets meet, and are part of them.
 - **Flat face heights.** Region growing takes triangles up to 10° off a face, which can include a fillet's first
   facets; a flat face's height is therefore the area-weighted centre of its triangles within 1° of it.
+- **Scans.** A scan's mesh is dense and even, its edges softened by about a cell, its triangles tilted by noise;
+  a CAD mesh's faces are exactly flat. The rebuild measures which it has and adapts, leaving a CAD mesh's result
+  unchanged:
+  - *Roughness* is the median angle between neighbouring triangles (0° on a CAD mesh). Flat regions grow across
+    2.5 times it (10° to 30°) and round regions across 2.5 times it (15° to 30°); their distance limit (0.2 mm)
+    still stops them at real edges. Above 2° a face must cover 93 % of its rectangle, not 98 %, to count as whole,
+    and pockets and pads may turn 2.5°, not 1°, before they count as turned.
+  - *Reach*, how far a softened edge pulls a face's boundary or a round's end from the real edge, is three times
+    the mesh's median edge length, at most 1 mm, at least the tolerance. The plate's, pockets' and pads' sides move
+    onto the walls that bound them (each wall within 1° of the side's direction, within the reach, beside it in
+    height and along it), since a scan's faces stop short of their edges; rounds' ends move to the nearest face
+    within the reach, so holes and bosses keep their real depths and heights.
+  - Round regions start only from triangles outside flat regions of 200 triangles or more, and no round is wider
+    than half the mesh's diagonal: on a noisy face every triangle is curving, and near-flat "cylinders" grown across
+    it cost most of the time.
+  - Not features: rounds square to the base covering under 200° of a circle (softened vertical edges, reported as
+    `rounded_edges`); rounds thinner than half the reach or coaxial with a round already taken; rounds lying along
+    an edge whose radius is within the reach, whose arc is under twice it, or covering under 45°; and slanted
+    faces, outside rounds and slivers on the base's or top's rim with under 1 % of the base's area. Those are
+    counted in one `small_faces` item.
+  Known answer (crates/rulercraft-mesh/tests/scan_like.rs): a 60 x 40 x 8 plate with a Ø6 through hole, a Ø4 hole
+  5 deep, a Ø10 boss 5 tall and a 16 x 10 pocket 3 deep, meshed by surface nets at 0.5 mm, turned 23° about a
+  tilted axis, 0.02 mm noise on every vertex: every size within 0.05 mm (the pocket's within 0.1 mm), nothing
+  dropped, the scan within 0.1 mm of the rebuilt part (95th percentile).
 - **Check.** The rebuilt part is also a signed-distance field (plate outline, pads and bosses joined, holes,
   pockets and cutouts taken away), and the scan's points (at most 200,000, evenly spaced) are measured against
   it: `details.check` has `points`, `mean_mm`, `rms_mm`, `p95_mm`, `max_mm` and `within_tolerance` (the share of
