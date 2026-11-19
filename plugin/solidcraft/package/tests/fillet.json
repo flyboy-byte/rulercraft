@@ -1,0 +1,13 @@
+{
+  "entry": "scan-to-part",
+  "file": "fillet.stl",
+  "expect": {
+    "model": {
+      "body_count": 1,
+      "total": {
+        "volume_mm3": 11708.6430
+      }
+    },
+    "tolerance": 1e-06
+  }
+}

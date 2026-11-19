@@ -4,6 +4,9 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Scan to SolidCraft: rounded top edges are rebuilt as fillets with a named radius, corner patches included. A
+  plate's thickness no longer reads slightly thin when its top edges are rounded.
+
 - Scan to SolidCraft: countersinks are rebuilt as cone cuts on their holes, and bevels on the top edges of the
   outline as chamfers with named sizes. Both checked against SolidCraft-made parts (exact volumes) and follow
   `thickness` when it is edited.
