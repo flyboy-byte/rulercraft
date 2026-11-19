@@ -1,6 +1,7 @@
 # Handoff
 
-Last updated 2026-11-18 (evening), Claude. Main is at #116; no open PRs.
+Last updated 2026-11-19 (afternoon), Claude. Main is at #124; no open PRs. `python3 tools/plan.py progress`: 63 %
+weighted, 74 features.
 
 ## Where the plugin stands
 The SolidCraft importer (D-014, D-015) rebuilds a plate-like scan as an editable SolidCraft design: any straight or
@@ -22,6 +23,13 @@ noise, turned 23°: every size within 0.01 mm, the scan within 0.06 mm (p95) of 
 windows, countersinks, chamfers and fillets work on scans too now; every synthetic scan of the known parts rebuilds
 within 0.25 % of SolidCraft's volume. `tests/ply_memory.rs` failed once under a full parallel run (its child's 96 MB
 virtual-memory cap) and passed on every rerun: a flake to watch, not caused by this work.
+
+## Also new (2026-11-19)
+- Point clouds (#123): `fit` and `measure` read .xyz/.pts/.asc and points-only PLY (`read_cloud`). Not yet: E57/LAS/PCD,
+  normals for clouds (so `--facing` works), the MCP server opening clouds.
+- Fuzzing (#124): `tests/fuzz.rs`, every reader and the fit command layer; long runs by hand. Not yet: the MCP server
+  over stdio, coverage-guided fuzzing (a library: Logan), a scheduled T2 run.
+- Test tools may use numpy, SciPy and scikit-image (D-016); `tools/dev/synth_scan.py` makes scan-like meshes.
 
 ## Owed and waiting on Logan
 - Push tag `plugin-v0.1.0` (or a newer commit's): `git tag plugin-v0.1.0 <sha> && git push origin plugin-v0.1.0`. A tag push
