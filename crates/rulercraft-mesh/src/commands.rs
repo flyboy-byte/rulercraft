@@ -3,8 +3,8 @@
 //! typed results out. No JSON here; front ends translate.
 
 use crate::fit::{
-    Clip, CylinderFit, CylinderOptions, FitError, PlaneFit, SphereFit, fit_cylinder, fit_plane,
-    fit_sphere,
+    CircleFit, Clip, ConeFit, CylinderFit, CylinderOptions, FitError, PlaneFit, SphereFit,
+    fit_circle, fit_cone, fit_cylinder, fit_plane, fit_sphere,
 };
 use crate::graph::MeshGraph;
 use crate::math::Vec3;
@@ -32,6 +32,10 @@ pub enum FitKind {
     Sphere,
     /// A cylinder.
     Cylinder,
+    /// A cone (a countersink, a taper, a drill point).
+    Cone,
+    /// A circle (points on a rim, an edge or a section).
+    Circle,
 }
 
 /// A fit command.
@@ -56,6 +60,10 @@ pub enum Fitted {
     Sphere(SphereFit),
     /// A cylinder.
     Cylinder(CylinderFit),
+    /// A cone.
+    Cone(ConeFit),
+    /// A circle.
+    Circle(CircleFit),
 }
 
 /// The result of a fit command.
@@ -123,7 +131,12 @@ pub fn fit(
     graph: &MeshGraph,
     request: &FitRequest,
 ) -> Result<FitOutcome, CommandError> {
-    if request.known_diameter.is_some() && request.kind == FitKind::Plane {
+    if request.known_diameter.is_some()
+        && matches!(
+            request.kind,
+            FitKind::Plane | FitKind::Cone | FitKind::Circle
+        )
+    {
         return Err(CommandError::Invalid(
             "a known diameter only applies to a sphere or cylinder fit",
         ));
@@ -164,6 +177,18 @@ pub fn fit(
                 .map_err(CommandError::Fit)?,
             )
         }
+        FitKind::Cone => Fitted::Cone(
+            fit_cone(
+                &mesh.positions,
+                Some(&graph.vertex_normals),
+                &picked,
+                request.clip,
+            )
+            .map_err(CommandError::Fit)?,
+        ),
+        FitKind::Circle => Fitted::Circle(
+            fit_circle(&mesh.positions, &picked, request.clip).map_err(CommandError::Fit)?,
+        ),
     };
     Ok(FitOutcome {
         selected: picked.len(),

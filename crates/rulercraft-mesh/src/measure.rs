@@ -4,7 +4,7 @@
 
 pub mod thickness;
 
-use crate::fit::{CylinderFit, PlaneFit, SphereFit};
+use crate::fit::{CircleFit, ConeFit, CylinderFit, PlaneFit, SphereFit};
 use crate::math::{Vec3, angle_between, cross, dot, length, normalize, sub};
 
 /// Below this angle (degrees), plane-related distances use the near-parallel convention.
@@ -61,6 +61,28 @@ impl From<&CylinderFit> for Element {
         Element::Cylinder {
             point: f.axis_point,
             axis: f.axis,
+            radius: f.radius,
+        }
+    }
+}
+
+/// A cone relates by its axis line, like a cylinder; `radius` is its radius at the axis point.
+impl From<&ConeFit> for Element {
+    fn from(f: &ConeFit) -> Self {
+        Element::Cylinder {
+            point: f.axis_point,
+            axis: f.axis,
+            radius: f.radius,
+        }
+    }
+}
+
+/// A circle relates by the line through its centre along its normal (a hole's axis from its rim).
+impl From<&CircleFit> for Element {
+    fn from(f: &CircleFit) -> Self {
+        Element::Cylinder {
+            point: f.center,
+            axis: f.normal,
             radius: f.radius,
         }
     }
