@@ -1,0 +1,5 @@
+{"commands":[
+ {"command":"solid.box","params":{"length":"40","width":"30","height":"10","name":"Plate","body_name":"Part"}},
+ {"command":"solid.cylinder","params":{"diameter":"6","height":"12","base":[20,15,-1],"operation":"cut","name":"Hole"}},
+ {"command":"solid.cone","params":{"radius":"3","top_radius":"7","height":"4","base":[20,15,7],"operation":"cut","name":"Csk"}}
+]}

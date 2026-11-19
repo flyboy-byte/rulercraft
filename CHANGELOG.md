@@ -4,6 +4,10 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Scan to SolidCraft: countersinks are rebuilt as cone cuts on their holes, and bevels on the top edges of the
+  outline as chamfers with named sizes. Both checked against SolidCraft-made parts (exact volumes) and follow
+  `thickness` when it is edited.
+
 - Scan to SolidCraft: through holes, holes blind from the top and bosses on the top face now follow `thickness`
   when it is edited (a boss used to stay where it was). The plugin's volume comparison moves to
   `details.volume_check`, so it no longer hides the point-by-point `details.check`. New `tools/agent_smoke.py` and
