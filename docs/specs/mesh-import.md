@@ -143,8 +143,8 @@ read it.
 - **Text (.xyz, .pts, .asc).** UTF-8, one point per line: x, y and z first, separated by spaces, tabs, commas or
   semicolons; further numbers (intensity, colour, normals) are ignored. Blank lines and lines starting with `#`, `//`
   or `;` are comments. The first other line may be a header instead of a point: a single whole number (a PTS count)
-  or a line whose first three fields are not numbers (column names). Any later line that is not a point is refused
-  with its line number; non-finite or overflowing positions, more points than the vertex limit, and a file with no
+  or a line with at least three fields whose first three are all nonnumeric (column names). A first row with
+  incomplete or mixed numeric coordinates is refused with its line number, as is any later line that is not a point; non-finite or overflowing positions, more points than the vertex limit, and a file with no
   points are refused. Units as for meshes; identical points merge as vertices do.
 - **PLY.** The vertex element's x, y and z; a face element is not needed, and when present is read and checked as
   usual, then left out. Read as a mesh (`read_mesh`), a PLY without faces is refused, pointing at `fit` and `measure`.
