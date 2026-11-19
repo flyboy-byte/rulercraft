@@ -6,9 +6,9 @@ Overall roadmap progress: **68%** (details in ROADMAP-PROGRESS.md).
 
 | Status | Features |
 | --- | ---: |
-| planned | 19 |
+| planned | 18 |
 | specced | 0 |
-| in-progress | 2 |
+| in-progress | 3 |
 | implemented | 9 |
 | verified | 44 |
 | done | 0 |
@@ -16,6 +16,7 @@ Overall roadmap progress: **68%** (details in ROADMAP-PROGRESS.md).
 ## In progress
 
 - `engine.library` (claude): Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog.
+- `fit.shapes` (Claude): Everything. Exit: known-answer fits within stated tolerance, with a wrong-value run each.
 - `sc.release` (Claude): Workflow and guide are merged. Needs Logan to push tag plugin-v0.1.0 (pushing tags is refused from the Claude session); the workflow then makes the pre-release with its SHA-256.
 
 ## Ready to claim
@@ -24,7 +25,6 @@ Overall roadmap progress: **68%** (details in ROADMAP-PROGRESS.md).
 - `cad.step` (R7): STEP export of measured features through SolidCraft
 - `engine.gpu` (R7): Optional GPU accelerators verified against the CPU reference
 - `engine.stream` (R7): Fast, bounded loading with progress and cancel
-- `fit.shapes` (R7): Cone, torus and circle fits
 - `io.e57` (R6): Read E57 scanner files
 - `measure.constructs` (R7): Points, lines and planes built from fits; dimensions between them with nominal and tolerance
 - `mesh.clean` (R7): Mesh clean-up: hole fill, bad triangle removal, reduction

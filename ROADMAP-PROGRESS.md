@@ -14,7 +14,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | R4 Reverse-engineering workflows with AI | `█████████░` | 90% | 15 | Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft. |
 | R5 Reusable engine | `███░░░░░░░` | 26% | 10 | Another project depends on rulercraft-mesh from crates.io or git, and the engine builds for Wasm and runs the app in a browser with nothing to install. |
 | R6 Any scanner in: point clouds, phones, photos (research first) | `███░░░░░░░` | 30% | 5 | Point clouds and phone-app exports open and measure correctly on generated scenes, and a written go/no-go with a prototype on photos of one object. |
-| R7 v1 in SolidCraft: the plugin, at parity and beyond | `████░░░░░░` | 44% | 25 | A SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own parts inside SolidCraft with the RulerCraft plugin, without help: rebuild a scanned part as editable CAD, inspect it with stated methods, let Claude measure through SolidCraft, and use the engine from another program. |
+| R7 v1 in SolidCraft: the plugin, at parity and beyond | `████░░░░░░` | 45% | 25 | A SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own parts inside SolidCraft with the RulerCraft plugin, without help: rebuild a scanned part as editable CAD, inspect it with stated methods, let Claude measure through SolidCraft, and use the engine from another program. |
 | R8 Proof at scale: machines break it so users do not | `████░░░░░░` | 40% | 10 | Nightly and weekly verification tiers run on their own, every reader has been fuzzed, the engine's mutation score is reported, and every confirmed break has a regression test (docs/specs/verification.md). |
 
 ## R1: Clean meshes: open, fit, measure, over CLI and MCP (88%)
@@ -94,7 +94,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `recon.surface` Points to surface reconstruction, proven on generated scenes | planned | - | unclaimed | Everything. |
 | `scan.phone` Phone capture: read capture-app exports first, own app only if needed | planned | - | unclaimed | Research. |
 
-## R7: v1 in SolidCraft: the plugin, at parity and beyond (44%)
+## R7: v1 in SolidCraft: the plugin, at parity and beyond (45%)
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
@@ -104,7 +104,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `engine.gpu` Optional GPU accelerators verified against the CPU reference | planned | - | unclaimed | Everything. Needs a dependency approval for native GPU compute; browser paths need none. |
 | `engine.parallel` Multi-core deviation, ICP, symmetry, thickness and tree build with the standard library only | verified | math, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/73 | Done 2026-11-08: par::map (std threads, item order kept, sums on one thread); tree build splits subtrees over threads with the same node layout for any count; deviation, ICP pairing, symmetry and thickness rays use it. Bit-identical for 1/2/3/5/8/12/13 threads (tests/parallel.rs). 490k vertices vs 980k triangles, 12 threads: 4.6x (ignored speed test, release). Not parallelised on purpose: segmentation (region growing depends on seed order, so threads would change results). Later: parallel statistics sort if it ever shows in a profile. |
 | `engine.stream` Fast, bounded loading with progress and cancel | planned | - | unclaimed | Everything. Exit: a baseline then target set on a real large mesh; limits and cancel tested. |
-| `fit.shapes` Cone, torus and circle fits | planned | - | unclaimed | Everything. Exit: known-answer fits within stated tolerance, with a wrong-value run each. |
+| `fit.shapes` Cone, torus and circle fits | in-progress | - | Claude | Everything. Exit: known-answer fits within stated tolerance, with a wrong-value run each. |
 | `gui.viewer` Standalone GUI: 3D view, brush selection, fits, measure, segments | implemented | - | claude | Kept as a prototype and test harness (D-012); new app work goes to the native app. |
 | `measure.constructs` Points, lines and planes built from fits; dimensions between them with nominal and tolerance | planned | - | unclaimed | Everything. Exit: known parts give dimension lists equal to the CLI's numbers, with pass/fail against tolerance. |
 | `measure.gdt` Form and position checks: flatness, parallelism, perpendicularity, coaxiality and similar | planned | - | unclaimed | Everything beyond flatness (form error exists on every fit). |
