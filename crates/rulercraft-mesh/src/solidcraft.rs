@@ -853,6 +853,26 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }
     };
     let o = flat_center(base);
+    // A flat face's normal from the same triangles, area-weighted: the region's fit leans toward any fillet facets
+    // it took in.
+    let flat_normal = |r: &crate::segment::PlaneRegion| {
+        let mut sum = [0.0; 3];
+        for &t in &r.triangles {
+            let f = graph.face_normals[t as usize];
+            if acute_deg(f, r.plane.normal) > 1.0 {
+                continue;
+            }
+            let [i, j, k] = mesh.triangles[t as usize];
+            let (a, b, c) = (pos(i), pos(j), pos(k));
+            let cr = cross(sub(b, a), sub(c, a));
+            let w = dot(cr, cr).sqrt() / 2.0;
+            let s = if dot(f, r.plane.normal) < 0.0 { -w } else { w };
+            for q in 0..3 {
+                sum[q] += s * f[q];
+            }
+        }
+        normalize(sum).unwrap_or(r.plane.normal)
+    };
     let mut n = base.plane.normal;
     let u0 = base.plane.basis_u;
     let mut v0 = if dot(cross(u0, base.plane.basis_v), n) < 0.0 {
@@ -958,7 +978,8 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         .iter()
         .filter(|p| (acute_deg(p.plane.normal, n) - 90.0).abs() <= SQUARE_DEG)
         .filter_map(|p| {
-            let (nx, ny) = (dot(p.plane.normal, u), dot(p.plane.normal, v));
+            let wn = flat_normal(p);
+            let (nx, ny) = (dot(wn, u), dot(wn, v));
             let l = nx.hypot(ny);
             let c = local(flat_center(p));
             let (lo, hi) = extent(&p.vertices);
