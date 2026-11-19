@@ -5,7 +5,9 @@ break `main` by following this page.
 
 ## Set up
 
-- Current stable Rust (`cargo`, `rustfmt`, `clippy`; 1.88 or newer). Python 3 for the plan tool.
+- Current stable Rust (`cargo`, `rustfmt`, `clippy`; 1.88 or newer). Python 3 for the plan tool (no packages); the
+  optional scan generator in `tools/dev/` needs numpy, SciPy and scikit-image.
+- For plugin work: SolidCraft's command line (`solidcraft-cli`) and the wasm32 target; `plugin/solidcraft/build.sh`.
 - `cargo test --workspace` should pass in a few minutes on a fresh clone.
 
 ## First ten minutes
@@ -15,7 +17,11 @@ cargo test --workspace                                          # everything pas
 cargo run -p rulercraft-cli -- info fixtures/known/hole-block.stl
 cargo run -p rulercraft-cli -- fit cylinder fixtures/known/hole-block.stl --box 8.4 13.4 1 11.6 16.6 9
 python3 tools/plan.py needs                                     # what needs help right now
+python3 tools/plan.py progress                                  # how far each milestone is
 ```
+
+RulerCraft's user interface is SolidCraft (D-015): the plugin in `plugin/solidcraft` turns a scan into an editable
+part there. Its rebuild is `crates/rulercraft-mesh/src/solidcraft.rs`, also on the CLI as `rulercraft solidcraft`.
 
 The hole you just fitted is 3 mm across by design (`fixtures/known/hole-block.json`); the radius should
 read 1.5. That is the whole idea of the project: every number checked against an answer known in advance.

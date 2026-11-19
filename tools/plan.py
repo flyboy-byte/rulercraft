@@ -6,6 +6,7 @@
   python3 tools/plan.py render   # rewrite the generated files
   python3 tools/plan.py next     # ready, unclaimed features first
   python3 tools/plan.py needs    # what needs help: ready, half-done, open findings, ignored tests, open PRs
+  python3 tools/plan.py progress # completion by milestone: features per status and a weighted percentage
 """
 import json
 import subprocess
@@ -176,6 +177,25 @@ def render_status(roadmap, features):
     return "\n".join(out) + "\n"
 
 
+def progress_lines(roadmap, features):
+    """Completion by milestone: how many features are in each status, and the weighted share done
+    (STATUSES gives each status's weight: verified counts 0.9, implemented 0.75, in progress 0.3)."""
+    order = ["verified", "done", "implemented", "in-progress", "specced", "planned"]
+    lines = []
+    total, weight = 0, 0.0
+    for m in roadmap["milestones"]:
+        fs = [f for f in features if f["milestone"] == m["id"]]
+        if not fs:
+            continue
+        counts = {s: sum(f["status"] == s for f in fs) for s in order}
+        w = sum(STATUSES[f["status"]] for f in fs)
+        total, weight = total + len(fs), weight + w
+        parts = ", ".join(f"{n} {s}" for s, n in counts.items() if n)
+        lines.append(f"{m['id']:4} {100 * w / len(fs):5.1f}%  {len(fs):3} features ({parts})  {m.get('title', '')}")
+    lines.append(f"all  {100 * weight / max(total, 1):5.1f}%  {total:3} features")
+    return lines
+
+
 def outputs(root=ROOT):
     roadmap, features = load(root)
     return {root / "STATUS.md": render_status(roadmap, features), root / "ROADMAP-PROGRESS.md": render_progress(roadmap, features)}
@@ -201,6 +221,8 @@ def main(argv):
             print("note: generated files out of date, run `python3 tools/plan.py render`: " + ", ".join(stale))
             if "--strict" in sys.argv:
                 return 1
+    elif cmd == "progress":
+        print("\n".join(progress_lines(roadmap, features)))
     elif cmd == "needs":
         print("\n".join(needs(features, open_pr_claims())))
     elif cmd == "next":

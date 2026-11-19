@@ -3,10 +3,14 @@
   "milestone": "R8",
   "title": "Fuzzing every reader and the command layer",
   "spec": "verification",
-  "status": "planned",
+  "status": "verified",
   "depends_on": [],
-  "owner": null,
+  "owner": "Claude",
   "pr": null,
-  "verified_by": [],
-  "left": "Everything. A harness with a library dependency needs Logan's yes."
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Dependency-free mutation fuzzing (tests/fuzz.rs): a fast run in every test run, long runs by hand. Not yet: coverage-guided fuzzing (needs a library: Logan), the MCP server over stdio, a scheduled T2 run."
 }

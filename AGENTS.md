@@ -40,13 +40,20 @@ python3 tools/plan.py check                  # plan files valid, generated files
 python3 tools/plan.py render                 # regenerate STATUS.md and ROADMAP-PROGRESS.md
 python3 tools/plan.py needs                  # what needs help (ready, half-done, findings, open PRs)
 python3 tools/plan.py next                   # ready, unclaimed roadmap features and current claims
+python3 tools/plan.py progress               # completion by milestone
 cargo run -p rulercraft-cli -- info part.stl
+cargo run -p rulercraft-cli -- solidcraft scan.stl --out part.json   # the plugin's rebuild, from the CLI
 cargo run -p rulercraft-mcp                  # MCP server on stdio
-cargo run -p rulercraft-gui -- part.stl      # browser app prototype (the native app is docs/v1.md P0)
+cargo run -p rulercraft-gui -- part.stl      # browser viewer: a developer tool (SolidCraft is the UI, D-015)
+plugin/solidcraft/build.sh                   # the SolidCraft plugin (own workspace; wasm32 target)
+solidcraft-cli plugin test plugin/solidcraft/package   # its known answers in SolidCraft's own runner
+RULERCRAFT_FUZZ_SECONDS=3600 cargo test --release -p rulercraft-mesh --test fuzz -- --ignored   # long fuzz
+python3 tools/dev/synth_scan.py part.stl scan.stl --noise 0.02 --turn 17   # a scan-like mesh (needs numpy etc.)
 ```
 
 Toolchain: current stable Rust (hosted CI installs the latest stable; `rulercraft-mcp` needs 1.88 or newer).
-Python 3, no packages. Clippy lints change between releases: if the gate fails only on a lint your toolchain
+Python 3: the plan tool and anything the gate runs use no packages; test tools in `tools/dev/` may use numpy, SciPy
+and scikit-image (D-016). Shipped code is Rust. Clippy lints change between releases: if the gate fails only on a lint your toolchain
 has and CI's does not (or the other way round), fix the code to satisfy both rather than allowing the lint.
 
 ## Working alongside other sessions (crosstalk)
@@ -85,6 +92,16 @@ deleting branches, tags or files that are not your own scratch, publishing anyth
 anyone (Tangency Labs maintainers, other projects' authors, anyone outside), signing anything, adding a
 dependency, changing repository settings, loosening a tolerance, or replacing a reference number
 with RulerCraft's own output.
+
+## Proof habits that keep paying
+
+- Every rule gets a known answer and a wrong-value run that a test fails on; undo a wrong-value edit with the reverse
+  edit, not `git checkout <file>` (that also throws away the uncommitted fix).
+- Rebuild features (`solidcraft.rs`) are checked against parts SolidCraft made itself: their exact volume in
+  `solidcraft-cli eval`, and again after editing a parameter. CAD meshes must stay exact when scan handling changes.
+- Scans are not CAD meshes: dense, softened edges, noise, turned. `tests/scan_like.rs` (in every run) and
+  `tools/dev/synth_scan.py` (by hand) are how scan behaviour is checked until real scans exist.
+- Readers and the fit command layer are fuzzed in every run (`tests/fuzz.rs`): never panic, never break a limit.
 
 ## Conventions
 
