@@ -382,12 +382,12 @@ fn fuzz_commands(seed: u64, iterations: usize, budget: Duration) -> usize {
         let result = catch_unwind(AssertUnwindSafe(|| fit(&mesh, &graph, &request)));
         match result {
             Ok(Ok(out)) => {
-                let text = serde_json::to_string(&out.fitted).unwrap();
+                let value = serde_json::to_value(&out.fitted).unwrap();
+                let mut bad = Vec::new();
+                non_finite(&value, "", &mut bad);
                 assert!(
-                    !text.contains("null")
-                        || text.contains("\"free_diameter\":null")
-                        || text.contains("_diameter\":null"),
-                    "a non-finite number in a fit: {text} for {request:?}"
+                    bad.is_empty(),
+                    "non-finite numbers at {bad:?} in {value} for {request:?}"
                 );
             }
             Ok(Err(e)) => assert!(!e.to_string().is_empty()),
@@ -426,4 +426,33 @@ fn readers_and_commands_survive_a_long_fuzz() {
         "fuzzed {r} reader inputs and {c} commands from seed {}",
         seed()
     );
+}
+
+/// Every null (serde's encoding of a non-finite float) in a fit, by path, except the optional diameters that are
+/// absent by design.
+fn non_finite(v: &serde_json::Value, path: &str, bad: &mut Vec<String>) {
+    const OPTIONAL: [&str; 2] = ["free_diameter", "assumed_diameter"];
+    match v {
+        serde_json::Value::Null => {
+            if !OPTIONAL.iter().any(|k| path.ends_with(&format!(".{k}"))) {
+                bad.push(path.to_string());
+            }
+        }
+        serde_json::Value::Number(n) => {
+            if !n.as_f64().is_some_and(f64::is_finite) {
+                bad.push(path.to_string());
+            }
+        }
+        serde_json::Value::Array(a) => {
+            for (i, x) in a.iter().enumerate() {
+                non_finite(x, &format!("{path}[{i}]"), bad);
+            }
+        }
+        serde_json::Value::Object(o) => {
+            for (k, x) in o {
+                non_finite(x, &format!("{path}.{k}"), bad);
+            }
+        }
+        _ => {}
+    }
 }

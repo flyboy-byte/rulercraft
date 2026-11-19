@@ -4,6 +4,10 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Scans at any turn: a scan rebuilds the same whichever way it lies on the scanner (it had failed at some angles).
+  Pockets and windows take their shape from their walls, and an edge's own scan softening is no longer taken for a
+  chamfer. Checked at 30 turns of the test part.
+
 - Cone and circle fits: `fit cone` gives a countersink's or taper's angle, end diameters and apex; `fit circle` a
   rim's or edge's centre and diameter. Both on the CLI and MCP server, and in `measure`.
 
