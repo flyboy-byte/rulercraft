@@ -29,7 +29,7 @@ solidcraft-cli --keep-plugin-approvals exec plugin.install \
   Plugins menu entry to rebuild a scan as a part.
 - The part opens as a new, unsaved design. Change `length`, `width`, `thickness`, a `hole…_diameter`,
   `boss…_height` or `pocket…_depth` in **Parameters** and the part rebuilds. Save it as any design.
-- The **Import report** lists what was not rebuilt (slanted faces such as fillets or bevels under the part, holes not square
+- The **Import report** lists what was not rebuilt (slanted faces such as bevels or rounds under the part, holes not square
   to the base, undercuts) and, under *From the importer*, the measured sizes, each hole's fit quality, how far the
   scan's points lie from the rebuilt part (`check`), and SolidCraft's own check: the rebuilt part's volume next to
   the scan's (`volume_check`).
@@ -42,7 +42,7 @@ From a terminal: `solidcraft-cli exec file.import '{"path":"part.stl","format":"
 
 Plate-like parts: a flat base and a parallel opposite face, with any straight-edged or circular outline, rectangular
 pockets, steps and pads, round bosses and pins, round holes (through, blind, counterbored or countersunk), windows cut through,
-and chamfers on the top edges. All of it square to the base. Anything else (fillets, bevels under the part, slanted faces, undercuts,
+and chamfers and fillets on the top edges. All of it square to the base. Anything else (bevels or rounds under the part, slanted faces, undercuts,
 curved outlines that mix arcs and lines, which become short straight edges) is listed in the report rather than
 guessed. Only parts SolidCraft itself made have been tried so far; a real scan is the next test (docs/v1.md, S1). Without SolidCraft, `rulercraft solidcraft <scan> --out part.json` writes the
 same design from RulerCraft's own command line.

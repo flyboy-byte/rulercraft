@@ -600,3 +600,36 @@ fn chamfers_on_a_traced_outline() {
     assert_eq!(r.report["details"]["chamfers"].as_array().unwrap().len(), 2);
     assert_eq!(param(&r.design, "chamfer1_size"), "1.5 mm");
 }
+
+/// A 50 x 30 x 8 plate with all four top edges rounded R2 and a Ø5 hole (SolidCraft: 11,708.643 mm³). Each edge's
+/// cross-section is a circle touching the top and the wall; the corner patches are part of the fillet; the plate is
+/// still 8 thick although region growing takes the fillet's first facets into the top face.
+#[test]
+fn top_edge_fillets_are_rebuilt() {
+    let r = design(&fixture("fillet.stl"), "fillet").unwrap();
+    assert!(
+        r.report["items"].as_array().unwrap().is_empty(),
+        "{}",
+        r.report["items"]
+    );
+    assert_eq!(param(&r.design, "thickness"), "8 mm");
+    let fs = r.report["details"]["fillets"].as_array().unwrap();
+    assert_eq!(fs.len(), 4);
+    for f in fs {
+        assert!((f["radius"].as_f64().unwrap() - 2.0).abs() < 0.01, "{f}");
+    }
+    assert_eq!(param(&r.design, "fillet1_radius"), "2 mm");
+    assert!(r.report["details"]["check"]["max_mm"].as_f64().unwrap() < 1e-3);
+}
+
+/// The L-plate with three top edges rounded R1.5, one of them on the inner arm (SolidCraft: 12,516.510 mm³).
+#[test]
+fn fillets_on_a_traced_outline() {
+    let r = design(&fixture("l-fillet.stl"), "l-fillet").unwrap();
+    assert!(
+        r.report["items"].as_array().unwrap().is_empty(),
+        "{}",
+        r.report["items"]
+    );
+    assert_eq!(r.report["details"]["fillets"].as_array().unwrap().len(), 3);
+}

@@ -12,3 +12,5 @@
 /package/tests/countersink.stl
 /package/tests/chamfer.stl
 /package/tests/l-chamfer.stl
+/package/tests/fillet.stl
+/package/tests/l-fillet.stl

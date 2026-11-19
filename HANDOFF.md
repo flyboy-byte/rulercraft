@@ -8,8 +8,8 @@ circular outline (sketch extrude), through and blind holes, counterbores, bosses
 windows, every size a named parameter (holes and bosses on the top follow `thickness`), a loss report of what was
 dropped or simplified, a point-by-point deviation of the scan from the rebuilt part (`details.check`), and a
 volume comparison made in SolidCraft (`details.volume_check`). Checked against SolidCraft-made parts: hole block,
-bracket, L-plate, round plate, stepped cylinder, counterbore, window, countersink, two chamfered plates (all
-exact), 12/12 in SolidCraft's `plugin test`,
+bracket, L-plate, round plate, stepped cylinder, counterbore, window, countersink, two chamfered and two filleted plates
+(all exact), 14/14 in SolidCraft's `plugin test`,
 and driven over SolidCraft's MCP by `tools/agent_smoke.py` (docs/agents-and-solidcraft.md).
 
 ## Owed and waiting on Logan
@@ -23,7 +23,7 @@ and driven over SolidCraft's MCP by `tools/agent_smoke.py` (docs/agents-and-soli
 ## Not done (ordered)
 - `sc.inspect`: measuring inside SolidCraft. SolidCraft's `model.mesh` stops at 8,192 vertices for command plugins;
   needs a way around inside its interface, or a request to its maintainers (Logan's call).
-- Sloped faces (countersinks and top-edge chamfers are done): fillets, bevels under the plate, tilted holes, mixed arc and line outlines (now straight-edge runs),
+- Sloped faces (countersinks, top-edge chamfers and fillets are done): bevels and rounds under the plate, tilted holes, mixed arc and line outlines (now straight-edge runs),
   blind or stepped cutouts. All reach the loss report as `dropped` or `degraded`, none are silent.
 - Real-scan hardening: noise, open meshes, thin walls, scans not aligned to a face.
 - Other roadmap items from `python3 tools/plan.py needs` (point clouds, cone/torus fits, mesh clean-up, sections).

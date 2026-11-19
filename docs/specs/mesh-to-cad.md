@@ -75,7 +75,14 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
   down a wall of a straight outline edge (its lowest points on the wall, its sides within the edge's ends) is a bevel
   on that edge, `width` across the top and `height` down the wall. Bevels of one size share one chamfer feature
   (`chamfer<i>_size`, or `chamfer<i>_width` and `chamfer<i>_height`), its edges named by their midpoints at the top.
-  Bevels under the plate, on round outlines, and fillets stay in the report as slanted faces.
+  Bevels under the plate and on round outlines stay in the report as slanted faces.
+- **Fillets.** On each straight top edge of the outline, the slanted triangles facing straight out over it (1°) and
+  lying within the thickness of it are cut across: when their cross-section is one circle (within the tolerance)
+  touching both the top face and the wall, the edge is rounded, rebuilt by a fillet feature (`fillet<i>_radius`,
+  one per radius). Slanted triangles inside a filleted edge's round band past its ends are the corner patches where
+  two fillets meet, and are part of them.
+- **Flat face heights.** Region growing takes triangles up to 10° off a face, which can include a fillet's first
+  facets; a flat face's height is therefore the area-weighted centre of its triangles within 1° of it.
 - **Check.** The rebuilt part is also a signed-distance field (plate outline, pads and bosses joined, holes,
   pockets and cutouts taken away), and the scan's points (at most 200,000, evenly spaced) are measured against
   it: `details.check` has `points`, `mean_mm`, `rms_mm`, `p95_mm`, `max_mm` and `within_tolerance` (the share of
@@ -93,7 +100,8 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
 
 Known answers also: a Ø6 hole countersunk 90° to Ø12 (11,604.159 mm³), a plate with four top edges bevelled
 2 x 1 (11,688.254 mm³) and the L-plate with two bevelled edges (12,461.305 mm³), all equal to SolidCraft's volume;
-the countersink and bevels follow `thickness` when it is edited. Known answers: an L-shaped plate (fixtures/known/l-plate.stl, 60 x 20 plus 20 x 20, 8 mm thick, Ø6 hole) rebuilds
+the countersink and bevels follow `thickness` when it is edited. Fillets: a plate with four top edges rounded R2
+(11,708.643 mm³) and the L-plate with three rounded R1.5 (12,516.510 mm³), exact, and exact after a thickness edit. Known answers: an L-shaped plate (fixtures/known/l-plate.stl, 60 x 20 plus 20 x 20, 8 mm thick, Ø6 hole) rebuilds
 as a six-corner sketch with SolidCraft's own volume, 12,573.805 mm³; a Ø50 x 6 round plate with a Ø8 hole as a circle
 sketch, 11,479.380 mm³. The hole block rebuilds as 60 x 30 x 10 with through holes of 3, 5 and 8 mm that map back to
 x = 10, 30, 50, y = 15, also after the scan is turned and moved. The bracket (fixtures/known/bracket.stl, made by

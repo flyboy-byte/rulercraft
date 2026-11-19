@@ -242,17 +242,13 @@ fn simplify_loop(p: &[[f64; 2]], tol: f64) -> Vec<[f64; 2]> {
     out
 }
 
-/// The circle through a loop's points, when they all lie within `tol` of one: `(cx, cy, r)`.
-fn circle_of(p: &[[f64; 2]], tol: f64) -> Option<(f64, f64, f64)> {
-    if p.len() < MIN_CIRCLE_POINTS {
-        return None; // four corners always lie on a circle: a rectangle is not one
-    }
+/// The least-squares circle through points (Kasa): `(cx, cy, r)`.
+fn fit_circle(p: &[[f64; 2]]) -> Option<(f64, f64, f64)> {
     let n = p.len() as f64;
     let (cx, cy) = (
         p.iter().map(|q| q[0]).sum::<f64>() / n,
         p.iter().map(|q| q[1]).sum::<f64>() / n,
     );
-    // Kasa fit on the centred points.
     let (mut suu, mut svv, mut suv, mut suuu, mut svvv, mut suvv, mut svuu) =
         (0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0);
     for q in p {
@@ -266,17 +262,24 @@ fn circle_of(p: &[[f64; 2]], tol: f64) -> Option<(f64, f64, f64)> {
         svuu += v * u * u;
     }
     let det = suu * svv - suv * suv;
-    if det.abs() < 1e-12 {
+    if det.is_nan() || det.abs() < 1e-12 {
         return None;
     }
     let (b1, b2) = ((suuu + suvv) / 2.0, (svvv + svuu) / 2.0);
     let (uc, vc) = ((b1 * svv - b2 * suv) / det, (suu * b2 - suv * b1) / det);
     let r = (uc * uc + vc * vc + (suu + svv) / n).sqrt();
-    let worst = p
-        .iter()
-        .map(|q| ((q[0] - cx - uc).hypot(q[1] - cy - vc) - r).abs())
-        .fold(0.0, f64::max);
-    (worst <= tol && r.is_finite()).then_some((cx + uc, cy + vc, r))
+    r.is_finite().then_some((cx + uc, cy + vc, r))
+}
+
+/// The circle through a loop's points, when they all lie within `tol` of one: `(cx, cy, r)`.
+fn circle_of(p: &[[f64; 2]], tol: f64) -> Option<(f64, f64, f64)> {
+    if p.len() < MIN_CIRCLE_POINTS {
+        return None; // four corners always lie on a circle: a rectangle is not one
+    }
+    let (cx, cy, r) = fit_circle(p)?;
+    p.iter()
+        .all(|q| ((q[0] - cx).hypot(q[1] - cy) - r).abs() <= tol)
+        .then_some((cx, cy, r))
 }
 
 fn point_in_loop(q: [f64; 2], p: &[[f64; 2]]) -> bool {
@@ -506,6 +509,8 @@ struct Chamfer {
     across: f64,
     down: f64,
     top: f64,
+    /// A rounded edge (a fillet of radius `across`, equal to `down`), not a flat bevel.
+    round: bool,
 }
 
 impl Chamfer {
@@ -516,10 +521,15 @@ impl Chamfer {
             q[0] * self.out[0] + q[1] * self.out[1],
             q[0] * self.dir[0] + q[1] * self.dir[1],
         );
+        let ends = (-t).max(t - self.len);
+        if self.round {
+            // Outside the quarter circle centred `across` in from the wall and down from the top.
+            let (ds, dz) = (s + self.across, p[2] - (self.top - self.across));
+            return (self.across - ds.hypot(dz)).max(-ds).max(-dz).max(ends);
+        }
         // The bevel's plane in (s, z): through (0, top - down) and (-across, top); taken where outside it.
         let g = (1.0 / self.across).hypot(1.0 / self.down);
         let plane = -(s / self.across - (self.top - p[2]) / self.down + 1.0) / g;
-        let ends = (-t).max(t - self.len);
         plane.max(ends)
     }
 }
@@ -556,7 +566,30 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         .enumerate()
         .max_by(|a, b| a.1.area.total_cmp(&b.1.area))
         .ok_or_else(|| NotRebuilt("the mesh has no flat face to build on".into()))?;
-    let o = base.plane.center;
+    // A flat face's point: the area-weighted centre of its triangles lying within 1° of it. Region growing takes
+    // triangles up to 10° off, the first facets of a fillet among them, which would pull the fitted centre off the face.
+    let flat_center = |r: &crate::segment::PlaneRegion| {
+        let (mut sum, mut w) = ([0.0; 3], 0.0);
+        for &t in &r.triangles {
+            if acute_deg(graph.face_normals[t as usize], r.plane.normal) > 1.0 {
+                continue;
+            }
+            let [i, j, k] = mesh.triangles[t as usize];
+            let (a, b, c) = (pos(i), pos(j), pos(k));
+            let cr = cross(sub(b, a), sub(c, a));
+            let area = dot(cr, cr).sqrt() / 2.0;
+            for q in 0..3 {
+                sum[q] += area * (a[q] + b[q] + c[q]) / 3.0;
+            }
+            w += area;
+        }
+        if w > 0.0 {
+            scale(sum, 1.0 / w)
+        } else {
+            r.plane.center
+        }
+    };
+    let o = flat_center(base);
     let mut n = base.plane.normal;
     let u0 = base.plane.basis_u;
     let mut v0 = if dot(cross(u0, base.plane.basis_v), n) < 0.0 {
@@ -615,7 +648,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     if !(len > 0.0 && wid > 0.0 && len.is_finite() && wid.is_finite()) {
         return Err(NotRebuilt("the base face has no extent".into()));
     }
-    let thick = dot(sub(planes[ti].plane.center, o), n);
+    let thick = dot(sub(flat_center(&planes[ti]), o), n);
     if !(thick > 0.0 && thick.is_finite()) {
         return Err(NotRebuilt(
             "the opposite face is not apart from the base".into(),
@@ -700,7 +733,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             let ang = min_rect_angle(&face_flat).to_degrees();
             Level {
                 index: k,
-                height: dot(sub(p.plane.center, o), n),
+                height: dot(sub(flat_center(p), o), n),
                 up: dot(p.plane.normal, n) > 0.0,
                 area: p.area,
                 lo: [l[0] - lo[0], l[1] - lo[1]],
@@ -936,10 +969,103 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         Outline::Circle { .. } => Vec::new(),
     };
     let mut chamfers: Vec<(Chamfer, Vec<u32>)> = Vec::new();
+    // Fillets: on each straight top edge, the slanted triangles facing straight out over it whose cross-section is a
+    // circle touching both the top face and the wall.
+    let mut rounded: std::collections::HashSet<u32> = Default::default();
+    let bevel_tris: Vec<u32> = bevel_groups.iter().flatten().copied().collect();
+    for &(a, b) in &edges {
+        let l = (b[0] - a[0]).hypot(b[1] - a[1]);
+        if l <= 0.0 {
+            continue;
+        }
+        let dir = [(b[0] - a[0]) / l, (b[1] - a[1]) / l];
+        let out = [dir[1], -dir[0]];
+        let st = |p: [f64; 3]| {
+            let q = [p[0] - a[0], p[1] - a[1]];
+            [
+                q[0] * out[0] + q[1] * out[1],
+                q[0] * dir[0] + q[1] * dir[1],
+                p[2],
+            ]
+        };
+        let mut tris = Vec::new();
+        let mut section: Vec<[f64; 2]> = Vec::new();
+        for &t in &bevel_tris {
+            let f = graph.face_normals[t as usize];
+            let (hx, hy) = (dot(f, u), dot(f, v));
+            let hl = hx.hypot(hy);
+            if hl <= 0.0
+                || (hx * out[0] + hy * out[1]) / hl < 1.0f64.to_radians().cos()
+                || dot(f, n) <= 0.0
+            {
+                continue;
+            }
+            let q = mesh.triangles[t as usize].map(|i| st(to_part(local(pos(i)))));
+            if q.iter()
+                .all(|q| q[0] <= tol && q[0] >= -thick && q[1] >= -tol && q[1] <= l + tol)
+            {
+                tris.push(t);
+                section.extend(q.iter().map(|q| [q[0], q[2]]));
+            }
+        }
+        // A fillet's cross-section is a quarter circle at most: `circle_of` wants points round it, so fit it
+        // and check the centre and radius here instead.
+        if tris.len() < 4 {
+            continue;
+        }
+        let Some((cs, cz, r)) = fit_circle(&section) else {
+            continue;
+        };
+        let on = section
+            .iter()
+            .all(|q| ((q[0] - cs).hypot(q[1] - cz) - r).abs() <= tol);
+        if on && (cs + r).abs() <= 2.0 * tol && (cz - (thick - r)).abs() <= 2.0 * tol && r < thick {
+            rounded.extend(tris.iter().copied());
+            chamfers.push((
+                Chamfer {
+                    a,
+                    dir,
+                    out,
+                    len: l,
+                    across: r,
+                    down: r,
+                    top: thick,
+                    round: true,
+                },
+                tris,
+            ));
+        }
+    }
+    // The corners where two fillets meet: slanted triangles inside the round band of a filleted edge, past its ends.
+    let mut fillet_corners: Vec<u32> = Vec::new();
+    for &t in &bevel_tris {
+        if rounded.contains(&t) {
+            continue;
+        }
+        let q = mesh.triangles[t as usize].map(|i| to_part(local(pos(i))));
+        let in_band = |c: &Chamfer| {
+            q.iter().all(|p| {
+                let d = [p[0] - c.a[0], p[1] - c.a[1]];
+                let (s, w) = (
+                    d[0] * c.out[0] + d[1] * c.out[1],
+                    d[0] * c.dir[0] + d[1] * c.dir[1],
+                );
+                s <= tol
+                    && s >= -c.across - tol
+                    && p[2] >= c.top - c.across - tol
+                    && w >= -c.across - tol
+                    && w <= c.len + c.across + tol
+            })
+        };
+        if chamfers.iter().any(|(c, _)| c.round && in_band(c)) {
+            fillet_corners.push(t);
+        }
+    }
+    rounded.extend(fillet_corners.iter().copied());
     for group in &bevel_groups {
         // One group can hold several bevels meeting at corners: split it by facing.
         let mut planes_of: Vec<([f64; 3], Vec<u32>)> = Vec::new();
-        for &t in group {
+        for &t in group.iter().filter(|t| !rounded.contains(t)) {
             let f = graph.face_normals[t as usize];
             match planes_of
                 .iter_mut()
@@ -1001,6 +1127,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                     across: -smin,
                     down: thick - zlo,
                     top: thick,
+                    round: false,
                 })
             });
             if let Some(c) = found {
@@ -1013,6 +1140,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     let explained_tris: std::collections::HashSet<u32> = chamfers
         .iter()
         .flat_map(|(_, tris)| tris.iter().copied())
+        .chain(fillet_corners.iter().copied())
         .chain(
             cones
                 .iter()
@@ -1025,7 +1153,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         if !cylinders[k]
             .triangles
             .iter()
-            .all(|t| explained_tris.contains(t))
+            .all(|t| explained_tris.contains(t) || !slanted[*t as usize])
         {
             losses.push(loss);
         }
@@ -1035,7 +1163,10 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         if k != bi
             && ang > SQUARE_DEG
             && ang < 90.0 - SQUARE_DEG
-            && !p.triangles.iter().all(|t| explained_tris.contains(t))
+            && !p
+                .triangles
+                .iter()
+                .all(|t| explained_tris.contains(t) || !slanted[*t as usize])
         {
             losses.push(Loss {
                 severity: "dropped",
@@ -1349,14 +1480,34 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     };
     // Bevels of one size share a feature and its sizes.
     let mut sizes: Vec<(f64, f64, Vec<Chamfer>)> = Vec::new();
+    let mut radii: Vec<(f64, f64, Vec<Chamfer>)> = Vec::new();
     for (c, _) in &chamfers {
-        match sizes
+        let list = if c.round { &mut radii } else { &mut sizes };
+        match list
             .iter_mut()
             .find(|s| (s.0 - c.across).abs() <= tol && (s.1 - c.down).abs() <= tol)
         {
             Some(s) => s.2.push(*c),
-            None => sizes.push((c.across, c.down, vec![*c])),
+            None => list.push((c.across, c.down, vec![*c])),
         }
+    }
+    for (i, (r, _, cs)) in radii.iter().enumerate() {
+        let edges: Vec<Value> = cs
+            .iter()
+            .map(|c| {
+                let t = c.len / 2.0;
+                json!([
+                    round_um(c.a[0] + c.dir[0] * t),
+                    round_um(c.a[1] + c.dir[1] * t),
+                    round_um(thick)
+                ])
+            })
+            .collect();
+        let p = format!("fillet{}_radius", i + 1);
+        params.push(param(&p, *r));
+        add(
+            json!({"name": format!("Fillet{}", i + 1), "type": "fillet", "edges": edges, "radius": p}),
+        );
     }
     for (i, (across, down, cs)) in sizes.iter().enumerate() {
         let edges: Vec<Value> = cs
@@ -1499,7 +1650,9 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         "details": {
             "base": {"area_mm2": base.area, "sigma": base.plane.sigma, "form_error": base.plane.form_error},
             "plate": {"length": len, "width": wid, "thickness": thick},
-            "chamfers": chamfers.iter().map(|(c, _)| json!({"edge_from": c.a, "edge_direction": c.dir,
+            "fillets": chamfers.iter().filter(|(c, _)| c.round).map(|(c, _)| json!({"edge_from": c.a,
+                "edge_direction": c.dir, "edge_length": c.len, "radius": c.across})).collect::<Vec<_>>(),
+            "chamfers": chamfers.iter().filter(|(c, _)| !c.round).map(|(c, _)| json!({"edge_from": c.a, "edge_direction": c.dir,
                 "edge_length": c.len, "width": c.across, "height": c.down})).collect::<Vec<_>>(),
             "check": check, "cutouts": slots, "holes": holes, "bosses": bosses, "pockets": pockets, "pads": pads,
             "frame": {"origin": o, "u": u, "v": v, "normal": n, "outline_min": lo, "z0": 0.0},
@@ -1586,6 +1739,7 @@ mod tests {
             across: 2.0,
             down: 1.0,
             top: 8.0,
+            round: false,
         };
         // The old corner is inside what it takes away; a point on the bevel's face is on it.
         assert!(c.dist([5.0, 0.0, 8.0]) < 0.0);
@@ -1594,6 +1748,30 @@ mod tests {
         assert!(c.dist([5.0, 0.0, 6.0]) > 0.0);
         // Beyond the edge's ends nothing is taken.
         assert!(c.dist([12.0, 0.0, 8.0]) >= 2.0 - 1e-12);
+    }
+
+    #[test]
+    fn distance_to_a_fillet() {
+        // The edge along +x, outward -y, top at 8, rounded R2: the arc's centre is at y = 2, z = 6.
+        let c = Chamfer {
+            a: [0.0, 0.0],
+            dir: [1.0, 0.0],
+            out: [0.0, -1.0],
+            len: 10.0,
+            across: 2.0,
+            down: 2.0,
+            top: 8.0,
+            round: true,
+        };
+        let on_arc = [
+            5.0,
+            2.0 - 2.0 * 45f64.to_radians().cos(),
+            6.0 + 2.0 * 45f64.to_radians().sin(),
+        ];
+        assert!(c.dist(on_arc).abs() < 1e-12);
+        let corner = c.dist([5.0, 0.0, 8.0]);
+        assert!((corner + (8f64.sqrt() - 2.0)).abs() < 1e-12, "{corner}");
+        assert!(c.dist([5.0, 1.0, 6.5]) > 0.0, "inside the arc stays");
     }
 
     #[test]

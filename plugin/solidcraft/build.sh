@@ -13,7 +13,7 @@ if wasm-tools component wit package/rulercraft.wasm | grep -Ei 'wasi|http|socket
   echo "the component imports WASI or network interfaces; SolidCraft would refuse it" >&2
   exit 1
 fi
-cp ../../fixtures/known/hole-block.stl ../../fixtures/known/stepped-cylinder.stl ../../fixtures/known/bracket.stl ../../fixtures/known/l-plate.stl ../../fixtures/known/round-plate.stl ../../fixtures/known/counterbore.stl ../../fixtures/known/window.stl ../../fixtures/known/countersink.stl ../../fixtures/known/chamfer.stl ../../fixtures/known/l-chamfer.stl package/tests/
+cp ../../fixtures/known/hole-block.stl ../../fixtures/known/stepped-cylinder.stl ../../fixtures/known/bracket.stl ../../fixtures/known/l-plate.stl ../../fixtures/known/round-plate.stl ../../fixtures/known/counterbore.stl ../../fixtures/known/window.stl ../../fixtures/known/countersink.stl ../../fixtures/known/chamfer.stl ../../fixtures/known/l-chamfer.stl ../../fixtures/known/fillet.stl ../../fixtures/known/l-fillet.stl package/tests/
 mkdir -p dist
 rm -f dist/rulercraft-solidcraft-plugin.zip
 (cd package && zip -q ../dist/rulercraft-solidcraft-plugin.zip plugin.json rulercraft.wasm)
