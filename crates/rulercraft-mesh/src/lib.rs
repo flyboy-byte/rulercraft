@@ -30,7 +30,8 @@
 //!
 //! ## Where things are
 //!
-//! - Reading: [`read_mesh`] (STL, PLY, OBJ, 3MF), [`ImportLimits`], [`Mesh`].
+//! - Reading: [`read_mesh`] (STL, PLY, OBJ, 3MF, glTF), [`read_cloud`] (those, or points: XYZ, PTS, ASC, PLY
+//!   vertices), [`ImportLimits`], [`Mesh`].
 //! - Marking and fitting: [`commands::select`], [`commands::fit`], and the fits in [`fit`] (plane, sphere,
 //!   cylinder, and `*_robust` for noisy scans).
 //! - Measuring: [`measure::relate`] (distance and angle between fitted elements),
@@ -69,7 +70,7 @@ pub mod stl;
 pub use mesh::{Bounds, Mesh, MeshBuilder, Unit};
 pub use stl::{Limits, ReadError, read_stl};
 
-pub use io::{ImportLimits, read_mesh};
+pub use io::{ImportLimits, read_cloud, read_mesh};
 
 /// The names most programs need, in one `use`.
 pub mod prelude {
@@ -77,5 +78,5 @@ pub mod prelude {
     pub use crate::fit::{Clip, CylinderFit, PlaneFit, SphereFit};
     pub use crate::graph::MeshGraph;
     pub use crate::measure::{Element, Relation, relate};
-    pub use crate::{ImportLimits, Mesh, ReadError, Unit, read_mesh};
+    pub use crate::{ImportLimits, Mesh, ReadError, Unit, read_cloud, read_mesh};
 }

@@ -3,12 +3,16 @@
   "milestone": "R6",
   "title": "Read point clouds (PLY points, XYZ/PTS/ASC) and fit directly to points",
   "spec": "scan-sources",
-  "status": "planned",
+  "status": "verified",
   "depends_on": [
     "io.ply"
   ],
-  "owner": null,
+  "owner": "Claude",
   "pr": null,
-  "verified_by": [],
-  "left": "Everything."
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "E57, LAS/LAZ and PCD (io.e57); normals for clouds (for --facing) and points-to-surface for segmenting a cloud; the MCP server still opens meshes only."
 }

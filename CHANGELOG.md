@@ -4,6 +4,9 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Point clouds: `fit` and `measure` read .xyz, .pts and .asc text clouds and PLY files with only vertices, and fit
+  straight to the points (select with `--box` or `--near`).
+
 - Scan to SolidCraft on scans: L-shaped and round outlines, windows, countersinks, chamfers and fillets are found on
   scan-like meshes too (they had needed CAD-exact faces), each within 0.1 mm on the test part, and every synthetic
   scan of the known parts rebuilds within 0.25 % of the true volume.
