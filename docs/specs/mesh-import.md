@@ -132,3 +132,26 @@ CLI info/fit check a regular file's declared byte size before allocating its con
 most the default byte cap plus one (also catching files that grow after the metadata check). An
 oversized file reports its path and byte limit, not a late allocation error. The same bounded-read
 helper is used by project commands. Existing engine byte limits still validate the supplied bytes.
+
+## Point clouds
+
+`read_cloud(name, bytes, unit, limits)` reads points to fit: a text cloud or a PLY file's vertices as a mesh with no
+triangles, and any other mesh format as `read_mesh` does. `fit` and `measure` (CLI) use it; everything that needs
+triangles (segmentation, thickness, deviation, the SolidCraft rebuild) refuses a cloud, saying `fit` and `measure`
+read it.
+
+- **Text (.xyz, .pts, .asc).** UTF-8, one point per line: x, y and z first, separated by spaces, tabs, commas or
+  semicolons; further numbers (intensity, colour, normals) are ignored. Blank lines and lines starting with `#`, `//`
+  or `;` are comments. The first other line may be a header instead of a point: a single whole number (a PTS count)
+  or a line whose first three fields are not numbers (column names). Any later line that is not a point is refused
+  with its line number; non-finite or overflowing positions, more points than the vertex limit, and a file with no
+  points are refused. Units as for meshes; identical points merge as vertices do.
+- **PLY.** The vertex element's x, y and z; a face element is not needed, and when present is read and checked as
+  usual, then left out. Read as a mesh (`read_mesh`), a PLY without faces is refused, pointing at `fit` and `measure`.
+- A cloud has no normals: `--facing` is refused (select with `--box` or `--near`); the cylinder fit starts from
+  positions alone, as it does when normals are missing.
+
+Known answers (tests/pointcloud.rs): a sphere of radius 10 sampled at 400 points in an XYZ file with a header, comma
+separators and an intensity column fits to 20 mm across within 1e-4; a cylinder of radius 0.5 cm in a PTS file with a
+count line and colour columns fits to 10 mm; points on z = 5 in an ASC file with tabs and semicolons fit that plane;
+two planes 6 mm apart in an XYZ file measure 6 mm through the CLI.

@@ -3,6 +3,7 @@
 pub mod gltf;
 pub mod obj;
 pub mod ply;
+pub mod points;
 pub mod threemf;
 mod xml;
 
@@ -52,10 +53,44 @@ pub fn format_name(name: &str) -> Result<&'static str, ReadError> {
         "3mf" => Ok("3mf"),
         "gltf" => Ok("gltf"),
         "glb" => Ok("glb"),
-        _ => Err(ReadError(
-            "unknown extension: supported extensions are .stl, .ply, .obj, .3mf, .gltf, .glb"
+        "xyz" | "pts" | "asc" => Err(ReadError(
+            "a point cloud has no triangles: `fit` and `measure` read it; this needs a mesh (.stl, .ply, .obj, \
+             .3mf, .gltf, .glb)"
                 .into(),
         )),
+        _ => Err(ReadError(
+            "unknown extension: supported extensions are .stl, .ply, .obj, .3mf, .gltf, .glb, and for points \
+             .xyz, .pts, .asc"
+                .into(),
+        )),
+    }
+}
+
+/// Whether a filename names a text point cloud (.xyz, .pts, .asc), case-insensitively.
+pub fn is_point_cloud_name(name: &str) -> bool {
+    matches!(
+        name.rsplit_once('.')
+            .map_or("", |(_, extension)| extension)
+            .to_ascii_lowercase()
+            .as_str(),
+        "xyz" | "pts" | "asc"
+    )
+}
+
+/// Reads points to fit: a text point cloud or a PLY file's vertices (faces or not) as a mesh with no triangles,
+/// and any other mesh format as a mesh.
+pub fn read_cloud(
+    name: &str,
+    bytes: &[u8],
+    unit: Unit,
+    limits: ImportLimits,
+) -> Result<Mesh, ReadError> {
+    if is_point_cloud_name(name) {
+        return points::read_text_points(bytes, unit, limits);
+    }
+    match format_name(name)? {
+        "ply" => ply::read_ply_points(bytes, unit, limits),
+        _ => read_mesh(name, bytes, unit, limits),
     }
 }
 /// Reads a mesh from bytes, converting file units to millimetres.
@@ -88,7 +123,7 @@ pub fn read_mesh(
         }
     }
 }
-fn check_bytes(bytes: &[u8], limits: ImportLimits) -> Result<(), ReadError> {
+pub(crate) fn check_bytes(bytes: &[u8], limits: ImportLimits) -> Result<(), ReadError> {
     if bytes.len() > limits.max_bytes {
         return Err(ReadError("input byte limit exceeded".into()));
     }
@@ -97,7 +132,7 @@ fn check_bytes(bytes: &[u8], limits: ImportLimits) -> Result<(), ReadError> {
     }
     Ok(())
 }
-fn vertex(builder: &mut MeshBuilder, p: [f32; 3], unit: Unit) -> Option<u32> {
+pub(crate) fn vertex(builder: &mut MeshBuilder, p: [f32; 3], unit: Unit) -> Option<u32> {
     if p.iter().any(|v| {
         !v.is_finite()
             || !(f64::from(*v) * unit.to_mm()).is_finite()

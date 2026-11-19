@@ -25,11 +25,33 @@ const USAGE: &str = "Usage:
                  [--facing DX DY DZ] [--within DEG] [--sigma 0|1|2|3] [--known-diameter D]
   rulercraft solidcraft <mesh> [--units U] [--out design.json]
   rulercraft measure <mesh> <plane|sphere|cylinder> [fit options] --and <plane|sphere|cylinder> [fit options]
-Meshes: .stl .ply .obj .3mf .gltf .glb. Lengths in mm (after --units), angles in degrees. Selection filters combine;
+Meshes: .stl .ply .obj .3mf .gltf .glb. fit and measure also read point clouds: .xyz .pts .asc and PLY vertices
+(select with --box or --near; a cloud has no normals for --facing). Lengths in mm (after --units), angles in degrees. Selection filters combine;
 with none the whole mesh is used. --within defaults to 30, --sigma to 3 (0 keeps every point).";
 
 fn number(v: f32) -> String {
     format!("{v}")
+}
+
+/// Points to fit: a point cloud (.xyz, .pts, .asc, or a PLY file's vertices) or a mesh.
+fn load_points(path: &str, unit: Unit) -> Result<Mesh, String> {
+    if !rulercraft_mesh::io::is_point_cloud_name(path) {
+        rulercraft_mesh::io::format_name(path).map_err(|e| e.to_string())?;
+    }
+    let bytes = limited_read(path, ImportLimits::default().max_bytes)?;
+    rulercraft_mesh::read_cloud(path, &bytes, unit, ImportLimits::default())
+        .map_err(|e| format!("{path}: {e}"))
+}
+
+/// A point cloud has no normals: refuse selections that need them, plainly.
+fn no_facing_on_points(mesh: &Mesh, options: &[String]) -> Result<(), String> {
+    if mesh.triangles.is_empty() && options.iter().any(|a| a == "--facing") {
+        return Err(
+            "--facing needs a mesh's normals; a point cloud has none: select with --near or --box"
+                .into(),
+        );
+    }
+    Ok(())
 }
 
 fn load(path: &str, unit: Unit) -> Result<Mesh, String> {
@@ -147,7 +169,8 @@ fn fit_command(args: &[String]) -> Result<String, String> {
         return Err(USAGE.into());
     };
     let (unit, request) = fit_request(kind, rest)?;
-    let mesh = load(path, unit)?;
+    let mesh = load_points(path, unit)?;
+    no_facing_on_points(&mesh, rest)?;
     let graph = MeshGraph::build(&mesh);
     let out = fit(&mesh, &graph, &request).map_err(|e| e.to_string())?;
     let (value, _) = fitted(&out.fitted);
@@ -223,7 +246,8 @@ fn measure_command(args: &[String]) -> Result<String, String> {
         return Err("give --units once: both fits measure the same mesh".into());
     }
     let unit = if said2 { u2 } else { u1 };
-    let mesh = load(path, unit)?;
+    let mesh = load_points(path, unit)?;
+    no_facing_on_points(&mesh, rest)?;
     let graph = MeshGraph::build(&mesh);
     let one = fit(&mesh, &graph, &a).map_err(|e| format!("first fit: {e}"))?;
     let two = fit(&mesh, &graph, &b).map_err(|e| format!("second fit: {e}"))?;

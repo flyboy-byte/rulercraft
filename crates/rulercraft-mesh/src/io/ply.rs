@@ -57,7 +57,7 @@ enum Encoding {
     Le,
     Be,
 }
-fn header(bytes: &[u8]) -> Result<(Encoding, Vec<Element>, usize, usize), ReadError> {
+fn header(bytes: &[u8], points: bool) -> Result<(Encoding, Vec<Element>, usize, usize), ReadError> {
     let mut offset = 0;
     let mut line = 0;
     let mut encoding = None;
@@ -141,10 +141,17 @@ fn header(bytes: &[u8]) -> Result<(Encoding, Vec<Element>, usize, usize), ReadEr
                     .iter()
                     .position(|e| e.name == "vertex")
                     .ok_or_else(|| error("missing vertex element"))?;
-                let fi = elements
-                    .iter()
-                    .position(|e| e.name == "face")
-                    .ok_or_else(|| error("missing face element"))?;
+                let fi = elements.iter().position(|e| e.name == "face");
+                let fi = match fi {
+                    Some(fi) => fi,
+                    // Points only: fine for a point cloud, which keeps just the vertices.
+                    None if points => usize::MAX,
+                    None => {
+                        return Err(error(
+                            "missing face element (a point cloud? `fit` and `measure` read points)",
+                        ));
+                    }
+                };
                 if vi >= fi {
                     return Err(error("vertex element must precede face element"));
                 }
@@ -157,13 +164,18 @@ fn header(bytes: &[u8]) -> Result<(Encoding, Vec<Element>, usize, usize), ReadEr
                         return Err(error("vertex needs scalar x/y/z"));
                     }
                 }
-                let indices: Vec<_> = elements[fi]
-                    .props
-                    .iter()
-                    .filter(|p| matches!(p.name.as_str(), "vertex_indices" | "vertex_index"))
-                    .collect();
-                if indices.len() != 1 || indices[0].count.is_none() || !indices[0].value.integer() {
-                    return Err(error("face needs one integer vertex_indices list"));
+                if fi != usize::MAX {
+                    let indices: Vec<_> = elements[fi]
+                        .props
+                        .iter()
+                        .filter(|p| matches!(p.name.as_str(), "vertex_indices" | "vertex_index"))
+                        .collect();
+                    if indices.len() != 1
+                        || indices[0].count.is_none()
+                        || !indices[0].value.integer()
+                    {
+                        return Err(error("face needs one integer vertex_indices list"));
+                    }
                 }
                 if elements.iter().any(|e| e.count > 0 && e.props.is_empty()) {
                     return Err(error("element has no properties"));
@@ -270,8 +282,18 @@ impl Cursor<'_> {
 }
 /// Reads a PLY mesh with explicit work limits and caller-selected length units.
 pub fn read_ply(bytes: &[u8], unit: Unit, limits: ImportLimits) -> Result<Mesh, ReadError> {
+    read(bytes, unit, limits, false)
+}
+
+/// Reads a PLY file's vertices as a point cloud: a mesh with no triangles. A face element is not needed; when
+/// present it is read and checked as usual, then left out.
+pub fn read_ply_points(bytes: &[u8], unit: Unit, limits: ImportLimits) -> Result<Mesh, ReadError> {
+    read(bytes, unit, limits, true)
+}
+
+fn read(bytes: &[u8], unit: Unit, limits: ImportLimits, points: bool) -> Result<Mesh, ReadError> {
     check_bytes(bytes, limits)?;
-    let (enc, elements, offset, line) = header(bytes)?;
+    let (enc, elements, offset, line) = header(bytes, points)?;
     let mut c = Cursor {
         bytes,
         offset,
@@ -342,7 +364,7 @@ pub fn read_ply(bytes: &[u8], unit: Unit, limits: ImportLimits) -> Result<Mesh, 
                         .ok_or_else(|| c.error("position or converted position is not finite"))?,
                 );
             }
-            if e.name == "face" {
+            if e.name == "face" && !points {
                 for k in 1..face.len() - 1 {
                     builder.triangle([face[0], face[k], face[k + 1]]);
                 }
@@ -354,6 +376,13 @@ pub fn read_ply(bytes: &[u8], unit: Unit, limits: ImportLimits) -> Result<Mesh, 
     }
     if c.offset != bytes.len() {
         return Err(c.error("undeclared trailing data"));
+    }
+    if points {
+        let mesh = builder.finish();
+        if mesh.positions.is_empty() {
+            return Err(ReadError("the file contains no points".into()));
+        }
+        return Ok(mesh);
     }
     finish(builder)
 }
