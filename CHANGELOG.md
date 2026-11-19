@@ -4,6 +4,8 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Fuzzing: every reader and the fit command layer are fuzzed in every test run, with a long run by hand.
+
 - Point clouds: `fit` and `measure` read .xyz, .pts and .asc text clouds and PLY files with only vertices, and fit
   straight to the points (select with `--box` or `--near`).
 

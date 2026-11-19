@@ -230,3 +230,10 @@ scans and turning them into trustworthy numbers and editable parts.
 **Limits.** SolidCraft's plugin interface decides what is possible: plugins ship no UI code (dialogs come from input
 schemas), and a command plugin reads at most 8,192 vertices of a mesh body. Where that blocks a job, the gap is
 written down for Logan, who decides whether to raise it with SolidCraft's maintainers; we contact no one.
+
+## D-016 Python test tools may use scientific packages (2026-11-19)
+
+**Decision.** Developer and test tools under `tools/dev/` may use numpy, SciPy and scikit-image (all BSD-3-Clause).
+Logan approved in-session ("Python for testing is fine"). The plan tool and anything the gate runs stay Python without
+packages; shipped code stays Rust. First use: `tools/dev/synth_scan.py`, which makes scan-like meshes (marching cubes
+over a part, noise, a turn) from SolidCraft-made parts, the evidence behind the scan work of 2026-11-19.

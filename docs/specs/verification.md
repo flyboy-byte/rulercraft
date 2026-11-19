@@ -62,7 +62,12 @@ tests, benchmark baselines. Reported in STATUS.md once the tools exist.
 ## Tools
 
 Mutation testing and fuzzing run as developer tools installed on the machine or CI runner, not as dependencies of the
-shipped crates. A fuzz harness that needs a library dependency lives in its own crate outside the workspace and needs
+shipped crates. The first fuzzer needs neither: `crates/rulercraft-mesh/tests/fuzz.rs` mutates small valid
+files of every format (STL ASCII and binary, PLY ASCII and binary, PLY points, OBJ, 3MF, glTF, GLB, XYZ, PTS) with a
+seeded generator and sends random fit requests (non-finite, inverted, huge) through the command layer; every outcome
+must be a refusal or finite, in-range, within-limit data, with no panic and nothing slow. A fast run is in every test
+run; `RULERCRAFT_FUZZ_SECONDS=3600 cargo test --release -p rulercraft-mesh --test fuzz -- --ignored` is the T2 run
+(2026-11-19: 30 million reader inputs and 124 million fit requests in 90 s, nothing found). A fuzz harness that needs a library dependency lives in its own crate outside the workspace and needs
 Logan's yes (AGENTS.md). Scheduled CI workflows are a hot file change: one PR at a time.
 
 ## First shape-zoo slice
