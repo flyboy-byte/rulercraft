@@ -40,7 +40,8 @@ on it keeps the dome out of the plate's region; refusals: none (an empty mesh gi
 - Seeds: triangles whose largest angle to an edge-neighbour is between 0.5° and 45° (curving, not a sharp
   edge), in index order. A triangle seeds at most once, and never after it was in a region that was handed back
   (it can still join a later region); otherwise a scan, where nearly every triangle is curving, is seeded over and
-  over and the search grows with the square of the mesh size. A seed patch is the seed and every triangle within two edge-steps; it is kept only
+  over and the search grows with the square of the mesh size. `segment_cylinders_seeded` also takes which triangles
+  may seed (any can still join), for a caller that knows the large flat faces. A seed patch is the seed and every triangle within two edge-steps; it is kept only
   if fit.cylinder accepts the patch's vertices (with vertex normals), the radius is under the limit, and
   every patch corner lies within the distance limit.
 - Growth: breadth-first across shared edges; a neighbour joins when its surface (corners, edge midpoints

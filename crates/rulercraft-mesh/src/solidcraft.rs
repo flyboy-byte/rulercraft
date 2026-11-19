@@ -10,7 +10,7 @@
 use crate::Mesh;
 use crate::graph::MeshGraph;
 use crate::math::{cross, dot, normalize, scale, sub};
-use crate::segment::{segment_cylinders, segment_planes};
+use crate::segment::{segment_cylinders_seeded, segment_planes};
 use serde_json::{Value, json};
 
 /// The SolidCraft design format written. Later SolidCraft versions upgrade it when they open it.
@@ -23,6 +23,10 @@ const MAX_OUTLINE_CORNERS: usize = 200;
 const MAX_CHECK_POINTS: usize = 200_000;
 /// A loop needs at least this many points to count as a circle.
 const MIN_CIRCLE_POINTS: usize = 12;
+/// Flat regions with at least this many triangles seed no round region.
+const BIG_FACE_TRIANGLES: usize = 200;
+/// A round square to the base covering less of a circle than this is a rounded vertical edge, not a hole or boss.
+const MIN_ROUND_COVERAGE_DEG: f64 = 200.0;
 
 /// What [`design`] made: the design JSON and the loss report SolidCraft shows after an import.
 #[derive(Debug, Clone, PartialEq)]
@@ -589,6 +593,17 @@ impl Chamfer {
     }
 }
 
+/// A flat face square to the base, in the frame: unit normal and centre across the base, extent, heights, area.
+struct Wall {
+    n: [f64; 2],
+    c: [f64; 2],
+    lo: [f64; 2],
+    hi: [f64; 2],
+    zlo: f64,
+    zhi: f64,
+    area: f64,
+}
+
 /// The plate's outline, traced from the base face.
 enum Outline {
     Rectangle,
@@ -611,8 +626,63 @@ struct Level {
 /// the file name).
 pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     let graph = MeshGraph::build(mesh);
-    let planes = segment_planes(mesh, &graph, Default::default()).regions;
-    let cylinders = segment_cylinders(mesh, &graph, Default::default()).regions;
+    // How rough the surface is: the median angle between neighbouring triangles (0 on a CAD mesh, whose flat faces
+    // are flat; several degrees on a noisy scan, whose small triangles tilt every way). Faces grow across that
+    // roughness; the distance limit still stops them at real edges.
+    let rough = {
+        let step = (graph.edges.len() / 50_000).max(1);
+        let mut d: Vec<f64> = graph
+            .edges
+            .iter()
+            .step_by(step)
+            .filter_map(|e| {
+                let t1 = e.t1?;
+                let (a, b) = (
+                    graph.face_normals[e.t0 as usize],
+                    graph.face_normals[t1 as usize],
+                );
+                (dot(a, a) > 0.0 && dot(b, b) > 0.0).then(|| acute_deg(a, b))
+            })
+            .collect();
+        d.sort_by(f64::total_cmp);
+        d.get(d.len() / 2).copied().unwrap_or(0.0)
+    };
+    let plane_options = crate::segment::PlaneSegmentOptions {
+        max_angle: (2.5 * rough).clamp(10.0, 30.0).to_radians(),
+        ..Default::default()
+    };
+    // No round on a part is wider than the part: half its diagonal bounds the radius, which keeps the search from
+    // growing near-flat "cylinders" across a noisy face only to drop them.
+    let diagonal = {
+        let (mut lo, mut hi) = ([f64::INFINITY; 3], [f64::NEG_INFINITY; 3]);
+        for p in &mesh.positions {
+            for k in 0..3 {
+                lo[k] = lo[k].min(f64::from(p[k]));
+                hi[k] = hi[k].max(f64::from(p[k]));
+            }
+        }
+        let d = sub(hi, lo);
+        dot(d, d).sqrt()
+    };
+    let cylinder_options = crate::segment::CylinderSegmentOptions {
+        max_angle: (2.5 * rough).clamp(15.0, 30.0).to_radians(),
+        max_radius: (diagonal / 2.0).max(1.0),
+        ..Default::default()
+    };
+    let planes = segment_planes(mesh, &graph, plane_options).regions;
+    // Triangles of large flat faces seed no round: on a noisy scan they are most of the mesh.
+    let mut on_big_face = vec![false; mesh.triangles.len()];
+    for p in planes
+        .iter()
+        .filter(|p| p.triangles.len() >= BIG_FACE_TRIANGLES)
+    {
+        for &t in &p.triangles {
+            on_big_face[t as usize] = true;
+        }
+    }
+    let cylinders =
+        segment_cylinders_seeded(mesh, &graph, cylinder_options, |t| !on_big_face[t as usize])
+            .regions;
     let pos = |i: u32| mesh.positions[i as usize].map(f64::from);
 
     // The base: the largest flat region.
@@ -709,9 +779,9 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }
         (lo, hi)
     };
-    let (lo, hi) = extent(&base.vertices);
-    let (len, wid) = (hi[0] - lo[0], hi[1] - lo[1]);
-    if !(len > 0.0 && wid > 0.0 && len.is_finite() && wid.is_finite()) {
+    let (blo, bhi) = extent(&base.vertices);
+    let (base_len, base_wid) = (bhi[0] - blo[0], bhi[1] - blo[1]);
+    if !(base_len > 0.0 && base_wid > 0.0 && base_len.is_finite() && base_wid.is_finite()) {
         return Err(NotRebuilt("the base face has no extent".into()));
     }
     let thick = dot(sub(flat_center(&planes[ti]), o), n);
@@ -720,10 +790,91 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             "the opposite face is not apart from the base".into(),
         ));
     }
-    let to_part = |l: [f64; 3]| [l[0] - lo[0], l[1] - lo[1], l[2]];
-
     let tol = (0.02 * thick).max(0.05);
     let margin = (0.1 * thick).max(0.5);
+    // How much of its rectangle a face must cover to count as one: noise leaves small gaps in a scan's faces.
+    let full = if rough > 2.0 { 0.93 } else { 0.98 };
+    let square = if rough > 2.0 { 2.5 } else { 1.0 };
+    // How far a scan's softened edge can pull a face's boundary or a round's end from where the edge really is:
+    // three of the mesh's typical edge lengths, at most 1 mm, at least the tolerance. On a CAD mesh faces meet
+    // exactly, so the nearest match within it is the exact one.
+    let reach = {
+        let step = (graph.edges.len() / 20_000).max(1);
+        let mut e: Vec<f64> = graph
+            .edges
+            .iter()
+            .step_by(step)
+            .map(|e| {
+                let d = sub(pos(e.a), pos(e.b));
+                dot(d, d).sqrt()
+            })
+            .collect();
+        e.sort_by(f64::total_cmp);
+        let median = e.get(e.len() / 2).copied().unwrap_or(0.0);
+        (3.0 * median).min(1.0).max(tol)
+    };
+    // Walls square to the base, in the frame: where faces' edges really are on a scan, whose faces stop short of
+    // their softened edges.
+    let walls: Vec<Wall> = planes
+        .iter()
+        .filter(|p| (acute_deg(p.plane.normal, n) - 90.0).abs() <= SQUARE_DEG)
+        .filter_map(|p| {
+            let (nx, ny) = (dot(p.plane.normal, u), dot(p.plane.normal, v));
+            let l = nx.hypot(ny);
+            let c = local(flat_center(p));
+            let (lo, hi) = extent(&p.vertices);
+            let (zlo, zhi) =
+                p.vertices
+                    .iter()
+                    .fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), &i| {
+                        let z = local(pos(i))[2];
+                        (a.min(z), b.max(z))
+                    });
+            (l > 0.0).then_some(Wall {
+                n: [nx / l, ny / l],
+                c: [c[0], c[1]],
+                lo,
+                hi,
+                zlo,
+                zhi,
+                area: p.area,
+            })
+        })
+        .collect();
+    // A rectangle's sides moved onto the walls that bound it: facing out of it for the plate and pads, into it for
+    // pockets; each wall within 1° of the side's direction, within `reach` of it, and beside it in height and along it.
+    let snap = |lo: [f64; 2], hi: [f64; 2], z0: f64, z1: f64, inward: bool| {
+        let (mut lo2, mut hi2) = (lo, hi);
+        for k in 0..2 {
+            let o = 1 - k;
+            for side in [-1.0f64, 1.0] {
+                let at = if side < 0.0 { lo[k] } else { hi[k] };
+                let want = if inward { -side } else { side };
+                let best = walls
+                    .iter()
+                    .filter(|w| {
+                        w.n[k] * want >= 1f64.to_radians().cos()
+                            && (w.c[k] - at).abs() <= reach
+                            && w.zhi > z0 + tol
+                            && w.zlo < z1 - tol
+                            && w.hi[o] > lo[o] + tol
+                            && w.lo[o] < hi[o] - tol
+                    })
+                    .max_by(|a, b| a.area.total_cmp(&b.area));
+                if let Some(w) = best {
+                    if side < 0.0 {
+                        lo2[k] = w.c[k];
+                    } else {
+                        hi2[k] = w.c[k];
+                    }
+                }
+            }
+        }
+        (lo2, hi2)
+    };
+    let (lo, hi) = snap(blo, bhi, 0.0, thick, false);
+    let (len, wid) = (hi[0] - lo[0], hi[1] - lo[1]);
+    let to_part = |l: [f64; 3]| [l[0] - lo[0], l[1] - lo[1], l[2]];
     let mut losses: Vec<Loss> = Vec::new();
 
     // The outline: the base face's outer boundary, as a circle or a polygon when it is not a rectangle.
@@ -732,11 +883,11 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         [l[0] - lo[0], l[1] - lo[1]]
     };
     let mut outline = Outline::Rectangle;
-    let mut outline_area = len * wid;
+    let mut outline_area = base_len * base_wid;
     let base_loops = boundary_loops(&base.triangles, mesh, &part_xy).unwrap_or_default();
     if let Some(ring) = base_loops.first() {
         let area = signed_area(ring).abs();
-        if area < 0.98 * len * wid {
+        if area < 0.98 * base_len * base_wid {
             if let Some((x, y, r)) = circle_of(ring, tol) {
                 outline_area = std::f64::consts::PI * r * r;
                 outline = Outline::Circle { x, y, r };
@@ -805,7 +956,8 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                 area: p.area,
                 lo: [l[0] - lo[0], l[1] - lo[1]],
                 hi: [h[0] - lo[0], h[1] - lo[1]],
-                aligned: ang <= 1.0 || ang >= 89.0,
+                // A scan's ragged face boundary turns its smallest rectangle a little: allow 2.5° on a rough mesh.
+                aligned: ang <= square || ang >= 90.0 - square,
             }
         })
         .collect();
@@ -813,7 +965,13 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     let down_heights: Vec<f64> = std::iter::once(0.0)
         .chain(levels.iter().filter(|l| !l.up).map(|l| l.height))
         .collect();
-    let near = |hs: &[f64], h: f64| hs.iter().any(|&x| (x - h).abs() <= tol);
+    // The face height nearest a round's end, within `reach`: on a scan a round stops short of its faces.
+    let nearest = |hs: &[f64], h: f64| {
+        hs.iter()
+            .copied()
+            .filter(|&x| (x - h).abs() <= reach)
+            .min_by(|a, b| (a - h).abs().total_cmp(&(b - h).abs()))
+    };
 
     // Cones square to the base, from the slanted triangles: countersinks once matched to their holes.
     let slanted: Vec<bool> = graph
@@ -882,7 +1040,11 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }
     }
     let mut cone_used = vec![false; cones.len()];
+    // Faces under a hundredth of the base's area go in one item: on a scan, the softened edges.
+    let small = 0.01 * base.area;
+    let (mut small_count, mut small_area) = (0usize, 0.0);
     let mut tilted: Vec<Loss> = Vec::new();
+    let mut rounded_corners: Vec<f64> = Vec::new();
     let mut tilted_of: Vec<usize> = Vec::new();
 
     // Round regions square to the base: holes (surface facing the axis) and bosses (facing away).
@@ -891,15 +1053,20 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     // Flat faces a round feature explains: a boss's top, a blind hole's floor.
     let mut explained: Vec<usize> = Vec::new();
     let mark = |explained: &mut Vec<usize>, x: f64, y: f64, r: f64, h: f64| {
+        let mut found: Option<f64> = None;
         for l in &levels {
             let (cx, cy) = ((l.lo[0] + l.hi[0]) / 2.0, (l.lo[1] + l.hi[1]) / 2.0);
-            if (l.height - h).abs() <= tol
+            if (l.height - h).abs() <= reach
                 && (cx - x).hypot(cy - y) <= r * 0.5
                 && l.area <= std::f64::consts::PI * r * r * 1.05
             {
                 explained.push(l.index);
+                if found.is_none_or(|f| (l.height - h).abs() < (f - h).abs()) {
+                    found = Some(l.height);
+                }
             }
         }
+        found
     };
     let mut down_hole_area = 0.0;
     for (k, cy) in cylinders.iter().enumerate() {
@@ -946,6 +1113,11 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         let at = to_part(local(f.axis_point));
         let (x, y, r) = (at[0], at[1], f.diameter / 2.0);
         if !inside_outline(x, y, r) {
+            if cy.area < small {
+                small_count += 1;
+                small_area += cy.area;
+                continue;
+            }
             drop(
                 &mut losses,
                 "Round features outside the plate",
@@ -954,14 +1126,36 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             );
             continue;
         }
+        // Too thin to be a feature on this mesh, or a piece of a round already taken: the softened edges.
+        let piece = holes.iter().chain(&bosses).any(|h| {
+            let (hx, hy) = (
+                h["x"].as_f64().unwrap_or(f64::NAN),
+                h["y"].as_f64().unwrap_or(f64::NAN),
+            );
+            (hx - x).hypot(hy - y) <= reach
+                && (h["diameter"].as_f64().unwrap_or(f64::NAN) - f.diameter).abs() <= 2.0 * reach
+        });
+        if r < reach / 2.0 || piece {
+            small_count += 1;
+            small_area += cy.area;
+            continue;
+        }
+        if f.coverage_deg < MIN_ROUND_COVERAGE_DEG {
+            // Less than most of a circle: a rounded vertical edge, not a hole or a boss.
+            let outline_wall = t0.abs() <= reach && (t1 - thick).abs() <= reach;
+            if !(outline_wall && !matches!(outline, Outline::Rectangle)) {
+                rounded_corners.push(f.diameter / 2.0);
+            }
+            continue;
+        }
         if facing < 0.0 {
             // A countersink: a cone widening from the hole's top to the plate's top face, on its axis.
             let csk = cones.iter().position(|(c, _)| {
                 (c.x - x).hypot(c.y - y) <= tol
-                    && (c.z0 - t1).abs() <= tol
-                    && (c.r0 - r).abs() <= tol
+                    && (c.z0 - t1).abs() <= reach
+                    && (c.r0 - r).abs() <= reach
                     && c.r1 > c.r0
-                    && (c.z1 - thick).abs() <= tol
+                    && (c.z1 - thick).abs() <= reach
             });
             let countersink = csk.map(|ci| {
                 cone_used[ci] = true;
@@ -970,11 +1164,14 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                 json!({"diameter": 2.0 * c.r1, "depth": c.z1 - c.z0,
                        "angle_deg": 2.0 * ((c.r1 - c.r0) / (c.z1 - c.z0)).atan().to_degrees()})
             });
-            let (top, bottom) = (near(&up_heights, t1), near(&down_heights, t0));
-            let (z, height, kind) = match (bottom, top) {
-                (true, true) => (t0 - margin, t1 - t0 + 2.0 * margin, "through"),
-                (false, true) => (t0, t1 - t0 + margin, "blind from above"),
-                (true, false) => (t0 - margin, t1 - t0 + margin, "blind from below"),
+            let (top_h, bottom_h) = (nearest(&up_heights, t1), nearest(&down_heights, t0));
+            let (top, bottom) = (top_h.is_some(), bottom_h.is_some());
+            t1 = top_h.unwrap_or(t1);
+            t0 = bottom_h.unwrap_or(t0);
+            let kind = match (bottom, top) {
+                (true, true) => "through",
+                (false, true) => "blind from above",
+                (true, false) => "blind from below",
                 (false, false) => {
                     drop(
                         &mut losses,
@@ -991,16 +1188,30 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                 down_hole_area += std::f64::consts::PI * r * r;
             }
             if !bottom {
-                mark(&mut explained, x, y, r, t0); // the floor of a hole blind from above
+                // The floor of a hole blind from above.
+                if let Some(h) = mark(&mut explained, x, y, r, t0) {
+                    t0 = h;
+                }
             } else if !top {
-                mark(&mut explained, x, y, r, t1); // the end of a hole blind from below
+                // The end of a hole blind from below.
+                if let Some(h) = mark(&mut explained, x, y, r, t1) {
+                    t1 = h;
+                }
             }
+            let (z, height) = match kind {
+                "through" => (t0 - margin, t1 - t0 + 2.0 * margin),
+                "blind from above" => (t0, t1 - t0 + margin),
+                _ => (t0 - margin, t1 - t0 + margin),
+            };
             holes.push(json!({"x": x, "y": y, "z": z, "height": height, "diameter": f.diameter,
                               "kind": kind, "from": t0, "to": t1, "sigma": f.sigma, "coverage_deg": f.coverage_deg,
                               "countersink": countersink}));
-        } else if near(&up_heights, t0) && t0 > tol {
+        } else if let Some(on) = nearest(&up_heights, t0).filter(|_| t0 > tol) {
             // Standing on an upward face (the top, a pocket floor or a pad); joined from just inside it.
-            mark(&mut explained, x, y, r, t1);
+            t0 = on;
+            if let Some(h) = mark(&mut explained, x, y, r, t1) {
+                t1 = h;
+            }
             bosses.push(
                 json!({"x": x, "y": y, "z": t0 - margin, "height": t1 - t0 + margin,
                                "standing_height": t1 - t0, "diameter": f.diameter, "on": t0,
@@ -1129,19 +1340,18 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }
     }
     rounded.extend(fillet_corners.iter().copied());
-    for group in &bevel_groups {
-        // One group can hold several bevels meeting at corners: split it by facing.
-        // Binned by facing (bins about 1° wide), so a noisy group with every facet its own way stays linear.
-        let mut bins: std::collections::BTreeMap<[i64; 3], Vec<u32>> = Default::default();
-        for &t in group.iter().filter(|t| !rounded.contains(t)) {
-            let f = graph.face_normals[t as usize];
-            bins.entry(f.map(|c| (c * 57.3).round() as i64))
-                .or_default()
-                .push(t);
-        }
-        let planes_of: Vec<([f64; 3], Vec<u32>)> = bins
-            .into_values()
-            .map(|ts| (graph.face_normals[ts[0] as usize], ts))
+    // Each bevel is one of the flat regions, slanted to the base: grown regions stay together on a scan, where single
+    // facets point every way.
+    {
+        let planes_of: Vec<([f64; 3], Vec<u32>)> = planes
+            .iter()
+            .filter(|p| {
+                let a = acute_deg(p.plane.normal, n);
+                a > SQUARE_DEG
+                    && a < 90.0 - SQUARE_DEG
+                    && !p.triangles.iter().any(|t| rounded.contains(t))
+            })
+            .map(|p| (p.plane.normal, p.triangles.clone()))
             .collect();
         for (f, tris) in planes_of {
             if dot(f, n) <= 0.0 {
@@ -1187,16 +1397,25 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                 let smax = st.iter().map(|x| x.0).fold(f64::NEG_INFINITY, f64::max);
                 let smin = st.iter().map(|x| x.0).fold(f64::INFINITY, f64::min);
                 let inside = st.iter().all(|x| x.1 >= -tol && x.1 <= l + tol);
-                (smax.abs() <= tol && inside && smin < -tol).then_some(Chamfer {
-                    a,
-                    dir,
-                    out,
-                    len: l,
-                    across: -smin,
-                    down: thick - zlo,
-                    top: thick,
-                    round: false,
-                })
+                // It runs along the whole edge, short only where bevels on the next edges meet it.
+                let (t0, t1) = st
+                    .iter()
+                    .fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), x| {
+                        (a.min(x.1), b.max(x.1))
+                    });
+                let along = t1 - t0 >= l + 2.0 * smin - 2.0 * reach;
+                let size_ok = -smin < l / 2.0 && thick - zlo < thick;
+                (smax.abs() <= reach.max(tol) && inside && smin < -tol && along && size_ok)
+                    .then_some(Chamfer {
+                        a,
+                        dir,
+                        out,
+                        len: l,
+                        across: -smin,
+                        down: thick - zlo,
+                        top: thick,
+                        round: false,
+                    })
             });
             if let Some(c) = found {
                 chamfers.push((c, tris));
@@ -1218,6 +1437,26 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         )
         .collect();
     for (loss, k) in tilted.into_iter().zip(tilted_of) {
+        // A thin round lying along an edge is that edge softened, however long.
+        // So is one whose arc is no wider than that, whatever radius noise gives its fit.
+        let c = &cylinders[k].cylinder;
+        let arc = c.coverage_deg.to_radians() * c.diameter / 2.0;
+        // And a shallow arc (under 45°) is a near-flat strip by an edge, not a round a person drew.
+        if cylinders[k].area < small
+            || c.diameter / 2.0 <= reach
+            || arc <= 2.0 * reach
+            || c.coverage_deg < 45.0
+        {
+            if !cylinders[k]
+                .triangles
+                .iter()
+                .all(|t| explained_tris.contains(t) || !slanted[*t as usize])
+            {
+                small_count += 1;
+                small_area += cylinders[k].area;
+            }
+            continue;
+        }
         if !cylinders[k]
             .triangles
             .iter()
@@ -1236,6 +1475,11 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                 .iter()
                 .all(|t| explained_tris.contains(t) || !slanted[*t as usize])
         {
+            if p.area < small {
+                small_count += 1;
+                small_area += p.area;
+                continue;
+            }
             losses.push(Loss {
                 severity: "dropped",
                 title: "Slanted faces not rebuilt",
@@ -1253,10 +1497,27 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         if l.index == ti || explained.contains(&l.index) {
             continue;
         }
+        if l.area < small && (l.height.abs() <= reach || (l.height - thick).abs() <= reach) {
+            // A sliver on the softened rim of the base or the top.
+            small_count += 1;
+            small_area += l.area;
+            continue;
+        }
         let subject = format!("face {} at {:.3} mm", l.index + 1, l.height);
         let (w, d) = (l.hi[0] - l.lo[0], l.hi[1] - l.lo[1]);
-        let rect = json!({"x": l.lo[0], "y": l.lo[1], "length": w, "width": d, "height": l.height, "area_mm2": l.area});
-        let simplified = l.area < 0.98 * w * d;
+        let simplified = l.area < full * w * d;
+        // Its sides on its walls (a scan's floor stops short of them), into it for a pocket, out of it for a pad.
+        let (rlo, rhi) = {
+            let at = |p: [f64; 2]| [p[0] + lo[0], p[1] + lo[1]];
+            let (a, b) = if l.height < thick {
+                snap(at(l.lo), at(l.hi), l.height, thick, true)
+            } else {
+                snap(at(l.lo), at(l.hi), thick, l.height, false)
+            };
+            ([a[0] - lo[0], a[1] - lo[1]], [b[0] - lo[0], b[1] - lo[1]])
+        };
+        let rect = json!({"x": rlo[0], "y": rlo[1], "length": rhi[0] - rlo[0], "width": rhi[1] - rlo[1],
+                          "height": l.height, "area_mm2": l.area});
         if l.up && l.height > tol && l.height < thick - tol {
             if !l.aligned {
                 losses.push(Loss {
@@ -1326,6 +1587,30 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }
     }
 
+    if small_count > 0 {
+        losses.push(Loss {
+            severity: "degraded",
+            title: "Small slanted and rounded faces not rebuilt",
+            subject: format!("{small_count} faces"),
+            message: format!(
+                "{small_count} faces of {small_area:.1} mm² in all, each under {small:.1} mm²: softened edges, or small bevels and rounds"
+            ),
+            code: "small_faces",
+        });
+    }
+    if !rounded_corners.is_empty() {
+        let (a, b) = rounded_corners
+            .iter()
+            .fold((f64::INFINITY, 0.0f64), |(a, b), &r| (a.min(r), b.max(r)));
+        losses.push(Loss {
+            severity: "degraded",
+            title: "Rounded vertical edges left sharp",
+            subject: format!("{} edges", rounded_corners.len()),
+            message: format!("rounds square to the base covering less than {MIN_ROUND_COVERAGE_DEG}° of a circle, radius {a:.2} to {b:.2} mm"),
+            code: "rounded_edges",
+        });
+    }
+
     // Cutouts through the plate that are not round: an inner loop of the base that the top face repeats.
     let mut slots: Vec<Vec<[f64; 2]>> = Vec::new();
     let mut slot_area = 0.0;
@@ -1359,7 +1644,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
 
     // An outline that is not a full rectangle is simplified to its enclosing rectangle.
     let expected = outline_area - down_hole_area - slot_area;
-    if base.area < 0.98 * expected {
+    if base.area < full * expected {
         let rectangle = matches!(outline, Outline::Rectangle);
         losses.push(Loss {
             severity: "degraded",

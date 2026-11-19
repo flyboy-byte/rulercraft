@@ -343,6 +343,18 @@ pub fn segment_cylinders(
     graph: &MeshGraph,
     options: CylinderSegmentOptions,
 ) -> CylinderSegmentation {
+    segment_cylinders_seeded(mesh, graph, options, |_| true)
+}
+
+/// As [`segment_cylinders`], seeding only from triangles `may_seed` allows (any triangle can still join a region).
+/// A caller that already knows the large flat faces passes them over: on a noisy scan every triangle is curving,
+/// and trying a cylinder at each one is most of the work.
+pub fn segment_cylinders_seeded(
+    mesh: &Mesh,
+    graph: &MeshGraph,
+    options: CylinderSegmentOptions,
+    may_seed: impl Fn(u32) -> bool,
+) -> CylinderSegmentation {
     let nt = mesh.triangles.len();
     let neighbours = triangle_neighbours(graph, nt);
     let normal = |t: u32| graph.face_normals[t as usize];
@@ -388,6 +400,7 @@ pub fn segment_cylinders(
         if owner[seed as usize] != u32::MAX
             || tried[seed as usize]
             || !usable(seed)
+            || !may_seed(seed)
             || !curving(seed)
         {
             continue;

@@ -4,6 +4,11 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
+- Scan to SolidCraft on real scans: sizes come from the walls (a scan's faces stop short of their softened edges),
+  holes and bosses keep their real depths and heights, softened edges are summarised in one report item instead of
+  hundreds, and a noisy 134,000-triangle scan takes 3 seconds, not a minute. Checked on a test part meshed like a
+  scan, turned and with noise: every size within 0.05 mm.
+
 - Faster and steadier on real scans: finding round regions no longer slows to minutes on a dense scan (a 134,000
   triangle scan of the bracket went from over 8 minutes to 3 seconds), and a scanned plate's axes follow its walls
   instead of the ragged edge of its base face, which had turned the frame by 0.7° and grown every size.

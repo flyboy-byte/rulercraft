@@ -12,6 +12,15 @@ bracket, L-plate, round plate, stepped cylinder, counterbore, window, countersin
 (all exact), 14/14 in SolidCraft's `plugin test`,
 and driven over SolidCraft's MCP by `tools/agent_smoke.py` (docs/agents-and-solidcraft.md).
 
+## Scans (2026-11-19)
+No real scan has been tried yet, so scan-like meshes stood in: marching cubes over SolidCraft-made parts (a local
+Python script with numpy, scipy and scikit-image, not committed: tools are Python without packages) and, in the
+repo, `tests/scan_like.rs` (surface nets over an exact part, turned, with noise). They found and fixed: quadratic
+round-region search (minutes), a frame turned by a ragged base boundary, sizes short by the softened edges, faces
+split by noise, and hundreds of report items for softened edges. On the bracket made scan-like at 0.4 mm with 0.03 mm
+noise, turned 23°: every size within 0.01 mm, the scan within 0.06 mm (p95) of the rebuild, 3 s. Not yet on scans:
+countersinks, chamfers and fillets (found on CAD meshes only), and outlines that are not rectangles.
+
 ## Owed and waiting on Logan
 - Push tag `plugin-v0.1.0` (or a newer commit's): `git tag plugin-v0.1.0 <sha> && git push origin plugin-v0.1.0`. A tag push
   is refused (403) from the Claude session's proxy; the `solidcraft-plugin-release` workflow does the rest.
