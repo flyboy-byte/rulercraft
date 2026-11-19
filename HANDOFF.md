@@ -24,6 +24,11 @@ windows, countersinks, chamfers and fillets work on scans too now; every synthet
 within 0.25 % of SolidCraft's volume. `tests/ply_memory.rs` failed once under a full parallel run (its child's 96 MB
 virtual-memory cap) and passed on every rerun: a flake to watch, not caused by this work.
 
+2026-11-19 Codex follow-up: #131 (`codex/scan-volume-validity`) keeps the rebuilt SolidCraft volume
+when the scan is open and leaves the scan volume and difference unavailable. The baseline open-window
+reproduction reported 8,180 mm³ for the scan and 1.22% difference from the 8,280 mm³ rebuild.
+Recheck the closed and open window imports first. Pose-dependent recognition remains on #129.
+
 ## Also new (2026-11-19)
 - Point clouds (#123): `fit` and `measure` read .xyz/.pts/.asc and points-only PLY (`read_cloud`). Not yet: E57/LAS/PCD,
   normals for clouds (so `--facing` works), the MCP server opening clouds.
