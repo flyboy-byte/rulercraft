@@ -532,3 +532,71 @@ fn the_check_finds_a_bump() {
         "one point is not 5 %: {c}"
     );
 }
+
+/// A 40 x 30 x 10 plate with a Ø6 through hole countersunk 90° to Ø12 (SolidCraft: 11,604.159 mm³). The cone is
+/// found from its facets, paired with the hole, and rebuilt as a cone cut; nothing is reported lost.
+#[test]
+fn a_countersink_is_a_cone_on_its_hole() {
+    let r = design(&fixture("countersink.stl"), "countersink").unwrap();
+    assert!(
+        r.report["items"].as_array().unwrap().is_empty(),
+        "{}",
+        r.report["items"]
+    );
+    let h = &r.report["details"]["holes"][0];
+    assert_eq!(h["kind"], "through");
+    let c = &h["countersink"];
+    assert!((c["diameter"].as_f64().unwrap() - 12.0).abs() < 0.01, "{c}");
+    assert!((c["depth"].as_f64().unwrap() - 3.0).abs() < 0.01, "{c}");
+    assert!((c["angle_deg"].as_f64().unwrap() - 90.0).abs() < 0.1, "{c}");
+    assert!(
+        r.design["features"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|f| f["type"] == "cone" && f["operation"] == "cut")
+    );
+    assert!(r.report["details"]["check"]["max_mm"].as_f64().unwrap() < 1e-3);
+}
+
+/// A 50 x 30 x 8 plate with all four top edges bevelled 2 mm across and 1 mm down, and a Ø5 hole (SolidCraft:
+/// 11,688.254 mm³). Each bevel is found on its edge, and one feature with two sizes rebuilds all four.
+#[test]
+fn top_edge_chamfers_are_rebuilt() {
+    let r = design(&fixture("chamfer.stl"), "chamfer").unwrap();
+    assert!(
+        r.report["items"].as_array().unwrap().is_empty(),
+        "{}",
+        r.report["items"]
+    );
+    let cs = r.report["details"]["chamfers"].as_array().unwrap();
+    assert_eq!(cs.len(), 4);
+    for c in cs {
+        assert!((c["width"].as_f64().unwrap() - 2.0).abs() < 0.01, "{c}");
+        assert!((c["height"].as_f64().unwrap() - 1.0).abs() < 0.01, "{c}");
+    }
+    let ch: Vec<&Value> = r.design["features"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|f| f["type"] == "chamfer")
+        .collect();
+    assert_eq!(ch.len(), 1);
+    assert_eq!(ch[0]["edges"].as_array().unwrap().len(), 4);
+    assert_eq!(param(&r.design, "chamfer1_width"), "2 mm");
+    assert!(r.report["details"]["check"]["max_mm"].as_f64().unwrap() < 1e-3);
+}
+
+/// The L-plate with an outer edge and the inner-corner edge bevelled 1.5 mm (SolidCraft: 12,461.305 mm³): bevels on
+/// a traced outline, one size, so one `chamfer1_size`.
+#[test]
+fn chamfers_on_a_traced_outline() {
+    let r = design(&fixture("l-chamfer.stl"), "l-chamfer").unwrap();
+    assert!(
+        r.report["items"].as_array().unwrap().is_empty(),
+        "{}",
+        r.report["items"]
+    );
+    assert_eq!(r.report["details"]["chamfers"].as_array().unwrap().len(), 2);
+    assert_eq!(param(&r.design, "chamfer1_size"), "1.5 mm");
+}

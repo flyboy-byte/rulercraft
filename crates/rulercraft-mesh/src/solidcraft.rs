@@ -301,6 +301,10 @@ struct Solid {
     body: Vec<(Shape, f64, f64)>,
     /// Material taken away.
     cuts: Vec<(Shape, f64, f64)>,
+    /// Material taken away by cones (countersinks).
+    cones: Vec<Cone>,
+    /// Material taken away by bevels along top edges.
+    chamfers: Vec<Chamfer>,
 }
 
 enum Shape {
@@ -348,7 +352,19 @@ impl Solid {
             .cuts
             .iter()
             .map(|(s, a, b)| Self::extruded(s, *a, *b, p))
-            .fold(f64::INFINITY, f64::min);
+            .fold(f64::INFINITY, f64::min)
+            .min(
+                self.cones
+                    .iter()
+                    .map(|c| c.dist(p))
+                    .fold(f64::INFINITY, f64::min),
+            )
+            .min(
+                self.chamfers
+                    .iter()
+                    .map(|c| c.dist(p))
+                    .fold(f64::INFINITY, f64::min),
+            );
         body.max(-cut)
     }
 }
@@ -371,6 +387,141 @@ fn check_report(mut d: Vec<f64>, tol: f64) -> Value {
            "rms_mm": (d.iter().map(|x| x * x).sum::<f64>() / n).sqrt(),
            "p95_mm": at(0.95), "max_mm": d.last().copied().unwrap_or(0.0),
            "within_tolerance": within, "tolerance_mm": tol})
+}
+
+/// A cone square to the base: its axis at `(x, y)` in the part frame, radius `r0` at height `z0` and `r1` at `z1`.
+#[derive(Debug, Clone, Copy)]
+struct Cone {
+    x: f64,
+    y: f64,
+    z0: f64,
+    r0: f64,
+    z1: f64,
+    r1: f64,
+}
+
+impl Cone {
+    /// Signed distance to the solid frustum (negative inside).
+    fn dist(&self, p: [f64; 3]) -> f64 {
+        let q = [
+            (p[0] - self.x).hypot(p[1] - self.y),
+            p[2] - (self.z0 + self.z1) / 2.0,
+        ];
+        let h = (self.z1 - self.z0) / 2.0;
+        let (k1, k2) = ([self.r1, h], [self.r1 - self.r0, 2.0 * h]);
+        let ca = [
+            q[0] - q[0].min(if q[1] < 0.0 { self.r0 } else { self.r1 }),
+            q[1].abs() - h,
+        ];
+        let d2 = |a: [f64; 2]| a[0] * a[0] + a[1] * a[1];
+        let t = (((k1[0] - q[0]) * k2[0] + (k1[1] - q[1]) * k2[1]) / d2(k2)).clamp(0.0, 1.0);
+        let cb = [q[0] - k1[0] + k2[0] * t, q[1] - k1[1] + k2[1] * t];
+        let sign = if cb[0] < 0.0 && ca[1] < 0.0 {
+            -1.0
+        } else {
+            1.0
+        };
+        sign * d2(ca).min(d2(cb)).sqrt()
+    }
+}
+
+/// The cone square to the base that slanted triangles lie on, when they wrap around one axis.
+/// `faces` holds each triangle's area, centroid across the base, and its normal's unit direction across the base;
+/// `points` the triangles' vertices in the part frame.
+fn cone_of(faces: &[(f64, [f64; 2], [f64; 2])], points: &[[f64; 3]], tol: f64) -> Option<Cone> {
+    // The axis: the point nearest every line through a triangle along its normal.
+    let (mut a, mut b) = ([[0.0; 2]; 2], [0.0; 2]);
+    for &(w, c, h) in faces {
+        let m = [
+            [1.0 - h[0] * h[0], -h[0] * h[1]],
+            [-h[0] * h[1], 1.0 - h[1] * h[1]],
+        ];
+        for i in 0..2 {
+            for j in 0..2 {
+                a[i][j] += w * m[i][j];
+            }
+            b[i] += w * (m[i][0] * c[0] + m[i][1] * c[1]);
+        }
+    }
+    let (det, tr) = (a[0][0] * a[1][1] - a[0][1] * a[1][0], a[0][0] + a[1][1]);
+    if det.is_nan() || det <= 0.05 * tr * tr {
+        return None; // the normals all point one way: a flat bevel, not a cone
+    }
+    let x = (b[0] * a[1][1] - b[1] * a[0][1]) / det;
+    let y = (a[0][0] * b[1] - a[1][0] * b[0]) / det;
+    // Radius as a straight line in height.
+    let n = points.len() as f64;
+    let rz: Vec<[f64; 2]> = points
+        .iter()
+        .map(|p| [(p[0] - x).hypot(p[1] - y), p[2]])
+        .collect();
+    let (sz, sr) = (
+        rz.iter().map(|q| q[1]).sum::<f64>(),
+        rz.iter().map(|q| q[0]).sum::<f64>(),
+    );
+    let szz = rz.iter().map(|q| q[1] * q[1]).sum::<f64>();
+    let szr = rz.iter().map(|q| q[1] * q[0]).sum::<f64>();
+    let den = n * szz - sz * sz;
+    if den.is_nan() || den <= 1e-12 * n * n {
+        return None;
+    }
+    let slope = (n * szr - sz * sr) / den;
+    let k = (sr - slope * sz) / n;
+    if rz.iter().any(|q| (k + slope * q[1] - q[0]).abs() > tol) {
+        return None;
+    }
+    // It must go all the way round.
+    let mut bins = [false; 36];
+    for p in points {
+        let ang = (p[1] - y).atan2(p[0] - x).to_degrees().rem_euclid(360.0);
+        bins[((ang / 10.0) as usize).min(35)] = true;
+    }
+    if bins.iter().filter(|&&f| f).count() < 32 {
+        return None;
+    }
+    let (z0, z1) = rz
+        .iter()
+        .fold((f64::INFINITY, f64::NEG_INFINITY), |(lo, hi), q| {
+            (lo.min(q[1]), hi.max(q[1]))
+        });
+    let (r0, r1) = (k + slope * z0, k + slope * z1);
+    (r0 > 0.0 && r1 > 0.0 && z1 > z0).then_some(Cone {
+        x,
+        y,
+        z0,
+        r0,
+        z1,
+        r1,
+    })
+}
+
+/// A bevel along a straight top edge of the outline: the edge from `a` along unit `dir` for `len`, `out` its
+/// outward normal across the base; the bevel cuts back `across` on the top face and `down` on the wall.
+#[derive(Debug, Clone, Copy)]
+struct Chamfer {
+    a: [f64; 2],
+    dir: [f64; 2],
+    out: [f64; 2],
+    len: f64,
+    across: f64,
+    down: f64,
+    top: f64,
+}
+
+impl Chamfer {
+    /// Signed distance to the material the bevel takes away (negative inside it), close enough for the check.
+    fn dist(&self, p: [f64; 3]) -> f64 {
+        let q = [p[0] - self.a[0], p[1] - self.a[1]];
+        let (s, t) = (
+            q[0] * self.out[0] + q[1] * self.out[1],
+            q[0] * self.dir[0] + q[1] * self.dir[1],
+        );
+        // The bevel's plane in (s, z): through (0, top - down) and (-across, top); taken where outside it.
+        let g = (1.0 / self.across).hypot(1.0 / self.down);
+        let plane = -(s / self.across - (self.top - p[2]) / self.down + 1.0) / g;
+        let ends = (-t).max(t - self.len);
+        plane.max(ends)
+    }
 }
 
 /// The plate's outline, traced from the base face.
@@ -564,18 +715,75 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         .collect();
     let near = |hs: &[f64], h: f64| hs.iter().any(|&x| (x - h).abs() <= tol);
 
-    for (k, p) in planes.iter().enumerate() {
-        let ang = acute_deg(p.plane.normal, n);
-        if k != bi && ang > SQUARE_DEG && ang < 90.0 - SQUARE_DEG {
-            losses.push(Loss {
-                severity: "dropped",
-                title: "Slanted faces not rebuilt",
-                subject: format!("face {}", k + 1),
-                message: format!("a {:.2} mm² face at {ang:.1}° to the base (a chamfer or draft) is not part of the rebuild", p.area),
-                code: "slanted_face",
-            });
+    // Cones square to the base, from the slanted triangles: countersinks once matched to their holes.
+    let slanted: Vec<bool> = graph
+        .face_normals
+        .iter()
+        .map(|&f| {
+            let a = acute_deg(f, n);
+            a > SQUARE_DEG && a < 90.0 - SQUARE_DEG
+        })
+        .collect();
+    let mut cones: Vec<(Cone, Vec<u32>)> = Vec::new();
+    let mut bevel_groups: Vec<Vec<u32>> = Vec::new();
+    {
+        let mut parent: Vec<u32> = (0..slanted.len() as u32).collect();
+        fn root(parent: &mut [u32], mut i: u32) -> u32 {
+            while parent[i as usize] != i {
+                parent[i as usize] = parent[parent[i as usize] as usize];
+                i = parent[i as usize];
+            }
+            i
+        }
+        for e in &graph.edges {
+            if let (Some(t1), false) = (e.t1, e.non_manifold) {
+                if slanted[e.t0 as usize] && slanted[t1 as usize] {
+                    let (a, b) = (root(&mut parent, e.t0), root(&mut parent, t1));
+                    parent[a as usize] = b;
+                }
+            }
+        }
+        let mut groups: std::collections::BTreeMap<u32, Vec<u32>> = Default::default();
+        for t in 0..slanted.len() as u32 {
+            if slanted[t as usize] {
+                groups.entry(root(&mut parent, t)).or_default().push(t);
+            }
+        }
+        for tris in groups.into_values().filter(|g| g.len() >= 6) {
+            let mut faces = Vec::with_capacity(tris.len());
+            let mut points = Vec::with_capacity(3 * tris.len());
+            for &t in &tris {
+                let [i, j, k] = mesh.triangles[t as usize];
+                let (pi, pj, pk) = (pos(i), pos(j), pos(k));
+                let area = 0.5 * {
+                    let c = cross(sub(pj, pi), sub(pk, pi));
+                    dot(c, c).sqrt()
+                };
+                let f = graph.face_normals[t as usize];
+                let Some(h) = ({
+                    let (hx, hy) = (dot(f, u), dot(f, v));
+                    let l = hx.hypot(hy);
+                    (l > 0.0).then(|| [hx / l, hy / l])
+                }) else {
+                    continue;
+                };
+                let c = to_part(local(scale(
+                    [0, 1, 2].map(|q| pi[q] + pj[q] + pk[q]),
+                    1.0 / 3.0,
+                )));
+                faces.push((area, [c[0], c[1]], h));
+                points.extend([pi, pj, pk].map(|q| to_part(local(q))));
+            }
+            if let Some(c) = cone_of(&faces, &points, tol) {
+                cones.push((c, tris));
+            } else {
+                bevel_groups.push(tris);
+            }
         }
     }
+    let mut cone_used = vec![false; cones.len()];
+    let mut tilted: Vec<Loss> = Vec::new();
+    let mut tilted_of: Vec<usize> = Vec::new();
 
     // Round regions square to the base: holes (surface facing the axis) and bosses (facing away).
     let mut holes: Vec<Value> = Vec::new();
@@ -607,8 +815,9 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             });
         };
         if acute_deg(f.axis, n) > SQUARE_DEG {
+            // Held back: strips of a countersink's cone fit as tilted rounds, and only the cone knows.
             drop(
-                &mut losses,
+                &mut tilted,
                 "Round features not square to the base",
                 "tilted_round",
                 format!(
@@ -616,6 +825,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                     acute_deg(f.axis, n)
                 ),
             );
+            tilted_of.push(k);
             continue;
         }
         let Some(ax) = normalize(f.axis) else {
@@ -645,6 +855,21 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             continue;
         }
         if facing < 0.0 {
+            // A countersink: a cone widening from the hole's top to the plate's top face, on its axis.
+            let csk = cones.iter().position(|(c, _)| {
+                (c.x - x).hypot(c.y - y) <= tol
+                    && (c.z0 - t1).abs() <= tol
+                    && (c.r0 - r).abs() <= tol
+                    && c.r1 > c.r0
+                    && (c.z1 - thick).abs() <= tol
+            });
+            let countersink = csk.map(|ci| {
+                cone_used[ci] = true;
+                let c = cones[ci].0;
+                t1 = thick;
+                json!({"diameter": 2.0 * c.r1, "depth": c.z1 - c.z0,
+                       "angle_deg": 2.0 * ((c.r1 - c.r0) / (c.z1 - c.z0)).atan().to_degrees()})
+            });
             let (top, bottom) = (near(&up_heights, t1), near(&down_heights, t0));
             let (z, height, kind) = match (bottom, top) {
                 (true, true) => (t0 - margin, t1 - t0 + 2.0 * margin, "through"),
@@ -671,7 +896,8 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                 mark(&mut explained, x, y, r, t1); // the end of a hole blind from below
             }
             holes.push(json!({"x": x, "y": y, "z": z, "height": height, "diameter": f.diameter,
-                              "kind": kind, "from": t0, "to": t1, "sigma": f.sigma, "coverage_deg": f.coverage_deg}));
+                              "kind": kind, "from": t0, "to": t1, "sigma": f.sigma, "coverage_deg": f.coverage_deg,
+                              "countersink": countersink}));
         } else if near(&up_heights, t0) && t0 > tol {
             // Standing on an upward face (the top, a pocket floor or a pad); joined from just inside it.
             mark(&mut explained, x, y, r, t1);
@@ -695,6 +921,129 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                     "it faces away from its axis but does not stand on an upward face (it runs from {t0:.3} to {t1:.3} mm)"
                 ),
             );
+        }
+    }
+
+    // Bevels along straight top edges of the outline: flat slanted faces from the top face down a wall.
+    let edges: Vec<([f64; 2], [f64; 2])> = match &outline {
+        Outline::Rectangle => vec![
+            ([0.0, 0.0], [len, 0.0]),
+            ([len, 0.0], [len, wid]),
+            ([len, wid], [0.0, wid]),
+            ([0.0, wid], [0.0, 0.0]),
+        ],
+        Outline::Polygon(p) => (0..p.len()).map(|i| (p[i], p[(i + 1) % p.len()])).collect(),
+        Outline::Circle { .. } => Vec::new(),
+    };
+    let mut chamfers: Vec<(Chamfer, Vec<u32>)> = Vec::new();
+    for group in &bevel_groups {
+        // One group can hold several bevels meeting at corners: split it by facing.
+        let mut planes_of: Vec<([f64; 3], Vec<u32>)> = Vec::new();
+        for &t in group {
+            let f = graph.face_normals[t as usize];
+            match planes_of
+                .iter_mut()
+                .find(|(m, _)| acute_deg(*m, f) <= 1.0 && dot(*m, f) > 0.0)
+            {
+                Some((_, ts)) => ts.push(t),
+                None => planes_of.push((f, vec![t])),
+            }
+        }
+        for (f, tris) in planes_of {
+            if dot(f, n) <= 0.0 {
+                continue; // facing down: a bevel under the plate, which changes the base's outline
+            }
+            let Some(h) = ({
+                let (hx, hy) = (dot(f, u), dot(f, v));
+                let l = hx.hypot(hy);
+                (l > 0.0).then(|| [hx / l, hy / l])
+            }) else {
+                continue;
+            };
+            let pts: Vec<[f64; 3]> = tris
+                .iter()
+                .flat_map(|&t| mesh.triangles[t as usize])
+                .map(|i| to_part(local(pos(i))))
+                .collect();
+            let (zlo, zhi) = pts
+                .iter()
+                .fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), p| {
+                    (a.min(p[2]), b.max(p[2]))
+                });
+            if (zhi - thick).abs() > tol || zlo <= tol {
+                continue;
+            }
+            let found = edges.iter().find_map(|&(a, b)| {
+                let l = (b[0] - a[0]).hypot(b[1] - a[1]);
+                if l <= 0.0 {
+                    return None;
+                }
+                let dir = [(b[0] - a[0]) / l, (b[1] - a[1]) / l];
+                let out = [dir[1], -dir[0]]; // the outline runs counter-clockwise
+                if out[0] * h[0] + out[1] * h[1] < SQUARE_DEG.to_radians().cos() {
+                    return None;
+                }
+                let st: Vec<(f64, f64)> = pts
+                    .iter()
+                    .map(|p| {
+                        let q = [p[0] - a[0], p[1] - a[1]];
+                        (q[0] * out[0] + q[1] * out[1], q[0] * dir[0] + q[1] * dir[1])
+                    })
+                    .collect();
+                let smax = st.iter().map(|x| x.0).fold(f64::NEG_INFINITY, f64::max);
+                let smin = st.iter().map(|x| x.0).fold(f64::INFINITY, f64::min);
+                let inside = st.iter().all(|x| x.1 >= -tol && x.1 <= l + tol);
+                (smax.abs() <= tol && inside && smin < -tol).then_some(Chamfer {
+                    a,
+                    dir,
+                    out,
+                    len: l,
+                    across: -smin,
+                    down: thick - zlo,
+                    top: thick,
+                })
+            });
+            if let Some(c) = found {
+                chamfers.push((c, tris));
+            }
+        }
+    }
+
+    // Slanted faces nothing above explains.
+    let explained_tris: std::collections::HashSet<u32> = chamfers
+        .iter()
+        .flat_map(|(_, tris)| tris.iter().copied())
+        .chain(
+            cones
+                .iter()
+                .zip(&cone_used)
+                .filter(|(_, used)| **used)
+                .flat_map(|((_, tris), _)| tris.iter().copied()),
+        )
+        .collect();
+    for (loss, k) in tilted.into_iter().zip(tilted_of) {
+        if !cylinders[k]
+            .triangles
+            .iter()
+            .all(|t| explained_tris.contains(t))
+        {
+            losses.push(loss);
+        }
+    }
+    for (k, p) in planes.iter().enumerate() {
+        let ang = acute_deg(p.plane.normal, n);
+        if k != bi
+            && ang > SQUARE_DEG
+            && ang < 90.0 - SQUARE_DEG
+            && !p.triangles.iter().all(|t| explained_tris.contains(t))
+        {
+            losses.push(Loss {
+                severity: "dropped",
+                title: "Slanted faces not rebuilt",
+                subject: format!("face {}", k + 1),
+                message: format!("a {:.2} mm² face at {ang:.1}° to the base (a chamfer or draft) is not part of the rebuild", p.area),
+                code: "slanted_face",
+            });
         }
     }
 
@@ -839,6 +1188,8 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     let mut solid = Solid {
         body: Vec::new(),
         cuts: Vec::new(),
+        cones: Vec::new(),
+        chamfers: chamfers.iter().map(|c| c.0).collect(),
     };
     solid.body.push((
         match &outline {
@@ -871,6 +1222,21 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             g(h, "from"),
             g(h, "to"),
         ));
+        if h["countersink"].is_object() {
+            let (r0, d, rt) = (
+                g(h, "diameter") / 2.0,
+                g(&h["countersink"], "depth"),
+                g(&h["countersink"], "diameter") / 2.0,
+            );
+            solid.cones.push(Cone {
+                x: g(h, "x"),
+                y: g(h, "y"),
+                z0: thick - d,
+                r0,
+                z1: thick + margin,
+                r1: rt + margin * (rt - r0) / d,
+            });
+        }
     }
     for b in &pockets {
         let (x, y) = (g(b, "x"), g(b, "y"));
@@ -981,6 +1347,46 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         f["param_names"] = json!([]);
         features.push(f);
     };
+    // Bevels of one size share a feature and its sizes.
+    let mut sizes: Vec<(f64, f64, Vec<Chamfer>)> = Vec::new();
+    for (c, _) in &chamfers {
+        match sizes
+            .iter_mut()
+            .find(|s| (s.0 - c.across).abs() <= tol && (s.1 - c.down).abs() <= tol)
+        {
+            Some(s) => s.2.push(*c),
+            None => sizes.push((c.across, c.down, vec![*c])),
+        }
+    }
+    for (i, (across, down, cs)) in sizes.iter().enumerate() {
+        let edges: Vec<Value> = cs
+            .iter()
+            .map(|c| {
+                let t = c.len / 2.0;
+                json!([
+                    round_um(c.a[0] + c.dir[0] * t),
+                    round_um(c.a[1] + c.dir[1] * t),
+                    round_um(thick)
+                ])
+            })
+            .collect();
+        let mut f = json!({"name": format!("Chamfer{}", i + 1), "type": "chamfer", "edges": edges});
+        if (across - down).abs() <= tol {
+            let p = format!("chamfer{}_size", i + 1);
+            params.push(param(&p, (across + down) / 2.0));
+            f["distance"] = json!(p);
+        } else {
+            let (pa, pd) = (
+                format!("chamfer{}_width", i + 1),
+                format!("chamfer{}_height", i + 1),
+            );
+            params.push(param(&pa, *across));
+            params.push(param(&pd, *down));
+            f["distance"] = json!(pa);
+            f["distance2"] = json!(pd);
+        }
+        add(f);
+    }
     for (i, p) in pads.iter().enumerate() {
         let h = format!("pad{}_height", i + 1);
         params.push(param(&h, f64of(p, "height") - thick));
@@ -1041,6 +1447,24 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             "base": [round_um(f64of(h, "x")), round_um(f64of(h, "y")), z],
             "axis": [0.0, 0.0, 1.0], "radius": format!("{p} / 2"), "height": height,
             "operation": "cut"}));
+        if h["countersink"].is_object() {
+            let c = &h["countersink"];
+            let (cd, ck, m) = (
+                format!("hole{}_csk_diameter", i + 1),
+                format!("hole{}_csk_depth", i + 1),
+                mm(margin),
+            );
+            params.push(param(&cd, f64of(c, "diameter")));
+            params.push(param(&ck, f64of(c, "depth")));
+            // From the hole's wall up past the top face, keeping its slope.
+            add(
+                json!({"name": format!("Hole{}_Countersink", i + 1), "type": "cone",
+                "base": [round_um(f64of(h, "x")), round_um(f64of(h, "y")), format!("thickness - {ck}")],
+                "axis": [0.0, 0.0, 1.0], "radius": format!("{p} / 2"),
+                "top_radius": format!("{cd} / 2 + {m} * ({cd} - {p}) / (2 * {ck})"),
+                "height": format!("{ck} + {m}"), "operation": "cut"}),
+            );
+        }
     }
     let next_id = features.len() + 1;
     let design = json!({
@@ -1075,6 +1499,8 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         "details": {
             "base": {"area_mm2": base.area, "sigma": base.plane.sigma, "form_error": base.plane.form_error},
             "plate": {"length": len, "width": wid, "thickness": thick},
+            "chamfers": chamfers.iter().map(|(c, _)| json!({"edge_from": c.a, "edge_direction": c.dir,
+                "edge_length": c.len, "width": c.across, "height": c.down})).collect::<Vec<_>>(),
             "check": check, "cutouts": slots, "holes": holes, "bosses": bosses, "pockets": pockets, "pads": pads,
             "frame": {"origin": o, "u": u, "v": v, "normal": n, "outline_min": lo, "z0": 0.0},
         },
@@ -1096,6 +1522,8 @@ mod tests {
                 (Shape::Circle(2.0, 2.0, 1.0), 4.0, 7.0),
             ],
             cuts: vec![(Shape::Circle(5.0, 5.0, 1.0), 0.0, 4.0)],
+            cones: vec![],
+            chamfers: vec![],
         };
         let d = |p| solid.distance(p);
         assert!((d([8.0, 8.0, 7.0]) - 3.0).abs() < 1e-9, "above the top");
@@ -1109,6 +1537,63 @@ mod tests {
         );
         assert!((d([2.0, 2.0, 7.5]) - 0.5).abs() < 1e-9, "over the boss");
         assert!((d([12.0, 5.0, 2.0]) - 2.0).abs() < 1e-9, "beside the plate");
+    }
+
+    #[test]
+    fn a_cone_is_found_from_its_facets_and_measured() {
+        // A 90° countersink: radius 3 at height 7 to radius 6 at height 10, axis at (20, 15), 48 facets.
+        let (mut faces, mut points) = (Vec::new(), Vec::new());
+        let at = |a: f64, r: f64, z: f64| [20.0 + r * a.cos(), 15.0 + r * a.sin(), z];
+        for i in 0..48 {
+            let (a, b) = (
+                f64::from(i) * std::f64::consts::TAU / 48.0,
+                f64::from(i + 1) * std::f64::consts::TAU / 48.0,
+            );
+            let m = (a + b) / 2.0;
+            let c = at(m, 4.5, 8.5);
+            faces.push((1.0, [c[0], c[1]], [-m.cos(), -m.sin()]));
+            points.extend([
+                at(a, 3.0, 7.0),
+                at(b, 3.0, 7.0),
+                at(a, 6.0, 10.0),
+                at(b, 6.0, 10.0),
+            ]);
+        }
+        let c = cone_of(&faces, &points, 1e-6).unwrap();
+        assert!(
+            (c.x - 20.0).abs() < 1e-9 && (c.y - 15.0).abs() < 1e-9,
+            "{c:?}"
+        );
+        assert!((c.r0 - 3.0).abs() < 1e-9 && (c.r1 - 6.0).abs() < 1e-9);
+        assert!((c.z0 - 7.0).abs() < 1e-9 && (c.z1 - 10.0).abs() < 1e-9);
+        // Half of it does not go round: no cone.
+        assert!(cone_of(&faces[..24], &points[..96], 1e-6).is_none());
+        // Distances: on the axis below its base, inside, and beside its slanted wall.
+        assert!((c.dist([20.0, 15.0, 5.0]) - 2.0).abs() < 1e-9);
+        assert!(c.dist([20.0, 15.0, 8.5]) < 0.0);
+        let wall = c.dist([20.0 + 4.5 + 2.0_f64.sqrt(), 15.0, 8.5]);
+        assert!((wall - 1.0).abs() < 1e-9, "{wall}");
+    }
+
+    #[test]
+    fn distance_to_a_bevel() {
+        // The edge along +x from the origin, 10 long, outward -y; 2 across the top at z = 8, 1 down the wall.
+        let c = Chamfer {
+            a: [0.0, 0.0],
+            dir: [1.0, 0.0],
+            out: [0.0, -1.0],
+            len: 10.0,
+            across: 2.0,
+            down: 1.0,
+            top: 8.0,
+        };
+        // The old corner is inside what it takes away; a point on the bevel's face is on it.
+        assert!(c.dist([5.0, 0.0, 8.0]) < 0.0);
+        assert!(c.dist([5.0, 1.0, 7.5]).abs() < 1e-12);
+        // 1 mm below the bevel's lower edge on the wall, the nearest point is past the plane: positive.
+        assert!(c.dist([5.0, 0.0, 6.0]) > 0.0);
+        // Beyond the edge's ends nothing is taken.
+        assert!(c.dist([12.0, 0.0, 8.0]) >= 2.0 - 1e-12);
     }
 
     #[test]

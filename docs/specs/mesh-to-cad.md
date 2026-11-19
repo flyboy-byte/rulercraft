@@ -65,6 +65,17 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
   one circle within the tolerance, since four corners always do) and that the top face repeats at the same place
   and size is a window cut through the plate: a sketch of its corners, cut full thickness (`details.cutouts`).
   Counterbores need nothing special: a wide blind round and a narrow through round on one axis are two cuts.
+- **Countersinks.** Triangles slanted to the base (between 5° and 85°) are grouped by shared edges. A group whose
+  normals, followed across the base, meet at one axis, whose radius grows in a straight line with height within the
+  tolerance, and that goes round (32 of 36 ten-degree sectors) is a cone square to the base. A cone that widens from
+  a hole's top on its axis to the top face is that hole's countersink: the hole opens on the top, and a cone cut
+  (`hole<i>_csk_diameter`, `hole<i>_csk_depth`, following `thickness`) rebuilds it. Strips of the cone that the
+  cylinder search fits as tilted rounds are not reported.
+- **Chamfers.** A group that is no cone is split by facing (1°). A face that faces up, reaches the top face and goes
+  down a wall of a straight outline edge (its lowest points on the wall, its sides within the edge's ends) is a bevel
+  on that edge, `width` across the top and `height` down the wall. Bevels of one size share one chamfer feature
+  (`chamfer<i>_size`, or `chamfer<i>_width` and `chamfer<i>_height`), its edges named by their midpoints at the top.
+  Bevels under the plate, on round outlines, and fillets stay in the report as slanted faces.
 - **Check.** The rebuilt part is also a signed-distance field (plate outline, pads and bosses joined, holes,
   pockets and cutouts taken away), and the scan's points (at most 200,000, evenly spaced) are measured against
   it: `details.check` has `points`, `mean_mm`, `rms_mm`, `p95_mm`, `max_mm` and `within_tolerance` (the share of
@@ -80,7 +91,9 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
   `pad_rectangle` (a face covering less than 98 % of its rectangle). `details` carries the plate, holes, bosses,
   pockets and pads with their measured sizes and fit quality, and the frame that maps the design back onto the scan.
 
-Known answers: an L-shaped plate (fixtures/known/l-plate.stl, 60 x 20 plus 20 x 20, 8 mm thick, Ø6 hole) rebuilds
+Known answers also: a Ø6 hole countersunk 90° to Ø12 (11,604.159 mm³), a plate with four top edges bevelled
+2 x 1 (11,688.254 mm³) and the L-plate with two bevelled edges (12,461.305 mm³), all equal to SolidCraft's volume;
+the countersink and bevels follow `thickness` when it is edited. Known answers: an L-shaped plate (fixtures/known/l-plate.stl, 60 x 20 plus 20 x 20, 8 mm thick, Ø6 hole) rebuilds
 as a six-corner sketch with SolidCraft's own volume, 12,573.805 mm³; a Ø50 x 6 round plate with a Ø8 hole as a circle
 sketch, 11,479.380 mm³. The hole block rebuilds as 60 x 30 x 10 with through holes of 3, 5 and 8 mm that map back to
 x = 10, 30, 50, y = 15, also after the scan is turned and moved. The bracket (fixtures/known/bracket.stl, made by

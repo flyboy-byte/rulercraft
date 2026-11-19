@@ -1,0 +1,13 @@
+{
+  "entry": "scan-to-part",
+  "file": "countersink.stl",
+  "expect": {
+    "model": {
+      "body_count": 1,
+      "total": {
+        "volume_mm3": 11604.1593
+      }
+    },
+    "tolerance": 1e-06
+  }
+}

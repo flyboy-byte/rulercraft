@@ -9,3 +9,6 @@
 /package/tests/round-plate.stl
 /package/tests/counterbore.stl
 /package/tests/window.stl
+/package/tests/countersink.stl
+/package/tests/chamfer.stl
+/package/tests/l-chamfer.stl

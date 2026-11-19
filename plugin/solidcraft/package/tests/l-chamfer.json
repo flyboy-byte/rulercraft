@@ -1,0 +1,13 @@
+{
+  "entry": "scan-to-part",
+  "file": "l-chamfer.stl",
+  "expect": {
+    "model": {
+      "body_count": 1,
+      "total": {
+        "volume_mm3": 12461.3053
+      }
+    },
+    "tolerance": 1e-06
+  }
+}

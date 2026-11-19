@@ -15,5 +15,5 @@
     "known-design",
     "wrong-value"
   ],
-  "left": "Counterbores and through windows. Blind or stepped cutouts, countersinks, slots with blind floors, chamfers and fillets still go to the loss report."
+  "left": "Counterbores, through windows, countersinks and top-edge chamfers. Fillets, bevels under the plate or on round outlines, and blind or stepped cutouts still go to the loss report."
 }
