@@ -57,6 +57,64 @@ This establishes that the component pieces can produce an editable part with exp
 The current product lacks a straight-through point-cloud import, calibration, hand-measurement
 binding and editable rebuild over MCP. Physical phone accuracy remains unverified.
 
+## Whole-part verification
+
+A second probe used the CLI built on this documentation branch from engine revision `df26fd6`.
+It mixed and shuffled the top, exterior walls and visible bore wall of a 60 × 30 × 8 mm plate in
+one XYZ file. Its bore is 8 mm across at (15, 12). The underside and lower half of the bore are
+unobserved. Each trial used one of three noise seeds, two poses, two noise amplitudes, three bore
+coverage angles, and one of three hand readings for a 60 mm reference. The 108 combinations reuse
+the same noise realization across poses and reference readings. They are paired comparisons.
+
+The harness supplied two approximate scale-reference picks (0.15 mm standard deviation per coordinate)
+and three approximate region picks (0.35 mm). It applied a uniform scale calculated from the hand
+reading and reference picks. The CLI saw the full cloud with spherical selections around the picks.
+It fitted two side planes and a cylinder with the supplied 8 mm diameter assumption. Width below is
+a harness diagnostic projecting the two plane centers onto the first fitted normal. Bore diameter is
+the free fit. Axis miss measures the distance between the true hole midpoint and the estimated axis
+in physical millimetres relative to the first reference pick. The generator's true pose was used
+for scoring. The case assumes a user or agent can identify the approximate regions.
+
+With the correct 60 mm hand reading, six trials per row gave the following ranges.
+
+| Visible bore arc | XYZ noise per coordinate | Returned bore diameter | Axis miss | Axis tilt |
+| --- | --- | --- | --- | --- |
+| 360° | 0.15 mm | 7.954–8.012 mm | 0.111–0.181 mm | 0.28–1.33° |
+| 360° | 0.60 mm | 7.700–7.825 mm | 0.113–0.182 mm | 1.03–3.46° |
+| 90° | 0.15 mm | 7.751–7.855 mm | 0.111–0.266 mm | 1.51–2.82° |
+| 90° | 0.60 mm | 6.930–7.397 mm | 0.657–0.793 mm | 17.41–89.72° |
+| 0° | 0.15 mm | All six refused | — | — |
+| 0° | 0.60 mm | Four fits from nearby surface samples, 3.506–27.996 mm. Two refused. | 3.030–10.674 mm for returned fits | 83.91–84.41° |
+
+For the full-arc clouds the 30 mm width estimate spanned 29.489–30.160 mm with a 60 mm reading,
+30.003–30.662 mm with 61 mm, and 32.662–33.219 mm with 66 mm. A second independent length can
+expose a scale error. A supplied hole diameter by itself cannot determine its center, direction or depth.
+
+### Two different parts explain every visible point
+
+SolidCraft CLI 0.45.0-rc.4 built two plates differing only in the bottom of the hole. One hole went
+through. The other ended 3 mm above the base. The host measured volumes of 13,997.876 and
+14,148.673 mm³, agreeing with the two analytic solids. Its exact-body projection reported zero maximum
+distance for **the same 7,061 noiseless visible samples** on both. Adding one point on the hidden wall
+at (19, 12, 1) gave 0 mm on the through part and 1 mm on the blind part. A measurement of depth or
+an observation of the underside resolves an ambiguity that more samples on the visible surfaces
+cannot resolve. This is also why the assisted part needs to record the source of a depth decision.
+
+### Reproducing the checks
+
+From the repository root, build the CLI and run the probe. It prints a JSON record per trial, including
+refusals. Supplying the SolidCraft executable adds four records for the hidden-floor check and asserts
+the expected volumes, measured point counts and distances.
+
+```sh
+cargo build --locked -p rulercraft-cli
+python3 tools/dev/check_assisted_cloud.py target/debug/rulercraft --solidcraft solidcraft-cli
+```
+
+These trials verify the fit and CAD components under controlled conditions. They do not test automatic
+feature discovery, unassisted point selection, nonuniform scale drift, a physical phone export, or a
+complete MCP-only reconstruction.
+
 ## Smallest useful implementation
 
 1. Add cloud-aware open and plane/cylinder fitting over MCP using the reader the CLI uses. A labelled selection should
