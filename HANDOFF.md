@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated 2026-11-19 (afternoon), Claude. Main is at #124; no open PRs. `python3 tools/plan.py progress`: 63 %
+Last updated 2026-11-19 (afternoon), Claude. Main is at #129; open: Codex #127 (assessment), #128 (point-cloud first row). `python3 tools/plan.py progress`: 63 %
 weighted, 74 features.
 
 ## Where the plugin stands
@@ -23,6 +23,17 @@ noise, turned 23°: every size within 0.01 mm, the scan within 0.06 mm (p95) of 
 windows, countersinks, chamfers and fillets work on scans too now; every synthetic scan of the known parts rebuilds
 within 0.25 % of SolidCraft's volume. `tests/ply_memory.rs` failed once under a full parallel run (its child's 96 MB
 virtual-memory cap) and passed on every rerun: a flake to watch, not caused by this work.
+
+## Scan poses (#129, 2026-11-19)
+The Codex assessment (#127 item 3) found the scan rebuild failed at some turns. Fixed: pockets aligned by their walls,
+softened corners and noise spikes dropped from snapped outlines (`snap_poly`), windows on scans rebuilt from their
+walls (`wall_poly`, falls back to snapping), boundary tracing that takes the sharpest turn at junctions, and, on scans
+only, a chamfer must be larger than half of `soft` (1.5 edge lengths): smaller is the scan's own edge softening, which
+at 0° lines up with the grid and runs the whole edge. Swept by hand at 30 turns, all pass:
+`for a in $(seq 0 15 345); do RULERCRAFT_SCAN_TURN=$a cargo test -q --release -p rulercraft-mesh --test scan_like; done`.
+The fuzz fit check now finds every non-finite number by path (only the optional diameters may be null). The wasm
+plugin was not rebuilt locally (the proxy blocked the rustup download); CI builds it. Debug prints left in
+`scan_like.rs` and `invariance.rs` were removed.
 
 ## Also new (2026-11-19)
 - Point clouds (#123): `fit` and `measure` read .xyz/.pts/.asc and points-only PLY (`read_cloud`). Not yet: E57/LAS/PCD,
