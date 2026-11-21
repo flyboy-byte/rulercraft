@@ -93,6 +93,10 @@ draft PR (feature id, or an area tag: fix:, improve:, perf:, test:, docs:), work
 - Known paperwork nits, left alone because DECISIONS.md is never rewritten: two decisions are numbered D-009 (3MF reader
   and GUI). ROADMAP.md has sections R1–R7; R8 (verification) lives only in plan/roadmap.json.
 
+2026-11-19 Codex follow-up: #132 (`codex/bound-deviation-sampling`) caps deviation at 200,000
+samples spread across the input sequence. The regression in `solidcraft_design.rs` reported
+399,999 points before the fix. Review the count alongside the existing deviation checks.
+
 ## Habits that held up
 - A branch cut from `origin/main` goes stale once a PR merges: `git fetch` and rebase before building on it (a missed
   rebase cost a conflict on #116). Never switch branches in a shared checkout; `git worktree add /tmp/<name> -b <branch> origin/main`, remove after merge.
