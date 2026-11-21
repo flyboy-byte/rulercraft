@@ -3,10 +3,14 @@
   "milestone": "R6",
   "title": "Check measured cloud scale at large coordinate offsets",
   "spec": "assisted-rebuild",
-  "status": "specced",
+  "status": "verified",
   "depends_on": [],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Verify the stored scale anchor and refuse precision loss."
+  "owner": "codex",
+  "pr": "#138",
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Regional and physical calibration uncertainty is covered by verify.phone."
 }
