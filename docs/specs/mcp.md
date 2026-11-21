@@ -84,6 +84,8 @@ Selection boxes, fits and measurements then use calibrated millimetres. Each suc
 includes the calibration record with file unit, IDs, anchor coordinates before scaling (mm), measured
 length and multiplier. An optional `check` inside calibration takes another vertices/distance_mm pair
 and reports the scaled span minus its hand reading in mm. It does not change the scale.
+The stored anchor must match the hand reading within eight f32 relative rounding steps. If storage
+loses more precision, move the source cloud closer to its origin and select the reference again.
 Both spans need two distinct locations and a positive finite reading. Reject invalid IDs, unusable
 scales and triangle-mesh calibration. Failed opens preserve the current cloud and history.
 Opening without calibration recovers source geometry. Undo and redo replay the original arguments.

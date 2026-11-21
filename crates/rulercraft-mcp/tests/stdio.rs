@@ -817,3 +817,24 @@ fn measured_cloud_scale_uses_an_independent_span() {
     );
     std::fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn calibration_refuses_a_span_lost_to_coordinate_precision() {
+    let path = std::env::temp_dir().join(format!("rulercraft-far-span-{}.xyz", std::process::id()));
+    std::fs::write(&path, "10000000 0 0\n10000003 0 0\n0 4 0\n3 4 0\n").unwrap();
+    let mut client = Client::new();
+    let open = |vertices: [usize; 2]| json!({"path": path, "calibration":{"vertices":vertices,"distance_mm":6.6}});
+    let prior = client.data("mesh.open", open([2, 3]));
+    let prior_history = client.data("history.info", json!({}));
+    let refused = client.call("mesh.open", open([0, 1]));
+    assert_eq!(refused["isError"], true, "{refused}");
+    assert!(
+        refused["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("coordinate precision")
+    );
+    assert_eq!(client.data("mesh.info", json!({})), prior);
+    assert_eq!(client.data("history.info", json!({})), prior_history);
+    std::fs::remove_file(path).unwrap();
+}

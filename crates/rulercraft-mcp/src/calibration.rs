@@ -66,7 +66,12 @@ impl Calibration {
             }
             *coord = scaled;
         }
-        points_and_length(mesh, self.vertices, self.distance_mm)?;
+        let (_, calibrated_span) = points_and_length(mesh, self.vertices, self.distance_mm)?;
+        // Allow ordinary f32 rounding near the origin, scaled to the length being verified.
+        let rounding = self.distance_mm * (8.0 * f64::from(f32::EPSILON));
+        if (calibrated_span - self.distance_mm).abs() > rounding {
+            return Err("coordinate precision cannot reproduce the calibration span. Move the source cloud closer to its origin and pick the reference again.".into());
+        }
         if let Some(check) = &self.check {
             let (_, scaled) = points_and_length(mesh, check.vertices, check.distance_mm)?;
             record["check"] = json!({"vertices":check.vertices,"distance_mm":check.distance_mm,
