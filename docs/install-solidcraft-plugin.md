@@ -1,22 +1,22 @@
-# RulerCraft in SolidCraft: install and use
+# Install RulerCraft in SolidCraft
 
 RulerCraft opens a 3D scan in SolidCraft as an **editable part**: a plate with its holes, every size a named
 parameter you can change, and a report of anything it could not rebuild. It runs inside SolidCraft, on your
 machine, with no network access.
 
-## Install
+## Get the plugin
 
-1. Get `rulercraft-solidcraft-plugin.zip`. For a tagged prerelease, use
-   [GitHub Releases](https://github.com/flyboy-byte/rulercraft/releases). While a tagged release
-   is pending, open the latest successful run on `main` in
-   [the plugin workflow](https://github.com/flyboy-byte/rulercraft/actions/workflows/solidcraft-plugin.yml).
-   Download the `rulercraft-solidcraft-plugin` artifact and extract it once. Use the inner
-   `rulercraft-solidcraft-plugin.zip` for installation. GitHub may require sign-in to download artifacts.
-   The artifact also includes `SHA256SUMS.txt` and `SOURCE-COMMIT.txt`.
-2. In SolidCraft (desktop), open **Preferences › Plugins** and choose **Install plugin…**, then pick the `.zip`.
-3. The confirmation screen shows what RulerCraft asks for: no folders, no other commands, no network, and
-   **1024 MiB of memory**, more than SolidCraft lets plugins use by default (128 MiB), because scans are large.
-   Allow it and choose **Install**. Nothing runs until you use it.
+Open the [successful preview builds on main](https://github.com/flyboy-byte/rulercraft/actions/workflows/solidcraft-plugin.yml?query=branch%3Amain+is%3Asuccess).
+Open the latest run and download the **rulercraft-solidcraft-plugin** artifact. GitHub may require
+sign-in. Extract the download once and keep the inner `rulercraft-solidcraft-plugin.zip` intact.
+The preview includes `SHA256SUMS.txt` and `SOURCE-COMMIT.txt`. Tagged packages appear under
+[Releases](https://github.com/flyboy-byte/rulercraft/releases) when published.
+
+1. In SolidCraft desktop, open **Preferences › Plugins › Install plugin…**.
+2. Choose the inner `rulercraft-solidcraft-plugin.zip`.
+3. Review the requested permissions and approve **1024 MiB of memory** if appropriate for your
+   machine. SolidCraft's default plugin limit is 128 MiB. RulerCraft requests no network access.
+4. Select **Install**.
 
 From a terminal, the same with SolidCraft's command line (`--keep-plugin-approvals` makes the approval last):
 
@@ -26,7 +26,13 @@ solidcraft-cli --keep-plugin-approvals exec plugin.install \
   '{"path":"rulercraft-solidcraft-plugin.zip","approve":{"memory_mib":1024}}'
 ```
 
-## Use
+## Your first import
+
+Try the [bracket fixture](../fixtures/known/bracket.stl) in millimetres before opening your scan.
+Change `thickness` from **8 mm to 12 mm** in **Parameters** to see the rebuild update.
+
+![RulerCraft bracket after a thickness edit, showing its holes, pocket and boss](images/bracket-edited.png)
+
 
 - **Plugins menu › RulerCraft › scan-to-part**: choose the scan's units (millimetres unless your scanner says
   otherwise), then the file: `.stl`, `.ply`, `.obj`, `.3mf`, `.gltf` or `.glb`.
