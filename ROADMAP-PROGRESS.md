@@ -89,7 +89,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | --- | --- | --- | --- | --- |
 | `io.e57` Read E57 scanner files | planned | - | unclaimed | Everything; may need a dependency (check licence). |
 | `io.gltf` Read glTF/GLB meshes (common phone-app export) | verified | math, known-design, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/106 | Triangles from scenes with node transforms, embedded buffers. Refused: required extensions (Draco, quantization), sparse accessors, buffers in separate files. |
-| `io.pointcloud` Read point clouds (PLY points, XYZ/PTS/ASC) and fit directly to points | verified | math, known-design, wrong-value | Claude | E57, LAS/LAZ and PCD (io.e57); normals for clouds (for --facing) and points-to-surface for segmenting a cloud; the MCP server still opens meshes only. |
+| `io.pointcloud` Read point clouds (PLY points, XYZ/PTS/ASC) and fit directly to points | verified | math, known-design, wrong-value | Claude | E57, LAS/LAZ and PCD (io.e57); normals for clouds (for --facing) and points-to-surface for segmenting a cloud. |
 | `photo.mesh` Photos to mesh (photogrammetry / AI shape guessing), research | planned | - | unclaimed | Research first; any library must pass the licence rules (no copyleft). |
 | `recon.surface` Points to surface reconstruction, proven on generated scenes | planned | - | unclaimed | Everything. |
 | `scan.phone` Phone capture: read capture-app exports first, own app only if needed | planned | - | unclaimed | Research. |

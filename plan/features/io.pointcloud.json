@@ -14,5 +14,5 @@
     "known-design",
     "wrong-value"
   ],
-  "left": "E57, LAS/LAZ and PCD (io.e57); normals for clouds (for --facing) and points-to-surface for segmenting a cloud; the MCP server still opens meshes only."
+  "left": "E57, LAS/LAZ and PCD (io.e57); normals for clouds (for --facing) and points-to-surface for segmenting a cloud."
 }
