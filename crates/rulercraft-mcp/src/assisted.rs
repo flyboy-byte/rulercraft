@@ -2,8 +2,8 @@
 use super::{Filters, Loaded};
 use rmcp::schemars;
 use rulercraft_mesh::{
-    fit::{Clip, CylinderOptions, fit_cylinder},
-    math::vec3::{add, cross, dot, length, normalize, scale, sub},
+    fit::{Clip, CylinderOptions, fit_cylinder, fit_plane},
+    math::vec3::{Vec3, add, cross, dot, length, normalize, scale, sub},
     solidcraft::FORMAT,
 };
 use serde::Deserialize;
@@ -21,6 +21,8 @@ enum Depth {
 pub(crate) struct PlateArgs {
     /// Three top-corner vertex IDs: origin, length corner, width corner.
     corners: [usize; 3],
+    /// Fit two opposing side faces to refine the width and its origin.
+    width_faces: Option<WidthFaces>,
     thickness_mm: f64,
     diameter_mm: f64,
     /// Center in local plate coordinates, measured from the first corner.
@@ -32,6 +34,81 @@ pub(crate) struct PlateArgs {
     /// Optional description of how the caller determined the hole center.
     center_note: Option<String>,
     depth: Depth,
+}
+
+#[derive(Debug, Deserialize, schemars::JsonSchema)]
+#[serde(deny_unknown_fields)]
+struct WidthFaces {
+    origin_side: Filters,
+    opposite_side: Filters,
+    /// Maximum accepted RMS residual in mm for each fitted plane.
+    max_sigma_mm: f64,
+}
+
+impl WidthFaces {
+    fn measure(
+        &self,
+        loaded: &Loaded,
+        top: Vec3,
+        axis: Vec3,
+        picked: f64,
+    ) -> Result<(f64, f64, Value), String> {
+        if !self.max_sigma_mm.is_finite() || self.max_sigma_mm <= 0.0 {
+            return Err("width_faces max_sigma_mm must be finite and positive".into());
+        }
+        let min_alignment = 10_f64.to_radians().cos();
+        let fit = |name: &str, filters: &Filters| {
+            let ids = loaded.select(&filters.selection())?;
+            if ids.len() > 1_000_000 {
+                return Err(format!(
+                    "{name} selection exceeds the 1 million point fit limit"
+                ));
+            }
+            let plane = fit_plane(&loaded.mesh.positions, None, &ids, Clip::None)
+                .map_err(|e| format!("cannot fit {name} width face: {e}"))?;
+            let alignment = dot(plane.normal, axis);
+            if alignment.abs() < min_alignment {
+                return Err(format!(
+                    "{name} width face must face within 10 degrees of the width axis"
+                ));
+            }
+            if plane.sigma > self.max_sigma_mm {
+                return Err(format!(
+                    "{name} width face RMS {:.4} mm exceeds max_sigma_mm {:.4}",
+                    plane.sigma, self.max_sigma_mm
+                ));
+            }
+            Ok((plane, alignment))
+        };
+        let (origin, low_alignment) = fit("origin_side", &self.origin_side)?;
+        let (opposite, high_alignment) = fit("opposite_side", &self.opposite_side)?;
+        if dot(origin.normal, opposite.normal).abs() < min_alignment {
+            return Err("width faces must be parallel within 10 degrees".into());
+        }
+        // Measure near the observed patches, avoiding extrapolation from the middle of a
+        // noisy face to a corner. Remove the width component to retain the picked origin.
+        let midpoint = sub(scale(add(origin.center, opposite.center), 0.5), top);
+        let station = add(top, sub(midpoint, scale(axis, dot(midpoint, axis))));
+        let low = dot(sub(origin.center, station), origin.normal) / low_alignment;
+        let high = dot(sub(opposite.center, station), opposite.normal) / high_alignment;
+        let low_sigma = origin.sigma / low_alignment.abs();
+        let high_sigma = opposite.sigma / high_alignment.abs();
+        let width = high - low;
+        if width <= 2.0 * (low_sigma + high_sigma) {
+            return Err(
+                "width faces must be distinct and run from origin_side to opposite_side".into(),
+            );
+        }
+        Ok((
+            width,
+            low,
+            json!({
+                "source":"side_face_fits","mm":width,"picked_mm":picked,"measurement_origin_mm":station,
+                "origin_side":{"fit":origin,"offset_mm":low},
+                "opposite_side":{"fit":opposite,"offset_mm":high}
+            }),
+        ))
+    }
 }
 
 pub(crate) fn plate(loaded: &Loaded, args: PlateArgs) -> Result<Value, String> {
@@ -56,7 +133,16 @@ pub(crate) fn plate(loaded: &Loaded, args: PlateArgs) -> Result<Value, String> {
     let normal = normalize(cross(x_axis, side)).ok_or("plate corners are collinear")?;
     let y_axis = cross(normal, x_axis);
     let plate_length = length(long_edge);
-    let width = dot(side_edge, y_axis);
+    let picked_width = dot(side_edge, y_axis);
+    let (width, width_origin, width_evidence) = match args.width_faces {
+        Some(faces) => faces.measure(loaded, top, y_axis, picked_width)?,
+        None => (
+            picked_width,
+            0.0,
+            json!({"source":"scan_picks","mm":picked_width,"vertices":[origin,across]}),
+        ),
+    };
+    let top = add(top, scale(y_axis, width_origin));
     let thickness = args.thickness_mm;
     let diameter = args.diameter_mm;
     if [thickness, diameter]
@@ -67,7 +153,7 @@ pub(crate) fn plate(loaded: &Loaded, args: PlateArgs) -> Result<Value, String> {
     }
     let (center, center_source, bore_fit) = match (args.center_mm, args.bore_selection.as_ref()) {
         (Some(center), None) if args.max_diameter_difference_mm.is_none() => {
-            (center, "caller", None)
+            ([center[0], center[1] - width_origin], "caller", None)
         }
         (None, Some(filters)) => {
             let allowance = args
@@ -163,7 +249,7 @@ pub(crate) fn plate(loaded: &Loaded, args: PlateArgs) -> Result<Value, String> {
             ], "next_id":3,"next_component_color_index":0},
         "evidence":{
             "length":{"source":"scan_picks","mm":plate_length,"vertices":[origin,along]},
-            "width":{"source":"scan_picks","mm":width,"vertices":[origin,across]},
+            "width":width_evidence,
             "thickness":{"source":"hand","mm":thickness},
             "hole_diameter":{"source":"hand","mm":diameter},
             "hole_x":{"source":center_source,"mm":x,"note":args.center_note},

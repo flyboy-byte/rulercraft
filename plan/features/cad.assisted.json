@@ -3,17 +3,17 @@
   "milestone": "R4",
   "title": "Build an editable plate and hole from scan evidence and hand dimensions",
   "spec": "assisted-rebuild",
-  "status": "in-progress",
+  "status": "implemented",
   "depends_on": [
     "scan.picks",
     "cad.solidcraft"
   ],
   "owner": "codex",
-  "pr": "#140",
+  "pr": "#142",
   "verified_by": [
     "math",
     "known-design",
     "wrong-value"
   ],
-  "left": "MCP emits editable CAD from picked corners and an explicit or fit-backed center. Still owed: end-to-end noisy acceptance with held-out width and center at stated tolerances."
+  "left": "Selected side faces and bore evidence work over MCP. Broader noisy coverage, desktop integration and physical acceptance remain open."
 }

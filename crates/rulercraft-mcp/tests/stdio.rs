@@ -935,3 +935,60 @@ fn assisted_bore_center_needs_observed_wall_and_diameter_agreement() {
     assert_eq!(client.call("assist.plate", args)["isError"], true);
     std::fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn assisted_side_faces_recover_width_and_keep_the_hole_center() {
+    let path = std::env::temp_dir().join(format!(
+        "rulercraft-assisted-width-{}.xyz",
+        std::process::id()
+    ));
+    std::fs::write(
+        &path,
+        concat!(
+            "0 1 8\n60 1 8\n0 29 8\n",
+            "20 0 2\n40 0 2\n20 0 6\n40 0 6\n",
+            "20 30 2\n40 30 2\n20 30 6\n40 30 6\n",
+            "20 14 8\n40 14 8\n20 16 8\n40 16 8\n",
+            "45 29 1\n55 31 1\n45 31 7\n55 29 7\n",
+        ),
+    )
+    .unwrap();
+    let mut client = Client::new();
+    client.data("mesh.open", json!({"path":path}));
+    let mut args = json!({"corners":[0,1,2],"thickness_mm":8,"diameter_mm":8,
+        "center_mm":[15,11],"depth":{"through":true}});
+    assert_eq!(
+        client.data("assist.plate", args.clone())["evidence"]["width"]["mm"],
+        28.
+    );
+    let first = json!({"in_box":[[19,-1,1],[41,1,7]]});
+    let second = json!({"in_box":[[19,29,1],[41,31,7]]});
+    args["width_faces"] = json!({"origin_side":first,"opposite_side":second,"max_sigma_mm":0.2});
+    let draft = client.data("assist.plate", args.clone());
+    assert_eq!(draft["evidence"]["width"]["mm"], 30.);
+    assert_eq!(draft["evidence"]["width"]["picked_mm"], 28.);
+    assert_eq!(draft["evidence"]["hole_y"]["mm"], 12.);
+    assert_eq!(draft["frame"]["top_origin_mm"], json!([0., 0., 8.]));
+
+    for (origin, opposite) in [
+        (second.clone(), first.clone()),
+        (first.clone(), first.clone()),
+        (first.clone(), json!({"in_box":[[19,13,7],[41,17,9]]})),
+        (first, json!({"in_box":[[100,0,0],[101,1,1]]})),
+    ] {
+        args["width_faces"] =
+            json!({"origin_side":origin,"opposite_side":opposite,"max_sigma_mm":0.2});
+        assert_eq!(client.call("assist.plate", args.clone())["isError"], true);
+    }
+    args["width_faces"] = json!({"origin_side":{"in_box":[[19,-1,1],[41,1,7]]},
+        "opposite_side":{"in_box":[[44,28,0],[56,32,8]]},"max_sigma_mm":0.2});
+    let rough = client.call("assist.plate", args);
+    assert_eq!(rough["isError"], true);
+    assert!(
+        rough["content"][0]["text"]
+            .as_str()
+            .unwrap()
+            .contains("exceeds max_sigma_mm")
+    );
+    std::fs::remove_file(path).unwrap();
+}
