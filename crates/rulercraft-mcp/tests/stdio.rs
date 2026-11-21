@@ -868,3 +868,32 @@ fn point_coordinates_follow_filtered_selection_pages_and_scale() {
     assert_eq!(scaled["calibration"]["factor"], 2.);
     std::fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn assisted_plate_uses_scan_edges_and_explicit_hole_decisions() {
+    let path = std::env::temp_dir().join(format!("rulercraft-assisted-{}.xyz", std::process::id()));
+    std::fs::write(&path, "2 4 5\n2 34 5\n-13 4 5\n").unwrap();
+    let mut client = Client::new();
+    client.data(
+        "mesh.open",
+        json!({"path":path,"calibration":{"vertices":[0,1],"distance_mm":60}}),
+    );
+    let mut args = json!({"corners":[0,1,2],"thickness_mm":8,"diameter_mm":8,"center_mm":[15,12]});
+    assert_eq!(client.call("assist.plate", args.clone())["isError"], true);
+    args["depth"] = json!({"through":true});
+    let report = client.data("assist.plate", args.clone());
+    assert_eq!(report["evidence"]["width"]["mm"], 30.);
+    assert_eq!(report["evidence"]["length"]["mm"], 60.);
+    assert_eq!(report["evidence"]["hole_x"]["mm"], 15.);
+    assert_eq!(report["evidence"]["thickness"]["source"], "hand");
+    assert_eq!(report["design"]["features"][1]["height"], "thickness");
+    assert_eq!(report["calibration"]["factor"], 2.);
+    args["depth"] = json!({"blind_depth_mm":8});
+    assert_eq!(client.call("assist.plate", args.clone())["isError"], true);
+    args["depth"] = json!({"blind_depth_mm":4});
+    assert_eq!(
+        client.data("assist.plate", args)["design"]["features"][1]["base"][2],
+        "thickness - hole_depth"
+    );
+    std::fs::remove_file(path).unwrap();
+}

@@ -3,13 +3,17 @@
   "milestone": "R4",
   "title": "Build an editable plate and hole from scan evidence and hand dimensions",
   "spec": "assisted-rebuild",
-  "status": "specced",
+  "status": "in-progress",
   "depends_on": [
     "scan.picks",
     "cad.solidcraft"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Bind dimensions to explicit evidence and check editable output in SolidCraft."
+  "owner": "codex",
+  "pr": "#140",
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Picked corners and explicit hole dimensions emit editable CAD over MCP. Still owed: fit-backed center with weak support handling, noisy cloud acceptance and contradictory readings."
 }

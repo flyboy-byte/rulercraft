@@ -18,3 +18,24 @@ fitted values when available. Use disagreement and support quality to decide whe
 
 Keep source import, feature inference, typed dimensions and SolidCraft emission separate. Use the exact
 mesh fixtures to protect the existing importer when extracting shared CAD emission.
+
+## Picked plate draft over MCP
+
+`assist.plate` takes three top corner vertex IDs ordered as origin, length corner and width corner.
+In the reported frame the length runs along the first edge. Width is the component of the second
+edge perpendicular to the first. The edges must be within 10° of square. The result reports both
+edge directions and the observed angle. Length and width come from the picks. The caller supplies
+thickness, diameter and center offsets in mm from the first corner along those axes. The center is
+an explicit caller input, with an optional note identifying a hand measurement or prior fit.
+Supply exactly one depth choice, `{"through":true}` or `{"blind_depth_mm":4}`.
+Reject nonpositive dimensions, holes touching or crossing an edge, and blind depth at or beyond
+the bottom. Return `design` for SolidCraft and `evidence` describing every dimension. The design
+uses a local XY plane. The report locates that plane's top in the cloud.
+
+A controlled 2026-11-21 check used `capture` from `tools/dev/check_assisted_cloud.py` with seeds
+7, 11 and 17, turns of 0° and 31°, noise of 0.05 and 0.30 mm, and no bore wall. For each known top
+corner, it picked the nearest actual vertex to the generator's expected corner. The first two picks
+and a 60 mm hand reading set the scale. The draft used a supplied center and through-hole decision.
+Across 12 clouds, the held-out 30 mm width came back as 29.324–29.856 mm, with a median of 29.559 mm.
+The picks underestimated width on every trial. Use this to compare a future face-fit method with
+individual corner picks. This check did not estimate the hole center.
