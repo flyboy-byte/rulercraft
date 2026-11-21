@@ -1,44 +1,47 @@
 # SPDX-License-Identifier: MIT OR Apache-2.0
-# Publishes the SolidCraft plugin package as a GitHub release when a tag `plugin-v<version>` is pushed
-# (docs/install-solidcraft-plugin.md). The tag must equal plugin.json's version. Pushing the tag is the
-# publishing moment, so it needs Logan's yes (AGENTS.md).
+# The version tag is the publishing approval. The host-tested artifact is promoted unchanged.
 name: solidcraft-plugin-release
 on:
   push:
     tags: ["plugin-v*"]
 permissions:
-  contents: write
+  contents: read
 jobs:
+  package:
+    uses: ./.github/workflows/solidcraft-plugin.yml
   release:
+    needs: package
+    permissions:
+      contents: write
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 5
     steps:
       - uses: actions/checkout@v4
       - name: Tag matches plugin.json
         run: |
           want="plugin-v$(python3 -c 'import json;print(json.load(open("plugin/solidcraft/package/plugin.json"))["version"])')"
           test "$want" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME, plugin.json says $want" >&2; exit 1; }
-      - name: Rust toolchain with the WebAssembly target
-        run: |
-          rustup toolchain install stable --profile minimal --target wasm32-unknown-unknown
-          rustup default stable
-      - uses: taiki-e/install-action@v2
+      - uses: actions/download-artifact@v4
         with:
-          tool: wasm-tools
-      - name: Build the package
-        run: plugin/solidcraft/build.sh
-      - name: Publish the release
+          name: rulercraft-solidcraft-plugin
+          path: dist
+      - name: Verify the packaged revision
+        working-directory: dist
+        run: |
+          sha256sum --check SHA256SUMS.txt
+          test "$(cat SOURCE-COMMIT.txt)" = "$(git rev-parse HEAD)"
+      - name: Publish the checked package
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          sha=$(sha256sum plugin/solidcraft/dist/rulercraft-solidcraft-plugin.zip | cut -d' ' -f1)
           {
             echo "RulerCraft for SolidCraft, plugin ${GITHUB_REF_NAME#plugin-v}."
             echo
-            echo "Install: SolidCraft › Preferences › Plugins › Install plugin…, pick rulercraft-solidcraft-plugin.zip."
+            echo "Install from SolidCraft › Preferences › Plugins › Install plugin…"
             echo "Guide: https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_REF_NAME}/docs/install-solidcraft-plugin.md"
             echo
-            echo "SHA-256 of the .zip: $sha"
+            echo "Package tested by installing and editing a known part in SolidCraft."
           } > notes.md
-          gh release create "$GITHUB_REF_NAME" plugin/solidcraft/dist/rulercraft-solidcraft-plugin.zip \
+          gh release create "$GITHUB_REF_NAME" dist/rulercraft-solidcraft-plugin.zip \
+            dist/SHA256SUMS.txt dist/SOURCE-COMMIT.txt --verify-tag \
             --title "RulerCraft for SolidCraft ${GITHUB_REF_NAME#plugin-v}" --notes-file notes.md --prerelease

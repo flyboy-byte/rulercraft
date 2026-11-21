@@ -6,8 +6,13 @@ machine, with no network access.
 
 ## Install
 
-1. Download `rulercraft-solidcraft-plugin.zip` from
-   [RulerCraft's releases](https://github.com/flyboy-byte/rulercraft/releases) (the newest `plugin-v…`).
+1. Get `rulercraft-solidcraft-plugin.zip`. For a tagged prerelease, use
+   [GitHub Releases](https://github.com/flyboy-byte/rulercraft/releases). While a tagged release
+   is pending, open the latest successful run on `main` in
+   [the plugin workflow](https://github.com/flyboy-byte/rulercraft/actions/workflows/solidcraft-plugin.yml).
+   Download the `rulercraft-solidcraft-plugin` artifact and extract it once. Use the inner
+   `rulercraft-solidcraft-plugin.zip` for installation. GitHub may require sign-in to download artifacts.
+   The artifact also includes `SHA256SUMS.txt` and `SOURCE-COMMIT.txt`.
 2. In SolidCraft (desktop), open **Preferences › Plugins** and choose **Install plugin…**, then pick the `.zip`.
 3. The confirmation screen shows what RulerCraft asks for: no folders, no other commands, no network, and
    **1024 MiB of memory**, more than SolidCraft lets plugins use by default (128 MiB), because scans are large.
@@ -55,6 +60,5 @@ plugin to open.
 ## When something is wrong
 
 The report names the cause: "does not support … no face is parallel to the base" means the scan has no second
-flat face to give the part a thickness. A scan that is not closed still imports, but its volume comparison means
-nothing. Please open an issue at https://github.com/flyboy-byte/rulercraft/issues with the scan (if you can share
+flat face to give the part a thickness. An open scan can still import. Its rebuilt volume is available if the host evaluates it, while scan volume and the difference are unavailable. Please open an issue at https://github.com/flyboy-byte/rulercraft/issues with the scan (if you can share
 it) and the report (**Copy report**).

@@ -16,7 +16,7 @@ Overall roadmap progress: **68%** (details in ROADMAP-PROGRESS.md).
 ## In progress
 
 - `engine.library` (claude): Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog.
-- `sc.release` (Claude): Workflow and guide are merged. Needs Logan to push tag plugin-v0.1.0 (pushing tags is refused from the Claude session); the workflow then makes the pre-release with its SHA-256.
+- `sc.release` (Claude): Host-tested preview ZIP and checksums are built on main. Tagged prerelease and desktop installation acceptance remain open.
 - `scan.phone` (codex, #135): Physical phone capture and scale uncertainty remain unverified. Measured cloud scale currently runs over MCP.
 
 ## Ready to claim

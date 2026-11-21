@@ -20,6 +20,17 @@ them, over a CLI and an MCP server. The CAD half (building the solid, STEP expor
 The project's locked intent is [INTENT.md](INTENT.md); the competitive scope is
 [docs/specs/product-scope.md](docs/specs/product-scope.md).
 
+## Choose a workflow
+
+| Job | SolidCraft plugin | RulerCraft CLI | RulerCraft MCP |
+| --- | --- | --- | --- |
+| Rebuild a plate-like triangle mesh | Import and edit in SolidCraft | Export an editable SolidCraft design | Use the plugin through SolidCraft MCP, or inspect with RulerCraft MCP |
+| Fit and measure selected cloud regions | Desktop inspection is planned | Fit and measure XYZ, PTS, ASC and PLY points | Open, select, fit, measure and calibrate a cloud |
+| Rebuild from cloud picks and hand readings | Native integration is planned | Fit and measure for manual assembly | Emit an editable plate with one hole and its measurement evidence |
+
+[Install the tested plugin preview](docs/install-solidcraft-plugin.md) or
+[drive an assisted rebuild from MCP](docs/agents-and-solidcraft.md#rebuild-a-plate-from-a-point-cloud).
+
 ## Try it
 
 ```bash
