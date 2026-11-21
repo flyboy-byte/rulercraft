@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated 2026-11-21, Codex. Main includes the pose and point-cloud reader fixes (#129 and #128).
+Last updated 2026-11-21, Codex. Main includes the assessment, roadmap and assisted rebuild through #142.
 
 ## Where the plugin stands
 The SolidCraft importer (D-014, D-015) rebuilds a plate-like scan as an editable SolidCraft design: any straight or
@@ -62,14 +62,17 @@ Recheck the closed and open window imports first.
 - Real-scan hardening: noise, open meshes, thin walls, scans not aligned to a face.
 - Other roadmap items from `python3 tools/plan.py needs` (point clouds, cone/torus fits, mesh clean-up, sections).
 
-## Open right now
+## Assisted rebuild (2026-11-21)
 
-- #136–#141 merged. #142 (`codex/assisted-face-width`) fits selected opposing side faces and
-  records their effect on the CAD frame. On 12 noisy captures, its largest width error was
-  0.396 mm versus 0.676 mm from corners. A combined noisy draft matched SolidCraft volume before
-  and after editing thickness.
-- Next is `sc.assisted` and then `verify.phone`. The fitted angular coverage of a bore can still
-  overstate actual wall visibility if off-wall samples are mixed into the selection.
+- #134–#142 are merged. MCP opens and calibrates clouds, returns picked coordinates, and drafts an
+  editable plate with one hole. The tool records each dimension's source. See the
+  [walkthrough](docs/agents-and-solidcraft.md#rebuild-a-plate-from-a-point-cloud) and [spec](docs/specs/assisted-rebuild.md).
+- On 12 noisy captures, opposing face fits reduced the largest width error from 0.676 mm to
+  0.396 mm. A combined noisy draft matched SolidCraft volume before and after a thickness edit.
+  The fitted angular coverage of a bore can still overstate actual wall visibility when off-wall
+  samples are selected.
+- Next are `sc.assisted` for native integration and `verify.phone` for an untouched physical phone
+  export with held-out caliper readings.
 
 ## Read first
 INTENT.md (locked; changes only by a superseding decision), AGENTS.md (outranks the rest), docs/v1.md (what v1 means,
@@ -84,14 +87,14 @@ draft PR (feature id, or an area tag: fix:, improve:, perf:, test:, docs:), work
   segmentation (planes, cylinders, joined strips); deviation and patches; ICP and datum frame; hole patterns (line,
   circle, grid), symmetry, design-value guesses; CAD recipe and coverage check (`cad::check`); threads (`par::map`).
 - Faces: CLI (info, fit, segment, project, thickness, deviation, version), MCP (open, info, select, fit incl. robust,
-  measure, segment, compare, reverse, datum, thickness, undo/redo, guide), browser app prototype `rulercraft-gui`.
+  measure, segment, compare, reverse, datum, thickness, assisted rebuild, undo/redo, guide), browser prototype `rulercraft-gui`.
 - Break-it pass 2026-11-12 (CLI): truncated/oversized/NaN/huge-coordinate STL, binary STL starting "solid", bad OBJ
   indices, lying PLY counts, NaN/inf in every selection option, bad units, tolerances and limits all refuse plainly with
   exit code 2. A part moved 1 km from the origin still fits its 3 mm hole within 1e-4 mm, with sigma growing honestly
   from f32 storage. Only cosmetic leftovers: "--sigma needs 1 numbers" (plural), `--near ... inf` says the radius
   "must be zero or a positive number"; a repeated option silently takes the last value.
 - Known paperwork nits, left alone because DECISIONS.md is never rewritten: two decisions are numbered D-009 (3MF reader
-  and GUI). ROADMAP.md has sections R1–R7; R8 (verification) lives only in plan/roadmap.json.
+  and GUI).
 
 2026-11-19 Codex follow-up: #132 (`codex/bound-deviation-sampling`) caps deviation at 200,000
 samples spread across the input sequence. The regression in `solidcraft_design.rs` reported

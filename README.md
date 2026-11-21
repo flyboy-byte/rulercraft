@@ -26,16 +26,19 @@ The project's locked intent is [INTENT.md](INTENT.md); the competitive scope is
 cargo run -p rulercraft-cli -- info fixtures/known/hole-block.stl
 cargo run -p rulercraft-cli -- fit sphere fixtures/known/sphere-seat.stl --near 0 0 12 12.01 --sigma 0
 cargo run -p rulercraft-mcp # stdio server; connect using an MCP client
-cargo run -p rulercraft-gui -- fixtures/known/hole-block.stl # the app: 3D view, mark, fit, measure
+cargo run -p rulercraft-gui -- fixtures/known/hole-block.stl # browser prototype for development
 ```
 
-The app (`rulercraft-gui`) runs on your computer only and opens in your browser; no Claude or internet is
-needed. See [the GUI page](docs/specs/gui.md).
+The browser prototype (`rulercraft-gui`) runs locally and opens in your browser. See [the GUI page](docs/specs/gui.md).
 
 Project commands are `rulercraft project create`, `project fit` and `project info`; see
 [project format and CLI](docs/specs/project-file.md). [MCP tools](docs/specs/mcp.md) provide bounded
 selection pages, fits, two-selection measurements, segmentation, thickness, comparison and undo/redo.
-The known corpus is mathematical design evidence, with real dimensional acceptance still open.
+MCP also opens point clouds, calibrates scale from a hand-measured span, and builds an editable
+rectangular plate with one through or blind hole through `assist.plate`. The result carries the source
+of each dimension. Start with the [assisted rebuild walkthrough](docs/agents-and-solidcraft.md#rebuild-a-plate-from-a-point-cloud).
+The assisted route has synthetic and SolidCraft host checks. A physical phone export and the desktop
+workflow are still open.
 
 ## How it is built
 

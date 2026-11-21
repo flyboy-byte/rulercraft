@@ -1,6 +1,6 @@
 # Roadmap
 
-Last updated 2026-11-07. Each milestone ends in something Logan can run and check, not just "tests
+Last updated 2026-11-21. Each milestone ends in something Logan can run and check, not just "tests
 pass". Features and their state live in `plan/features/`; the generated view is ROADMAP-PROGRESS.md.
 Completed items are struck through with a date, never deleted.
 
@@ -43,10 +43,13 @@ SolidCraft.
 
 **Exit:** another project depends on `rulercraft-mesh` and builds for Wasm.
 
-## R6 Photos to mesh (research)
+## R6 Scanner inputs and photos
 
-**Exit:** a written go/no-go with a prototype on photos of one object. Any library used must pass the
-licence rules in AGENTS.md (no copyleft).
+**Exit:** point clouds and phone-app exports open and measure correctly on generated scenes, with a
+written go/no-go and prototype on photos of one object.
+
+Text clouds and PLY vertices can be measured today. MCP supports measured cloud calibration and
+paged coordinate picks. Phone-export acceptance and photo reconstruction research remain open.
 
 ## R7 v1 in SolidCraft: the plugin, at parity and beyond
 
@@ -60,6 +63,12 @@ inside SolidCraft (blocked on SolidCraft's mesh-size limit), and Claude driving 
 docs/agents-and-solidcraft.md).
 Features `sc.*`; phases in docs/v1.md.
 
+## R8 Proof at scale
+
+**Exit:** scheduled verification tiers run on their own, every reader has been fuzzed, the mutation
+score is reported, and confirmed failures have regressions. Short reader and fit fuzz runs already
+run in the workspace gate. See the [verification spec](docs/specs/verification.md).
+
 ## Not planned (say so before starting)
 
 A CAD kernel of our own, cloud services or accounts, and a 2D flatbed-photo measuring workflow.
@@ -71,11 +80,13 @@ The first acceptance part is a rectangular plate with one circular hole. The cal
 reference points and visible features. RulerCraft must ask for missing dimensions or decisions when the
 scan cannot support them.
 
-1. **R6 / scan.scale and scan.picks.** Prove that file origin does not silently change a hand reference.
-   Return actual selected coordinates so the caller can inspect anchors and supports.
-2. **R4 / cad.assisted.** Bind the selected supports and hand readings to an editable plate and hole.
-   Hold out width and hole center and verify an edit in SolidCraft. Include a missing-bore case.
-3. **R7 / sc.assisted and verify.phone.** Carry dimension sources into the SolidCraft workflow and run
-   the same acceptance case on an untouched phone export with held-out caliper readings.
+1. ~~**R6 / scan.scale and scan.picks.** Check the stored measured span and expose selected
+   vertex coordinates.~~ Merged 2026-11-21 in #138 and #139.
+2. **R4 / cad.assisted.** The first MCP implementation merged 2026-11-21 in #140–#142.
+   It emits an editable plate and one hole from picked geometry and hand dimensions. Synthetic trials
+   held out width and center, exercised missing or contradictory bore evidence, and checked a
+   SolidCraft thickness edit. Broader noisy coverage remains open.
+3. **R7 / sc.assisted and verify.phone.** Carry dimension evidence through the native SolidCraft
+   workflow, then import and edit an untouched phone export with held-out caliper readings.
 
 See the [acceptance matrix](docs/specs/assisted-rebuild.md) and [controlled trials](docs/assisted-phone-rebuild.md).

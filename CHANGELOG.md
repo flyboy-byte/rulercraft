@@ -4,7 +4,14 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
 
 ## Unreleased
 
-- Scans at any turn: a scan rebuilds the same whichever way it lies on the scanner (it had failed at some angles).
+- MCP opens XYZ, PTS and ASC clouds and can read PLY vertices explicitly. Calibrate a cloud from
+  a measured span, check it with a second reading, and inspect selected positions alongside their IDs.
+  Opens that lose the requested span to coordinate precision return an error.
+- `assist.plate` returns editable SolidCraft geometry and dimension evidence for a rectangular
+  plate with one hole. The caller can refine width from two fitted side faces and locate the hole
+  from a selected bore wall or explicit center. Hole depth remains a caller decision.
+
+- Scan rebuilds handle more orientations after fixes to pocket alignment and softened edges.
   Pockets and windows take their shape from their walls, and an edge's own scan softening is no longer taken for a
   chamfer. Checked at 30 turns of the test part.
 
@@ -20,12 +27,12 @@ User-visible changes. Newest first. Versions follow SemVer; nothing is released 
   scan-like meshes too (they had needed CAD-exact faces), each within 0.1 mm on the test part, and every synthetic
   scan of the known parts rebuilds within 0.25 % of the true volume.
 
-- Scan to SolidCraft on real scans: sizes come from the walls (a scan's faces stop short of their softened edges),
+- Scan to SolidCraft on scan-like meshes: sizes come from the walls (a scan's faces stop short of their softened edges),
   holes and bosses keep their real depths and heights, softened edges are summarised in one report item instead of
   hundreds, and a noisy 134,000-triangle scan takes 3 seconds, not a minute. Checked on a test part meshed like a
   scan, turned and with noise: every size within 0.05 mm.
 
-- Faster and steadier on real scans: finding round regions no longer slows to minutes on a dense scan (a 134,000
+- Faster and steadier on scan-like meshes: finding round regions no longer slows to minutes on a dense scan (a 134,000
   triangle scan of the bracket went from over 8 minutes to 3 seconds), and a scanned plate's axes follow its walls
   instead of the ragged edge of its base face, which had turned the frame by 0.7° and grown every size.
 
