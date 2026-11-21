@@ -1,0 +1,14 @@
+{
+  "id": "verify.phone",
+  "milestone": "R7",
+  "title": "Verify assisted rebuild on an untouched phone export",
+  "spec": "assisted-rebuild",
+  "status": "specced",
+  "depends_on": [
+    "sc.assisted"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Physical capture, held-out caliper measurements and a desktop edit."
+}

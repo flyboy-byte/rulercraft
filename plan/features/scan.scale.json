@@ -1,0 +1,12 @@
+{
+  "id": "scan.scale",
+  "milestone": "R6",
+  "title": "Check measured cloud scale at large coordinate offsets",
+  "spec": "assisted-rebuild",
+  "status": "specced",
+  "depends_on": [],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Verify the stored scale anchor and refuse precision loss."
+}
