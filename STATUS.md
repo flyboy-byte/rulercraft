@@ -6,9 +6,9 @@ Overall roadmap progress: **69%** (details in ROADMAP-PROGRESS.md).
 
 | Status | Features |
 | --- | ---: |
-| planned | 18 |
+| planned | 17 |
 | specced | 0 |
-| in-progress | 2 |
+| in-progress | 3 |
 | implemented | 9 |
 | verified | 45 |
 | done | 0 |
@@ -17,6 +17,7 @@ Overall roadmap progress: **69%** (details in ROADMAP-PROGRESS.md).
 
 - `engine.library` (claude): Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog.
 - `sc.release` (Claude): Workflow and guide are merged. Needs Logan to push tag plugin-v0.1.0 (pushing tags is refused from the Claude session); the workflow then makes the pre-release with its SHA-256.
+- `scan.phone` (codex, #135): Physical phone capture and scale uncertainty remain unverified. Measured cloud scale currently runs over MCP.
 
 ## Ready to claim
 
@@ -29,7 +30,6 @@ Overall roadmap progress: **69%** (details in ROADMAP-PROGRESS.md).
 - `mesh.clean` (R7): Mesh clean-up: hole fill, bad triangle removal, reduction
 - `recon.surface` (R6): Points to surface reconstruction, proven on generated scenes
 - `sc.inspect` (R7): Inspect inside SolidCraft: command entries that fit and measure picked regions of a scan
-- `scan.phone` (R6): Phone capture: read capture-app exports first, own app only if needed
 - `section.cut` (R7): Sections across a feature and the part's widest outline, measured in 2D
 - `verify.mutants` (R8): Mutation testing of the engine; each survivor becomes a test or a deleted rule
 - `verify.regress` (R8): Regression corpus with stored known answers and a runner over every face

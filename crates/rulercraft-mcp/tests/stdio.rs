@@ -758,3 +758,62 @@ fn point_clouds_can_be_measured_and_keep_their_format_on_redo() {
     assert_eq!(client.data("mesh.info", json!({}))["path"], json!(ply_path));
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn measured_cloud_scale_uses_an_independent_span() {
+    let path = std::env::temp_dir().join(format!("rulercraft-scale-{}.xyz", std::process::id()));
+    std::fs::write(
+        &path,
+        "1 2 0\n4 6 0\n4 2 0\n1 6 0\n1 2 2\n4 6 2\n4 2 2\n1 6 2\n",
+    )
+    .unwrap();
+    let mut client = Client::new();
+    let raw = client.data("mesh.open", json!({"path":path,"unit":"cm"}));
+    assert_eq!(raw["bounds"]["max"], json!([40.0, 60.0, 20.0]));
+    let open = |distance: f64| {
+        json!({"path":path,"unit":"cm","calibration":{
+            "vertices":[0,1],"distance_mm":distance,"check":{"vertices":[2,6],"distance_mm":40}
+        }})
+    };
+    for (anchor, gap, disagreement) in [(100., 40., 0.), (110., 44., 4.)] {
+        let calibrated = client.data("mesh.open", open(anchor));
+        let record = &calibrated["calibration"];
+        assert_eq!(record["source_unit"], "cm");
+        assert_eq!(record["source_points_mm"][0], json!([10., 20., 0.]));
+        assert_eq!(record["factor"], anchor / 50.);
+        assert_eq!(record["check"]["difference_mm"], disagreement);
+        let measured = client.data(
+            "measure",
+            json!({
+                "first":{"kind":"plane","selection":{"in_box":[[0,0,-1],[100,150,1]]}},
+                "second":{"kind":"plane","selection":{"in_box":[[0,0,39],[100,150,45]]}}
+            }),
+        );
+        assert_eq!(measured["relation"]["distance"], gap);
+        assert_eq!(&measured["calibration"], record);
+    }
+    for invalid in [
+        json!({"vertices":[0,0],"distance_mm":1}),
+        json!({"vertices":[0,99],"distance_mm":1}),
+        json!({"vertices":[0,1],"distance_mm":0}),
+        json!({"vertices":[0,1],"distance_mm":1e100}),
+    ] {
+        assert_eq!(
+            client.call("mesh.open", json!({"path":path,"calibration":invalid}))["isError"],
+            true
+        );
+    }
+    client.data("history.undo", json!({}));
+    assert_eq!(
+        client.data("mesh.info", json!({}))["calibration"]["factor"],
+        2.
+    );
+    client.data("history.undo", json!({}));
+    assert_eq!(client.data("mesh.info", json!({})), raw);
+    client.data("history.redo", json!({}));
+    assert_eq!(
+        client.data("mesh.info", json!({}))["bounds"]["max"],
+        json!([80., 120., 40.])
+    );
+    std::fs::remove_file(path).unwrap();
+}

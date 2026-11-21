@@ -13,7 +13,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | R3 Noisy scans: robust fits, deviation, alignment, thickness | `█████████░` | 90% | 20 | A real scan (a public sample scan or a phone scan) gives stable fits and a deviation report against its CAD. |
 | R4 Reverse-engineering workflows with AI | `█████████░` | 90% | 15 | Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft. |
 | R5 Reusable engine | `███░░░░░░░` | 26% | 10 | Another project depends on rulercraft-mesh from crates.io or git, and the engine builds for Wasm and runs the app in a browser with nothing to install. |
-| R6 Any scanner in: point clouds, phones, photos (research first) | `███░░░░░░░` | 30% | 5 | Point clouds and phone-app exports open and measure correctly on generated scenes, and a written go/no-go with a prototype on photos of one object. |
+| R6 Any scanner in: point clouds, phones, photos (research first) | `████░░░░░░` | 35% | 5 | Point clouds and phone-app exports open and measure correctly on generated scenes, and a written go/no-go with a prototype on photos of one object. |
 | R7 v1 in SolidCraft: the plugin, at parity and beyond | `█████░░░░░` | 48% | 25 | A SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own parts inside SolidCraft with the RulerCraft plugin, without help: rebuild a scanned part as editable CAD, inspect it with stated methods, let Claude measure through SolidCraft, and use the engine from another program. |
 | R8 Proof at scale: machines break it so users do not | `████░░░░░░` | 40% | 10 | Nightly and weekly verification tiers run on their own, every reader has been fuzzed, the engine's mutation score is reported, and every confirmed break has a regression test (docs/specs/verification.md). |
 
@@ -83,7 +83,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `engine.library` Stable library API, docs, crates.io, Wasm build | in-progress | - | claude | Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog. |
 | `engine.wasm` Browser (Wasm) build of the engine with the same numbers as native | planned | - | unclaimed | Everything; needs a Wasm toolchain installed (not present on the development machine). |
 
-## R6: Any scanner in: point clouds, phones, photos (research first) (30%)
+## R6: Any scanner in: point clouds, phones, photos (research first) (35%)
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
@@ -92,7 +92,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `io.pointcloud` Read point clouds (PLY points, XYZ/PTS/ASC) and fit directly to points | verified | math, known-design, wrong-value | Claude | E57, LAS/LAZ and PCD (io.e57); normals for clouds (for --facing) and points-to-surface for segmenting a cloud. |
 | `photo.mesh` Photos to mesh (photogrammetry / AI shape guessing), research | planned | - | unclaimed | Research first; any library must pass the licence rules (no copyleft). |
 | `recon.surface` Points to surface reconstruction, proven on generated scenes | planned | - | unclaimed | Everything. |
-| `scan.phone` Phone capture: read capture-app exports first, own app only if needed | planned | - | unclaimed | Research. |
+| `scan.phone` Phone capture: read capture-app exports first, own app only if needed | in-progress | math, known-design, wrong-value | codex #135 | Physical phone capture and scale uncertainty remain unverified. Measured cloud scale currently runs over MCP. |
 
 ## R7: v1 in SolidCraft: the plugin, at parity and beyond (48%)
 

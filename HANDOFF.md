@@ -65,9 +65,9 @@ Recheck the closed and open window imports first.
 ## Open right now
 - The assessment, cloud reader, exact notch, open-scan volume, deviation cap and assisted-rebuild
   verification PRs #127, #128 and #130–#133 are merged. The pose fixes are in #129.
-- MCP point-cloud measurement is in #134 (`codex/mcp-point-clouds`). The stdio regression opens
-  XYZ and PLY vertices, measures a known 6 mm gap and checks history replay. The assisted
-  rebuild still needs explicit calibration and dimension provenance.
+- #134 merged. #135 (`codex/point-scale`) adds a measured scale and independent span check to
+  MCP cloud import. A known 40 mm plane gap measured 44 mm after a 10% high hand reading.
+  Next for the assisted rebuild is binding selected features and hand readings to named CAD dimensions.
 
 ## Read first
 INTENT.md (locked; changes only by a superseding decision), AGENTS.md (outranks the rest), docs/v1.md (what v1 means,
