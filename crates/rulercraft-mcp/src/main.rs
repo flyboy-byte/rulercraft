@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Local mesh commands over MCP stdio; stdout is reserved for the protocol.
+mod assisted;
 mod calibration;
 use calibration::Calibration;
 use rmcp::{
@@ -612,6 +613,13 @@ impl MeshServer {
     )]
     fn mesh_open(&self, Parameters(args): Parameters<OpenArgs>) -> CallToolResult {
         result(self.open(args))
+    }
+    #[tool(
+        name = "assist.plate",
+        description = "Build an editable SolidCraft plate from three picked top corners, hand dimensions, and an explicitly located hole."
+    )]
+    fn assist_plate(&self, Parameters(args): Parameters<assisted::PlateArgs>) -> CallToolResult {
+        self.with_mesh(|m| assisted::plate(&m.mesh, args))
     }
     #[tool(
         name = "mesh.info",
