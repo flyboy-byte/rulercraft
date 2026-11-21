@@ -65,11 +65,13 @@ Recheck the closed and open window imports first.
 ## Open right now
 
 - #136 records the 2026-11-21 assessment. #137 plans the assisted workflow. In order after #137,
-  #138 checks the calibrated span, #139 adds paged pick coordinates, and #140 adds the first
-  editable plate over MCP. The latest implementation branch is `codex/assisted-cad`.
+  #138 checks the calibrated span, #139 adds paged pick coordinates, #140 adds the first
+  editable plate over MCP, and #141 estimates a center from selected bore evidence. The latest
+  implementation branch is `codex/assisted-bore-evidence`.
 - SolidCraft evaluated the calibrated 60 × 30 plate with an 8 mm through-hole at 13,997.876 mm³,
   then 20,996.814 mm³ after editing thickness from 8 to 12 mm. A 4 mm blind hole also stayed
-  4 mm deep through the edit. Next add fit-backed center evidence and noisy capture checks.
+  4 mm deep through the edit. #141 refuses empty or narrow bore support and contradictory diameters.
+  Next replace individual corner width picks with face evidence for noisy capture acceptance.
 
 ## Read first
 INTENT.md (locked; changes only by a superseding decision), AGENTS.md (outranks the rest), docs/v1.md (what v1 means,
