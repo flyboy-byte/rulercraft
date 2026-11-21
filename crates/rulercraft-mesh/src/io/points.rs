@@ -6,7 +6,8 @@ use crate::{Mesh, MeshBuilder, Unit};
 /// Reads a text point cloud. Each line holds x, y and z first, separated by spaces, tabs, commas or semicolons;
 /// further numbers on a line (intensity, colour, normals) are ignored. Blank lines and lines starting with `#`, `//`
 /// or `;` are comments. The first line that is not a comment may be a header instead of a point: a single whole
-/// number (a PTS point count) or a line whose first three fields are not numbers (column names). Any other line
+/// number (a PTS point count) or a line with at least three fields whose first three are all nonnumeric (column
+/// names). Any other line
 /// that is not a point is refused with its line number.
 pub fn read_text_points(bytes: &[u8], unit: Unit, limits: ImportLimits) -> Result<Mesh, ReadError> {
     check_bytes(bytes, limits)?;
@@ -27,22 +28,18 @@ pub fn read_text_points(bytes: &[u8], unit: Unit, limits: ImportLimits) -> Resul
         {
             continue;
         }
-        let fields: Vec<&str> = line
+        let mut fields = line
             .split(|c: char| c.is_whitespace() || c == ',' || c == ';')
-            .filter(|f| !f.is_empty())
-            .collect();
+            .filter(|f| !f.is_empty());
+        let fields = [fields.next(), fields.next(), fields.next()];
         let at_start = std::mem::replace(&mut first, false);
-        if at_start && fields.len() == 1 && fields[0].parse::<u64>().is_ok() {
+        if at_start && matches!(fields, [Some(count), None, None] if count.parse::<u64>().is_ok()) {
             continue; // a PTS point count
         }
-        let xyz: Option<Vec<f32>> = fields
-            .iter()
-            .take(3)
-            .map(|f| f.parse::<f32>().ok())
-            .collect();
+        let xyz = fields.map(|field| field.and_then(|f| f.parse::<f32>().ok()));
         let p = match xyz {
-            Some(v) if v.len() == 3 => [v[0], v[1], v[2]],
-            _ if at_start => continue, // column names
+            [Some(x), Some(y), Some(z)] => [x, y, z],
+            [None, None, None] if at_start && fields[2].is_some() => continue, // column names
             _ => {
                 return Err(ReadError(format!(
                     "line {}: a point needs x, y and z numbers first",

@@ -132,3 +132,18 @@ fn bad_point_files_are_refused_plainly() {
     let e = read_mesh("a.xyz", b"0 0 0\n", Unit::Mm, limits).unwrap_err();
     assert!(e.to_string().contains("`fit` and `measure`"), "{e}");
 }
+
+#[test]
+fn malformed_first_point_rows_are_refused() {
+    for row in ["10 20 bad", "X 20 30", "10 20", "10.5"] {
+        let text = format!("# scanner export\n{row}\n0 0 5\n10 0 5\n0 10 5\n");
+        let error = read_cloud(
+            "bad.xyz",
+            text.as_bytes(),
+            Unit::Mm,
+            ImportLimits::default(),
+        )
+        .unwrap_err();
+        assert!(error.to_string().starts_with("line 2:"), "{row}: {error}");
+    }
+}

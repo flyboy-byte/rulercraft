@@ -148,13 +148,6 @@ fn rescaling_scales_lengths_and_keeps_angles() {
     );
     let opts = CylinderOptions::default();
     let a = fit_cylinder(&f32s(&tube), Some(&f32s(&tube_n)), &sel(tube.len()), opts).unwrap();
-    for k2 in [2.0, 5.0, 10.0, 25.4, 100.0] {
-        let t: Vec<Vec3> = tube.iter().map(|p| p.map(|x| x * k2)).collect();
-        eprintln!(
-            "DBG scale {k2}: {:?}",
-            fit_cylinder(&f32s(&t), Some(&f32s(&tube_n)), &sel(tube.len()), opts).map(|c| c.radius)
-        );
-    }
     let b = fit_cylinder(
         &f32s(&scale(&tube)),
         Some(&f32s(&tube_n)),
@@ -162,15 +155,6 @@ fn rescaling_scales_lengths_and_keeps_angles() {
         opts,
     )
     .unwrap();
-    eprintln!(
-        "DBG cyl r {} {} ratio {} len {} {} ratio {}",
-        a.radius,
-        b.radius,
-        b.radius / a.radius,
-        a.length,
-        b.length,
-        b.length / a.length
-    );
     assert!((b.radius / a.radius - k).abs() < 1e-6 && (b.length / a.length - k).abs() < 1e-6);
 }
 

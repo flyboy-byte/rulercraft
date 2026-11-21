@@ -215,21 +215,49 @@ fn boundary_loops(
     for &(a, b) in &edges {
         next.entry(a).or_default().push(b);
     }
+    // Which way the triangles wind across the plane: a boundary edge has its triangle on the left when they wind
+    // counter-clockwise. At a vertex where chains touch, the walk keeps to its own triangle's side, taking the outgoing
+    // edge that turns most sharply toward it; that keeps loops that touch from merging.
+    let winding: f64 = tris
+        .iter()
+        .map(|&t| {
+            let [a, b, c] = mesh.triangles[t as usize].map(flat);
+            (b[0] - a[0]) * (c[1] - a[1]) - (b[1] - a[1]) * (c[0] - a[0])
+        })
+        .sum();
+    let left = winding >= 0.0;
     let mut found: Vec<(f64, Vec<[f64; 2]>)> = Vec::new();
     for &(s, first) in &edges {
         if !next.get(&s).is_some_and(|v| v.contains(&first)) {
             continue; // already walked
         }
-        let take = |next: &mut HashMap<u32, Vec<u32>>, from: u32, to: Option<u32>| -> Option<u32> {
+        let take = |next: &mut HashMap<u32, Vec<u32>>,
+                    from: u32,
+                    to: Option<u32>,
+                    prev: u32|
+         -> Option<u32> {
             let v = next.get_mut(&from)?;
             let k = match to {
                 Some(t) => v.iter().position(|&x| x == t)?,
-                None => 0,
+                None if v.len() <= 1 => 0,
+                None => {
+                    // Back along the incoming edge, then round toward the triangles' side: the first edge met.
+                    let (o, p) = (flat(from), flat(prev));
+                    let back = (p[1] - o[1]).atan2(p[0] - o[0]);
+                    let turn = |x: u32| {
+                        let q = flat(x);
+                        let a = (q[1] - o[1]).atan2(q[0] - o[0]) - back;
+                        let a = if left { -a } else { a };
+                        a.rem_euclid(std::f64::consts::TAU)
+                    };
+                    (0..v.len()).min_by(|&i, &j| turn(v[i]).total_cmp(&turn(v[j])))?
+                }
             };
             (k < v.len()).then(|| v.swap_remove(k))
         };
         let mut chain = vec![s];
-        let mut at = take(&mut next, s, Some(first))?;
+        let mut at = take(&mut next, s, Some(first), s)?;
+        let mut prev = s;
         let mut steps = 0usize;
         while at != s {
             chain.push(at);
@@ -237,10 +265,12 @@ fn boundary_loops(
             if steps > edges.len() {
                 return None;
             }
-            at = match take(&mut next, at, None) {
+            let here = at;
+            at = match take(&mut next, at, None, prev) {
                 Some(n) => n,
                 None => break, // an open chain: not a loop
             };
+            prev = here;
         }
         if at == s && chain.len() >= 3 {
             let pts: Vec<[f64; 2]> = chain.iter().map(|&i| flat(i)).collect();
@@ -957,7 +987,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     // How far a scan's softened edge can pull a face's boundary or a round's end from where the edge really is:
     // three of the mesh's typical edge lengths, at most 1 mm, at least the tolerance. On a CAD mesh faces meet
     // exactly, so the nearest match within it is the exact one.
-    let reach = {
+    let (reach, soft) = {
         let step = (graph.edges.len() / 20_000).max(1);
         let mut e: Vec<f64> = graph
             .edges
@@ -970,7 +1000,8 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             .collect();
         e.sort_by(f64::total_cmp);
         let median = e.get(e.len() / 2).copied().unwrap_or(0.0);
-        (3.0 * median).min(1.0).max(tol)
+        // `soft`: the same without the 1 mm cap, how wide a softened edge's round can be on a coarse scan.
+        ((3.0 * median).min(1.0).max(tol), (3.0 * median).max(tol))
     };
     // Walls square to the base, in the frame: where faces' edges really are on a scan, whose faces stop short of
     // their softened edges.
@@ -1005,6 +1036,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     // pockets; each wall within 1° of the side's direction, within `reach` of it, and beside it in height and along it.
     let snap = |lo: [f64; 2], hi: [f64; 2], z0: f64, z1: f64, inward: bool| {
         let (mut lo2, mut hi2) = (lo, hi);
+        let mut matched = 0usize;
         for k in 0..2 {
             let o = 1 - k;
             for side in [-1.0f64, 1.0] {
@@ -1022,6 +1054,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                     })
                     .max_by(|a, b| a.area.total_cmp(&b.area));
                 if let Some(w) = best {
+                    matched += 1;
                     if side < 0.0 {
                         lo2[k] = w.c[k];
                     } else {
@@ -1030,9 +1063,9 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                 }
             }
         }
-        (lo2, hi2)
+        (lo2, hi2, matched)
     };
-    let (lo, hi) = snap(blo, bhi, 0.0, thick, false);
+    let (lo, hi, _) = snap(blo, bhi, 0.0, thick, false);
     let (len, wid) = (hi[0] - lo[0], hi[1] - lo[1]);
     // How far a traced boundary may stray from a straight edge or a circle: a scan's face boundary is ragged.
     let ptol = if rough > 2.0 { reach } else { tol };
@@ -1103,20 +1136,35 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                 }
             })
             .collect();
-        // Edges on the same wall as the one before are one edge; a short edge no wall bounds, between two that walls
-        // do, is a softened corner, and its neighbours meet instead.
+        // Edges on the same wall as the one before are one edge.
+        // Two edges on one line (within 1° and `reach`): one edge, whichever wall pieces each found.
+        let same_line = |a: &SnapLine, b: &SnapLine| {
+            let cr = a.1[0] * b.1[1] - a.1[1] * b.1[0];
+            let dot = a.1[0] * b.1[0] + a.1[1] * b.1[1];
+            let w = [b.0[0] - a.0[0], b.0[1] - a.0[1]];
+            dot > 0.0
+                && cr.abs() <= 1f64.to_radians().sin()
+                && (w[0] * a.1[1] - w[1] * a.1[0]).abs() <= reach
+        };
+        // A short edge no wall bounds, once walls bound most of the outline, is a softened corner or a spike in the
+        // traced boundary: its neighbours meet instead. A real notch has walls and stays.
+        let walled = lines.iter().filter(|l| l.2.is_some()).count();
         let mut kept: Vec<SnapLine> = Vec::new();
-        for i in 0..m {
-            let (prev, this, next) = (lines[(i + m - 1) % m], lines[i], lines[(i + 1) % m]);
-            let softened =
-                this.2.is_none() && this.3 < 3.0 * reach && prev.2.is_some() && next.2.is_some();
-            if softened || (this.2.is_some() && kept.last().is_some_and(|k| k.2 == this.2)) {
+        for &this in lines.iter().take(m) {
+            let softened = this.2.is_none() && this.3 < 3.0 * reach && walled >= 3;
+            let merged = kept
+                .last()
+                .is_some_and(|k| (this.2.is_some() && k.2 == this.2) || same_line(k, &this));
+            if softened || merged {
                 continue;
             }
             kept.push(this);
         }
-        if kept.len() > 1 && kept[0].2.is_some() && kept[0].2 == kept[kept.len() - 1].2 {
-            kept.remove(0);
+        if kept.len() > 1 {
+            let (first, last) = (kept[0], kept[kept.len() - 1]);
+            if (first.2.is_some() && first.2 == last.2) || same_line(&last, &first) {
+                kept.remove(0);
+            }
         }
         let k = kept.len();
         if k < 3 {
@@ -1142,6 +1190,92 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             })
             .collect()
     };
+    // On a scan a traced loop is ragged (noise gaps join its edge as spikes), but the walls along it are not: the
+    // polygon of those walls, each facing away from the material, coplanar ones merged, ordered round the loop, each
+    // meeting the next. Used only when every corner lands near the traced loop and the areas agree within 15 %.
+    let wall_poly = |ring: &[[f64; 2]], material_inside: bool| -> Option<Vec<[f64; 2]>> {
+        let m = ring.len();
+        let near_ring = |q: [f64; 2]| {
+            (0..m)
+                .map(|i| seg_dist(q, ring[i], ring[(i + 1) % m]))
+                .fold(f64::INFINITY, f64::min)
+        };
+        let n = m as f64;
+        let c = [
+            ring.iter().map(|q| q[0]).sum::<f64>() / n,
+            ring.iter().map(|q| q[1]).sum::<f64>() / n,
+        ];
+        let mut groups: Vec<([f64; 2], [f64; 2], f64)> = Vec::new(); // area-weighted centre, normal sum, area
+        for w in &walls {
+            let wc = [w.c[0] - lo[0], w.c[1] - lo[1]];
+            let away = w.n[0] * (wc[0] - c[0]) + w.n[1] * (wc[1] - c[1]) > 0.0;
+            if away != material_inside || w.zhi - w.zlo < 0.5 * thick || near_ring(wc) > reach {
+                continue;
+            }
+            match groups.iter_mut().find(|g| {
+                let gn = normalize([g.1[0], g.1[1], 0.0]).unwrap_or([0.0; 3]);
+                let gc = [g.0[0] / g.2, g.0[1] / g.2];
+                gn[0] * w.n[0] + gn[1] * w.n[1] >= 3f64.to_radians().cos()
+                    && ((wc[0] - gc[0]) * gn[0] + (wc[1] - gc[1]) * gn[1]).abs() <= reach
+            }) {
+                Some(g) => {
+                    g.0 = [g.0[0] + wc[0] * w.area, g.0[1] + wc[1] * w.area];
+                    g.1 = [g.1[0] + w.n[0] * w.area, g.1[1] + w.n[1] * w.area];
+                    g.2 += w.area;
+                }
+                None => groups.push((
+                    [wc[0] * w.area, wc[1] * w.area],
+                    [w.n[0] * w.area, w.n[1] * w.area],
+                    w.area,
+                )),
+            }
+        }
+        if groups.len() < 3 {
+            return None;
+        }
+        let mut lines: Vec<([f64; 2], [f64; 2], f64)> = groups
+            .iter()
+            .filter_map(|g| {
+                let nl = g.1[0].hypot(g.1[1]);
+                (nl > 0.0).then(|| {
+                    let p = [g.0[0] / g.2, g.0[1] / g.2];
+                    let nn = [g.1[0] / nl, g.1[1] / nl];
+                    // Counter-clockwise round the loop: the material inside means the normal points out, so the
+                    // edge runs a quarter turn to its left.
+                    let d = if material_inside {
+                        [-nn[1], nn[0]]
+                    } else {
+                        [nn[1], -nn[0]]
+                    };
+                    (p, d, (p[1] - c[1]).atan2(p[0] - c[0]))
+                })
+            })
+            .collect();
+        lines.sort_by(|a, b| a.2.total_cmp(&b.2));
+        let k = lines.len();
+        let poly: Vec<[f64; 2]> = (0..k)
+            .map(|i| {
+                let ((p1, d1, _), (p2, d2, _)) = (lines[(i + k - 1) % k], lines[i]);
+                let cr = d1[0] * d2[1] - d1[1] * d2[0];
+                if cr.abs() < 1e-6 {
+                    return None;
+                }
+                let w = [p2[0] - p1[0], p2[1] - p1[1]];
+                let s = (w[0] * d2[1] - w[1] * d2[0]) / cr;
+                Some([p1[0] + s * d1[0], p1[1] + s * d1[1]])
+            })
+            .collect::<Option<Vec<_>>>()?;
+        let (pa, ra) = (signed_area(&poly).abs(), signed_area(ring).abs());
+        let fits =
+            poly.iter().all(|&q| near_ring(q) <= 3.0 * reach) && (pa - ra).abs() <= 0.15 * ra;
+        fits.then(|| {
+            let mut poly = poly;
+            if signed_area(&poly) < 0.0 {
+                poly.reverse();
+            }
+            poly
+        })
+    };
     let mut losses: Vec<Loss> = Vec::new();
 
     // The outline: the base face's outer boundary, as a circle or a polygon when it is not a rectangle.
@@ -1151,7 +1285,29 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     };
     let mut outline = Outline::Rectangle;
     let mut outline_area = base_len * base_wid;
-    let base_loops = boundary_loops(&base.triangles, mesh, &part_xy).unwrap_or_default();
+    // The base and the top as every flat region lying in their planes (within 5° and the tolerance): noise splits a
+    // scan's faces, and the largest piece alone would trace a ragged outline.
+    let coplanar = |of: usize, height: f64, up: bool| -> (Vec<u32>, f64) {
+        let mut tris = Vec::new();
+        let mut area = 0.0;
+        for (k, p) in planes.iter().enumerate() {
+            let facing_up = dot(p.plane.normal, n) > 0.0;
+            if k == of
+                || (acute_deg(p.plane.normal, n) <= SQUARE_DEG
+                    && facing_up == up
+                    && (dot(sub(flat_center(p), o), n) - height).abs() <= tol)
+            {
+                tris.extend_from_slice(&p.triangles);
+                area += p.area;
+            }
+        }
+        tris.sort_unstable();
+        tris.dedup();
+        (tris, area)
+    };
+    let (base_tris, base_area) = coplanar(bi, 0.0, false);
+    let (top_tris, _) = coplanar(ti, thick, true);
+    let base_loops = boundary_loops(&base_tris, mesh, &part_xy).unwrap_or_default();
     if let Some(ring) = base_loops.first() {
         let area = signed_area(ring).abs();
         // A small notch may leave almost all of the rectangle covered. On a low-roughness
@@ -1163,7 +1319,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                     q > blo[axis] + ptol && q < bhi[axis] - ptol
                 })
             });
-        if area < 0.98 * base_len * base_wid || inset {
+        if area < full * base_len * base_wid || inset {
             if let Some((x, y, r)) = circle_of(ring, ptol) {
                 // The outer wall's own circle, when one was found round it: the base face stops short of it on a
                 // scan.
@@ -1187,6 +1343,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                         poly.reverse(); // counter-clockwise in the part frame
                     }
                     let poly = snap_poly(&poly, true);
+
                     let poly_area = signed_area(&poly);
                     let short = (0..poly.len())
                         .filter(|&i| {
@@ -1332,7 +1489,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     let mut cone_used = vec![false; cones.len()];
     let mut countersink_tris: Vec<u32> = Vec::new();
     // Faces under a hundredth of the base's area go in one item: on a scan, the softened edges.
-    let small = 0.01 * base.area;
+    let small = 0.01 * base_area;
     let (mut small_count, mut small_area) = (0usize, 0.0);
     let mut tilted: Vec<Loss> = Vec::new();
     let mut rounded_corners: Vec<f64> = Vec::new();
@@ -1348,7 +1505,16 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         for l in &levels {
             let (cx, cy) = ((l.lo[0] + l.hi[0]) / 2.0, (l.lo[1] + l.hi[1]) / 2.0);
             if (l.height - h).abs() <= reach
-                && (cx - x).hypot(cy - y) <= r * 0.5
+                // Centred on the axis, or a piece of a split face lying wholly inside the round.
+                && ((cx - x).hypot(cy - y) <= r * 0.5
+                    || [
+                        [l.lo[0], l.lo[1]],
+                        [l.hi[0], l.lo[1]],
+                        [l.lo[0], l.hi[1]],
+                        [l.hi[0], l.hi[1]],
+                    ]
+                    .iter()
+                    .all(|q| (q[0] - x).hypot(q[1] - y) <= r + reach))
                 && l.area <= std::f64::consts::PI * r * r * 1.05
             {
                 explained.push(l.index);
@@ -1714,6 +1880,8 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }
     }
     rounded.extend(fillet_corners.iter().copied());
+    #[allow(clippy::type_complexity)]
+    let mut candidates: Vec<((usize, f64, f64, Chamfer), Vec<u32>)> = Vec::new();
     // Each bevel is one of the flat regions, slanted to the base: grown regions stay together on a scan, where single
     // facets point every way.
     {
@@ -1758,7 +1926,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             if (zhi - thick).abs() > tol || zlo <= tol {
                 continue;
             }
-            let found = edges.iter().find_map(|&(a, b)| {
+            let found = edges.iter().enumerate().find_map(|(ei, &(a, b))| {
                 let l = (b[0] - a[0]).hypot(b[1] - a[1]);
                 if l <= 0.0 {
                     return None;
@@ -1778,16 +1946,18 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                 let smax = st.iter().map(|x| x.0).fold(f64::NEG_INFINITY, f64::max);
                 let smin = st.iter().map(|x| x.0).fold(f64::INFINITY, f64::min);
                 let inside = st.iter().all(|x| x.1 >= -tol && x.1 <= l + tol);
-                // It runs along the whole edge, short only where bevels on the next edges meet it.
+                // How far along the edge it runs (judged below, with any other pieces of the same bevel).
                 let (t0, t1) = st
                     .iter()
                     .fold((f64::INFINITY, f64::NEG_INFINITY), |(a, b), x| {
                         (a.min(x.1), b.max(x.1))
                     });
-                let along = t1 - t0 >= l + 2.0 * smin - 2.0 * reach;
                 let size_ok = -smin < l / 2.0 && thick - zlo < thick;
-                (smax.abs() <= reach.max(tol) && inside && smin < -tol && along && size_ok)
-                    .then_some(Chamfer {
+                (smax.abs() <= reach.max(tol) && inside && smin < -tol && size_ok).then_some((
+                    ei,
+                    t0,
+                    t1,
+                    Chamfer {
                         a,
                         dir,
                         out,
@@ -1816,11 +1986,68 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                         },
                         top: thick,
                         round: false,
-                    })
+                    },
+                ))
             });
             if let Some(c) = found {
-                chamfers.push((c, tris));
+                candidates.push((c, tris));
             }
+        }
+    }
+    // Pieces of one bevel (noise splits a scan's faces): on one edge, of one size within `reach`. Together they must
+    // run along the edge, short only where bevels on the next edges meet it, with no gap wider than twice `reach`.
+    let mut taken = vec![false; candidates.len()];
+    for i in 0..candidates.len() {
+        if taken[i] {
+            continue;
+        }
+        let (ei, first) = (candidates[i].0.0, candidates[i].0.3);
+        let group: Vec<usize> = (i..candidates.len())
+            .filter(|&j| {
+                let c = candidates[j].0.3;
+                !taken[j]
+                    && candidates[j].0.0 == ei
+                    && (c.across - first.across).abs() <= reach
+                    && (c.down - first.down).abs() <= reach
+            })
+            .collect();
+        let mut spans: Vec<(f64, f64)> = group
+            .iter()
+            .map(|&j| (candidates[j].0.1, candidates[j].0.2))
+            .collect();
+        spans.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let (mut lo_t, mut hi_t, mut joined) = (spans[0].0, spans[0].1, true);
+        for &(a, b) in &spans[1..] {
+            joined &= a <= hi_t + 2.0 * reach;
+            hi_t = hi_t.max(b);
+            lo_t = lo_t.min(a);
+        }
+        let weight: f64 = group.iter().map(|&j| candidates[j].1.len() as f64).sum();
+        let mean = |f: &dyn Fn(&Chamfer) -> f64| {
+            group
+                .iter()
+                .map(|&j| f(&candidates[j].0.3) * candidates[j].1.len() as f64)
+                .sum::<f64>()
+                / weight
+        };
+        let (across, down) = (mean(&|c| c.across), mean(&|c| c.down));
+        // On a scan every edge is softened by about a cell; a bevel no larger than that is the softening, not a
+        // chamfer (on a grid aligned with the edge it runs unbroken the whole length).
+        let resolved = rough <= 2.0 || across.max(down) >= soft / 2.0;
+        if resolved && joined && hi_t - lo_t >= first.len - 2.0 * across - 2.0 * reach {
+            let mut tris = Vec::new();
+            for &j in &group {
+                taken[j] = true;
+                tris.extend_from_slice(&candidates[j].1);
+            }
+            chamfers.push((
+                Chamfer {
+                    across,
+                    down,
+                    ..first
+                },
+                tris,
+            ));
         }
     }
 
@@ -1883,7 +2110,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         let arc = c.coverage_deg.to_radians() * c.diameter / 2.0;
         // And a shallow arc (under 45°) is a near-flat strip by an edge, not a round a person drew.
         if cylinders[k].area < small
-            || c.diameter / 2.0 <= reach
+            || c.diameter / 2.0 <= soft
             || arc <= 2.0 * reach
             || c.coverage_deg < 45.0
         {
@@ -1920,6 +2147,29 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                 * 4
                 < p.triangles.len() * 3
         {
+            // A piece of a rebuilt bevel or round split off by noise: nearly all of it within that edge's band.
+            let verts: Vec<[f64; 3]> = p.vertices.iter().map(|&i| to_part(local(pos(i)))).collect();
+            let in_band = chamfers.iter().any(|(c, _)| {
+                let inside = verts
+                    .iter()
+                    .filter(|q| {
+                        let d = [q[0] - c.a[0], q[1] - c.a[1]];
+                        let (s, t) = (
+                            d[0] * c.out[0] + d[1] * c.out[1],
+                            d[0] * c.dir[0] + d[1] * c.dir[1],
+                        );
+                        s <= reach
+                            && s >= -c.across - reach
+                            && q[2] >= c.top - c.down - reach
+                            && t >= -reach
+                            && t <= c.len + reach
+                    })
+                    .count();
+                inside * 10 >= verts.len() * 9
+            });
+            if in_band {
+                continue;
+            }
             if p.area < small {
                 small_count += 1;
                 small_area += p.area;
@@ -1978,19 +2228,40 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         let (w, d) = (l.hi[0] - l.lo[0], l.hi[1] - l.lo[1]);
         let simplified = l.area < full * w * d;
         // Its sides on its walls (a scan's floor stops short of them), into it for a pocket, out of it for a pad.
-        let (rlo, rhi) = {
+        let (rlo, rhi, walled) = {
             let at = |p: [f64; 2]| [p[0] + lo[0], p[1] + lo[1]];
-            let (a, b) = if l.height < thick {
+            let (a, b, m) = if l.height < thick {
                 snap(at(l.lo), at(l.hi), l.height, thick, true)
             } else {
                 snap(at(l.lo), at(l.hi), thick, l.height, false)
             };
-            ([a[0] - lo[0], a[1] - lo[1]], [b[0] - lo[0], b[1] - lo[1]])
+            (
+                [a[0] - lo[0], a[1] - lo[1]],
+                [b[0] - lo[0], b[1] - lo[1]],
+                m,
+            )
         };
+        // A piece of a floor or top already taken (noise splits a scan's faces): inside it, at its height.
+        let piece_of = |list: &[Value]| {
+            list.iter().any(|q| {
+                let g = |k: &str| q[k].as_f64().unwrap_or(f64::NAN);
+                (g("height") - l.height).abs() <= tol.max(reach / 2.0)
+                    && l.lo[0] >= g("x") - reach
+                    && l.lo[1] >= g("y") - reach
+                    && l.hi[0] <= g("x") + g("length") + reach
+                    && l.hi[1] <= g("y") + g("width") + reach
+            })
+        };
+        if piece_of(&pockets) || piece_of(&pads) {
+            continue;
+        }
+        // Square to the plate: its floor's smallest rectangle says so, or three or more of its sides lie on walls
+        // square to the plate's (within 1°): a scan's ragged floor can turn its rectangle, its walls do not.
+        let aligned = l.aligned || walled >= 3;
         let rect = json!({"x": rlo[0], "y": rlo[1], "length": rhi[0] - rlo[0], "width": rhi[1] - rlo[1],
                           "height": l.height, "area_mm2": l.area});
         if l.up && l.height > tol && l.height < thick - tol {
-            if !l.aligned {
+            if !aligned {
                 losses.push(Loss {
                     severity: "dropped",
                     title: "Pockets turned to the outline not rebuilt",
@@ -2015,7 +2286,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             }
             pockets.push(rect);
         } else if l.up && l.height > thick + tol {
-            if !l.aligned {
+            if !aligned {
                 losses.push(Loss {
                     severity: "dropped",
                     title: "Pads turned to the outline not rebuilt",
@@ -2040,6 +2311,11 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             }
             pads.push(rect);
         } else if !l.up && l.height > tol && l.height < thick - tol {
+            if l.area < small {
+                small_count += 1;
+                small_area += l.area;
+                continue;
+            }
             losses.push(Loss {
                 severity: "dropped",
                 title: "Undercuts not rebuilt",
@@ -2085,7 +2361,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     // Cutouts through the plate that are not round: an inner loop of the base that the top face repeats.
     let mut slots: Vec<Vec<[f64; 2]>> = Vec::new();
     let mut slot_area = 0.0;
-    let top_loops = boundary_loops(&planes[ti].triangles, mesh, &part_xy).unwrap_or_default();
+    let top_loops = boundary_loops(&top_tris, mesh, &part_xy).unwrap_or_default();
     let centroid = |p: &[[f64; 2]]| {
         let n = p.len() as f64;
         [
@@ -2099,21 +2375,29 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }
         let area = signed_area(inner).abs();
         let c = centroid(inner);
-        let same = if rough > 2.0 { 0.1 } else { 0.03 };
+        // The top has the same window: on a CAD mesh at the same place and size; on a scan, whose loops are ragged
+        // and softened differently top and bottom, each loop's centre inside the other and the areas within 25 %.
         let matched = top_loops.iter().skip(1).any(|t| {
             let (tc, ta) = (centroid(t), signed_area(t).abs());
-            (tc[0] - c[0]).hypot(tc[1] - c[1]) <= 2.0 * ptol && (ta - area).abs() <= same * area
+            if rough > 2.0 {
+                point_in_loop(tc, inner) && point_in_loop(c, t) && (ta - area).abs() <= 0.25 * area
+            } else {
+                (tc[0] - c[0]).hypot(tc[1] - c[1]) <= 2.0 * ptol && (ta - area).abs() <= 0.03 * area
+            }
         });
+        if !matched || area < small {
+            continue;
+        }
         let mut poly = simplify_loop(inner, ptol);
         if signed_area(&poly) < 0.0 {
             poly.reverse();
         }
-        let poly = snap_poly(&poly, false);
-        if matched
-            && area >= small
-            && (3..=MAX_OUTLINE_CORNERS).contains(&poly.len())
-            && signed_area(&poly).abs() > 0.0
-        {
+        let poly = if rough > 2.0 {
+            wall_poly(inner, false).unwrap_or_else(|| snap_poly(&poly, false))
+        } else {
+            snap_poly(&poly, false)
+        };
+        if (3..=MAX_OUTLINE_CORNERS).contains(&poly.len()) && signed_area(&poly).abs() > 0.0 {
             slot_area += signed_area(&poly).abs();
             slots.push(poly);
         }
@@ -2121,7 +2405,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
 
     // An outline that is not a full rectangle is simplified to its enclosing rectangle.
     let expected = outline_area - down_hole_area - slot_area;
-    if base.area < full * expected {
+    if base_area < full * expected {
         let rectangle = matches!(outline, Outline::Rectangle);
         losses.push(Loss {
             severity: "degraded",
@@ -2133,7 +2417,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
             subject: "base outline".into(),
             message: format!(
                 "the base face covers {:.1} mm² of the {:.1} mm² its {} leaves after holes",
-                base.area,
+                base_area,
                 expected,
                 if rectangle { "rectangle" } else { "outline" }
             ),
@@ -2478,7 +2762,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         "summary": summary,
         "items": losses.iter().map(Loss::json).collect::<Vec<_>>(),
         "details": {
-            "base": {"area_mm2": base.area, "sigma": base.plane.sigma, "form_error": base.plane.form_error},
+            "base": {"area_mm2": base_area, "sigma": base.plane.sigma, "form_error": base.plane.form_error},
             "plate": {"length": len, "width": wid, "thickness": thick},
             "fillets": chamfers.iter().filter(|(c, _)| c.round).map(|(c, _)| json!({"edge_from": c.a,
                 "edge_direction": c.dir, "edge_length": c.len, "radius": c.across})).collect::<Vec<_>>(),
