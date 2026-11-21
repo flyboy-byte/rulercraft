@@ -6,7 +6,7 @@
 Installs the plugin, imports the scan as a part, reads the loss report, changes `thickness`, and measures.
 Needs a SolidCraft command line that has `mcp --headless`. Prints each step; exits 1 on the first failure.
 """
-import json, os, subprocess, sys
+import argparse, json, math, os, subprocess, sys
 
 
 class Mcp:
@@ -34,8 +34,15 @@ class Mcp:
 
 
 def main():
-    zip_path, scan = os.path.abspath(sys.argv[1]), os.path.abspath(sys.argv[2])
-    cli = sys.argv[3] if len(sys.argv) > 3 else "solidcraft-cli"
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("package")
+    parser.add_argument("scan")
+    parser.add_argument("cli", nargs="?", default="solidcraft-cli")
+    parser.add_argument("--known-hole-block", action="store_true",
+                        help="check exact volumes for fixtures/known/hole-block.stl")
+    args = parser.parse_args()
+    zip_path, scan = os.path.abspath(args.package), os.path.abspath(args.scan)
+    cli = args.cli
     m = Mcp(cli)
     m.call("execute", {"command": "plugin.install", "params": {"path": zip_path, "approve": {"memory_mib": 1024}, "replace": True}})
     print("installed the plugin")
@@ -53,6 +60,13 @@ def main():
     print(f"volume {before:.1f} -> {after:.1f} mm3 with thickness {t:g} -> {t + 2:g}")
     if not after > before:
         sys.exit("editing thickness did not change the part")
+    if args.known_hole_block:
+        # Designed 60 x 30 x 10 plate with three through-bores of diameter 3, 5 and 8.
+        area = 60 * 30 - math.pi * sum(radius**2 for radius in (1.5, 2.5, 4))
+        for label, actual, expected in (("imported", before, area * 10),
+                                        ("edited", after, area * 12)):
+            if not math.isclose(actual, expected, rel_tol=0, abs_tol=1e-6):
+                sys.exit(f"{label} hole-block volume {actual:.9f}, expected {expected:.9f} mm³")
     print("ok")
 
 

@@ -5,18 +5,20 @@
 set -eu
 here=$(cd "$(dirname "$0")" && pwd)
 cd "$here"
-cargo build --release --target wasm32-unknown-unknown
+cargo build --locked --release --target wasm32-unknown-unknown
 wasm-tools component new target/wasm32-unknown-unknown/release/rulercraft_solidcraft_plugin.wasm \
   -o package/rulercraft.wasm
 # SolidCraft links no WASI and no network: refuse a component that imports either.
-if wasm-tools component wit package/rulercraft.wasm | grep -Ei 'wasi|http|socket'; then
+component_wit=$(wasm-tools component wit package/rulercraft.wasm)
+if printf '%s\n' "$component_wit" | grep -Ei 'wasi|http|socket'; then
   echo "the component imports WASI or network interfaces; SolidCraft would refuse it" >&2
   exit 1
 fi
 cp ../../fixtures/known/hole-block.stl ../../fixtures/known/stepped-cylinder.stl ../../fixtures/known/bracket.stl ../../fixtures/known/l-plate.stl ../../fixtures/known/round-plate.stl ../../fixtures/known/counterbore.stl ../../fixtures/known/window.stl ../../fixtures/known/countersink.stl ../../fixtures/known/chamfer.stl ../../fixtures/known/l-chamfer.stl ../../fixtures/known/fillet.stl ../../fixtures/known/l-fillet.stl package/tests/
 mkdir -p dist
 rm -f dist/rulercraft-solidcraft-plugin.zip
-(cd package && zip -q ../dist/rulercraft-solidcraft-plugin.zip plugin.json rulercraft.wasm)
+zip -q -j dist/rulercraft-solidcraft-plugin.zip package/plugin.json package/rulercraft.wasm \
+    NOTICE ../../LICENSE-MIT ../../LICENSE-APACHE
 echo "built dist/rulercraft-solidcraft-plugin.zip"
 cli=${SOLIDCRAFT_CLI:-solidcraft-cli}
 if command -v "$cli" >/dev/null 2>&1; then

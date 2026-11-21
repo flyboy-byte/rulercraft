@@ -1,14 +1,13 @@
 # SPDX-License-Identifier: MIT OR Apache-2.0
-# Builds the SolidCraft plugin package (docs/specs/solidcraft-plugin.md, D-014). Not part of the fast gate: it
-# runs only when someone starts it, or on a pull request that changes plugin/. A few minutes per run.
 name: solidcraft-plugin
 on:
   workflow_dispatch:
+  workflow_call:
+  push:
+    branches: [main]
+    paths: ["plugin/**", "crates/rulercraft-mesh/**", "fixtures/known/**", "tools/agent_smoke.py", ".github/workflows/solidcraft-plugin*.yml"]
   pull_request:
-    paths: ["plugin/**", ".github/workflows/solidcraft-plugin.yml"]
-concurrency:
-  group: solidcraft-plugin-${{ github.ref }}
-  cancel-in-progress: true
+    paths: ["plugin/**", "crates/rulercraft-mesh/**", "fixtures/known/**", "tools/agent_smoke.py", ".github/workflows/solidcraft-plugin*.yml"]
 permissions:
   contents: read
 jobs:
@@ -31,13 +30,37 @@ jobs:
         working-directory: plugin/solidcraft
         run: |
           cargo fmt --check
-          cargo clippy --target wasm32-unknown-unknown -- -D warnings
-      - name: Build the package
+          cargo clippy --locked --target wasm32-unknown-unknown -- -D warnings
+      - name: Fetch the checked SolidCraft host
+        shell: bash
+        run: |
+          host=solidcraft-0.45.0-rc.4-linux-x86_64
+          curl --fail --silent --show-error --location --retry 3 \
+            "https://github.com/tangency-labs/solidcraft/releases/download/v0.45.0-rc.4/$host.tar.gz" \
+            --output "$RUNNER_TEMP/$host.tar.gz"
+          cd "$RUNNER_TEMP"
+          printf '%s  %s\n' f964cf35caaae7b30c1176863cf4a8ba62c32e030b15f9f6c8a066b264510ed4 "$host.tar.gz" | sha256sum --check
+          tar -xzf "$host.tar.gz" "$host/bin/solidcraft-cli"
+          echo "SOLIDCRAFT_CLI=$RUNNER_TEMP/$host/bin/solidcraft-cli" >> "$GITHUB_ENV"
+      - name: Build and test the package in SolidCraft
         run: plugin/solidcraft/build.sh
+      - name: Install the ZIP and verify an editable known part
+        run: |
+          export XDG_CONFIG_HOME="$RUNNER_TEMP/solidcraft-config"
+          export XDG_DATA_HOME="$RUNNER_TEMP/solidcraft-data"
+          export XDG_CACHE_HOME="$RUNNER_TEMP/solidcraft-cache"
+          python3 tools/agent_smoke.py plugin/solidcraft/dist/rulercraft-solidcraft-plugin.zip \
+            fixtures/known/hole-block.stl "$SOLIDCRAFT_CLI" --known-hole-block
+      - name: Record package checksum and source revision
+        working-directory: plugin/solidcraft/dist
+        run: |
+          sha256sum rulercraft-solidcraft-plugin.zip > SHA256SUMS.txt
+          git rev-parse HEAD > SOURCE-COMMIT.txt
       - uses: actions/upload-artifact@v4
         with:
           name: rulercraft-solidcraft-plugin
           path: |
             plugin/solidcraft/dist/rulercraft-solidcraft-plugin.zip
-            plugin/solidcraft/package/rulercraft.wasm
+            plugin/solidcraft/dist/SHA256SUMS.txt
+            plugin/solidcraft/dist/SOURCE-COMMIT.txt
           if-no-files-found: error

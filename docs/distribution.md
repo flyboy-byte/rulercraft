@@ -1,7 +1,6 @@
 # Distribution
 
-Status: *Plan (2026-11-07)*. Nothing is published without Logan's yes at the time (AGENTS.md). This page is the plan so
-that, when he says yes, the steps are known.
+Status updated 2026-11-21. The SolidCraft plugin has a checked preview package and a tag-driven prerelease pipeline. Publishing requires Logan’s explicit approval under AGENTS.md.
 
 ## What ships
 
@@ -10,14 +9,21 @@ that, when he says yes, the steps are known.
 | `rulercraft-mesh` (engine) | programs, SolidCraft | crates.io (and git) |
 | `rulercraft` (CLI) | scripts, CI | GitHub Releases binaries; `cargo install` |
 | `rulercraft-mcp` (MCP server) | Claude and other agents | GitHub Releases; install line for Claude Code/Desktop in the README |
-| RulerCraft app (native, D-012) | people | GitHub Releases installers; later Flathub, winget, Homebrew |
 | Web build (later) | people with nothing installed | static hosting (for example GitHub Pages) |
-| SolidCraft plugin (if their design lands) | SolidCraft users | whatever SolidCraft decides (#1221) |
+| SolidCraft plugin | SolidCraft desktop users | Tested GitHub Actions previews and tagged GitHub prereleases |
 
-## Platforms
+## Plugin delivery
 
-Linux x86_64 and aarch64 (AppImage and .tar.gz; Flatpak later), Windows x86_64 (.zip, then an installer), macOS
-universal (.dmg). Built by CI from a tag.
+The plugin is one WebAssembly component ZIP. CI checks it against SolidCraft CLI 0.45.0-rc.4 on
+Linux x86_64, runs the host fixture suite, installs the actual ZIP, and checks a known part before
+and after a thickness edit. Changes to the mesh engine also trigger packaging. Download the preview
+from a successful run on `main` and follow the [install guide](install-solidcraft-plugin.md).
+Other desktop platforms and newer host versions remain compatibility checks.
+
+Once Logan approves a prerelease, push the version tag matching `plugin.json`, such as
+`plugin-v0.1.0`. The release job takes the ZIP from the same run that tested it and verifies the ZIP
+checksum and source commit before attaching it to the prerelease. Rust binary distribution and
+crates.io publishing are separate work.
 
 ## Versions and changes
 
