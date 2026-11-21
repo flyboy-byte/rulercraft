@@ -838,3 +838,33 @@ fn calibration_refuses_a_span_lost_to_coordinate_precision() {
     assert_eq!(client.data("history.info", json!({})), prior_history);
     std::fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn point_coordinates_follow_filtered_selection_pages_and_scale() {
+    let path = std::env::temp_dir().join(format!("rulercraft-picks-{}.xyz", std::process::id()));
+    std::fs::write(&path, "9 1 0\n0 2 0\n4 2 0\n1 2 0\n").unwrap();
+    let mut client = Client::new();
+    client.data("mesh.open", json!({"path":path}));
+    let pick = |scale: f64| {
+        json!({
+            "selection":{"in_box":[[0.,scale, -1.],[5.*scale,3.*scale,1.]]},
+            "offset":1,"limit":1,"include_positions":true
+        })
+    };
+    let page = client.data("select", pick(1.));
+    assert_eq!(page["total"], 3);
+    assert_eq!(page["truncated"], true);
+    assert_eq!(page["indices"], json!([2]));
+    assert_eq!(page["positions_mm"], json!([[4., 2., 0.]]));
+    let default = client.data("select", json!({}));
+    assert!(default.get("positions_mm").is_none());
+    client.data(
+        "mesh.open",
+        json!({"path":path,"calibration":{"vertices":[1,2],"distance_mm":8}}),
+    );
+    let scaled = client.data("select", pick(2.));
+    assert_eq!(scaled["indices"], page["indices"]);
+    assert_eq!(scaled["positions_mm"], json!([[8., 4., 0.]]));
+    assert_eq!(scaled["calibration"]["factor"], 2.);
+    std::fs::remove_file(path).unwrap();
+}

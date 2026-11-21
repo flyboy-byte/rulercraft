@@ -3,12 +3,16 @@
   "milestone": "R6",
   "title": "Inspect selected point coordinates and IDs over MCP",
   "spec": "assisted-rebuild",
-  "status": "specced",
+  "status": "verified",
   "depends_on": [
     "scan.scale"
   ],
-  "owner": null,
-  "pr": null,
-  "verified_by": [],
-  "left": "Return bounded pages of point coordinates for choosing anchors and feature supports."
+  "owner": "codex",
+  "pr": "#139",
+  "verified_by": [
+    "math",
+    "known-design",
+    "wrong-value"
+  ],
+  "left": "Physical identification of matching landmarks is covered by verify.phone."
 }

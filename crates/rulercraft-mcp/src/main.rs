@@ -113,6 +113,8 @@ impl Filters {
 #[derive(Debug, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct SelectArgs {
+    /// Include coordinates in mm alongside the returned vertex IDs.
+    include_positions: Option<bool>,
     /// Combined filters; omitted means all vertices.
     selection: Option<Filters>,
     /// First selected vertex offset, default 0.
@@ -640,12 +642,33 @@ impl MeshServer {
         result(self.move_history(true))
     }
     #[tool(
-        description = "Select vertices by combined box, near-point and normal-facing filters. Returns a bounded page of ids; reuse filters in fit."
+        description = "Select vertices by combined box, near-point and normal-facing filters. Returns a bounded page of IDs and optionally their coordinates; reuse filters in fit."
     )]
     fn select(&self, Parameters(args): Parameters<SelectArgs>) -> CallToolResult {
-        self.with_mesh(|m|{let request=args.selection.as_ref().map(Filters::selection).unwrap_or_default();let ids=m.select(&request)?;
-            let limit=args.limit.unwrap_or(256);if limit>1024 {return Err("selection page limit must be at most 1024".into());}let offset=args.offset.unwrap_or(0);let page:Vec<_>=ids.iter().skip(offset).take(limit).copied().collect();
-            Ok(json!({"total":ids.len(),"offset":offset,"returned":page.len(),"truncated":offset.saturating_add(page.len())<ids.len(),"indices":page}))})
+        self.with_mesh(|m| {
+            let limit = args.limit.unwrap_or(256);
+            if limit > 1024 {
+                return Err("selection page limit must be at most 1024".into());
+            }
+            let request = args
+                .selection
+                .as_ref()
+                .map(Filters::selection)
+                .unwrap_or_default();
+            let ids = m.select(&request)?;
+            let offset = args.offset.unwrap_or(0);
+            let page: Vec<_> = ids.iter().skip(offset).take(limit).copied().collect();
+            let mut response = json!({"total":ids.len(), "offset":offset, "returned":page.len(),
+                "truncated":offset.saturating_add(page.len()) < ids.len(), "indices":page});
+            if args.include_positions == Some(true) {
+                let positions: Vec<_> = page
+                    .iter()
+                    .map(|&id| m.mesh.positions[id as usize])
+                    .collect();
+                response["positions_mm"] = json!(positions);
+            }
+            Ok(response)
+        })
     }
     #[tool(
         description = "Measure directional wall thickness along inward vertex normals, returning a bounded page. Requires consistently outward mesh winding."

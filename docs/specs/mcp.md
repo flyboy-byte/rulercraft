@@ -89,3 +89,6 @@ loses more precision, move the source cloud closer to its origin and select the 
 Both spans need two distinct locations and a positive finite reading. Reject invalid IDs, unusable
 scales and triangle-mesh calibration. Failed opens preserve the current cloud and history.
 Opening without calibration recovers source geometry. Undo and redo replay the original arguments.
+
+Set `include_positions: true` on `select` to return `positions_mm` in the same order as the
+page of `indices`. Coordinates use the current import scale and the existing page limit.

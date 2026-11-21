@@ -7,10 +7,10 @@ Overall roadmap progress: **65%** (details in ROADMAP-PROGRESS.md).
 | Status | Features |
 | --- | ---: |
 | planned | 17 |
-| specced | 4 |
+| specced | 3 |
 | in-progress | 3 |
 | implemented | 9 |
-| verified | 46 |
+| verified | 47 |
 | done | 0 |
 
 ## In progress
@@ -22,6 +22,7 @@ Overall roadmap progress: **65%** (details in ROADMAP-PROGRESS.md).
 ## Ready to claim
 
 - `align.auto` (R7): Auto-align a part from its own faces; guided three-plane datum applied to a mesh
+- `cad.assisted` (R4): Build an editable plate and hole from scan evidence and hand dimensions
 - `cad.step` (R7): STEP export of measured features through SolidCraft
 - `engine.gpu` (R7): Optional GPU accelerators verified against the CPU reference
 - `engine.stream` (R7): Fast, bounded loading with progress and cancel
@@ -30,7 +31,6 @@ Overall roadmap progress: **65%** (details in ROADMAP-PROGRESS.md).
 - `mesh.clean` (R7): Mesh clean-up: hole fill, bad triangle removal, reduction
 - `recon.surface` (R6): Points to surface reconstruction, proven on generated scenes
 - `sc.inspect` (R7): Inspect inside SolidCraft: command entries that fit and measure picked regions of a scan
-- `scan.picks` (R6): Inspect selected point coordinates and IDs over MCP
 - `section.cut` (R7): Sections across a feature and the part's widest outline, measured in 2D
 - `verify.mutants` (R8): Mutation testing of the engine; each survivor becomes a test or a deleted rule
 - `verify.regress` (R8): Regression corpus with stored known answers and a runner over every face
