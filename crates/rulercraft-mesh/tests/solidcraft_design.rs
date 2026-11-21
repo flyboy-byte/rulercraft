@@ -559,6 +559,24 @@ fn the_check_finds_a_bump() {
     );
 }
 
+#[test]
+fn deviation_uses_at_most_200_000_points() {
+    let mut mesh = fixture("window.stl");
+    let small = design(&mesh, "window").unwrap();
+    assert_eq!(
+        small.report["details"]["check"]["points"],
+        mesh.positions.len()
+    );
+
+    // Keep the original triangles and add reconstruction samples on the original surface.
+    let point = mesh.positions[0];
+    mesh.positions.resize(399_999, point);
+    let large = design(&mesh, "window").unwrap();
+    assert_eq!(large.report["details"]["check"]["points"], 200_000);
+    let p95 = large.report["details"]["check"]["p95_mm"].as_f64().unwrap();
+    assert!(p95 < 1e-8, "on-surface deviation {p95} mm");
+}
+
 /// A 40 x 30 x 10 plate with a Ø6 through hole countersunk 90° to Ø12 (SolidCraft: 11,604.159 mm³). The cone is
 /// found from its facets, paired with the hole, and rebuilt as a cone cut; nothing is reported lost.
 #[test]

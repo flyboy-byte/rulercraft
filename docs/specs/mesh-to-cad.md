@@ -133,7 +133,7 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
   found within 0.1 mm. Synthetic scans of the SolidCraft-made fixtures (marching cubes at 0.35 mm, 0.02 mm noise,
   turned 17°) rebuild within 0.25 % of SolidCraft's own volume for each.
 - **Check.** The rebuilt part is also a signed-distance field (plate outline, pads and bosses joined, holes,
-  pockets and cutouts taken away), and the scan's points (at most 200,000, evenly spaced) are measured against
+  pockets and cutouts taken away), and the scan's points (all vertices up to 200,000, otherwise 200,000 evenly spaced by vertex index) are measured against
   it: `details.check` has `points`, `mean_mm`, `rms_mm`, `p95_mm`, `max_mm` and `within_tolerance` (the share of
   points within the plate's tolerance). Unions and cuts combine by min and max, which is exact on faces and
   slightly low near edges where features meet. When 5 % of the scan is more than three tolerances off, the

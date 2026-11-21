@@ -9,6 +9,14 @@ use serde_json::Value;
 
 type V3 = [f64; 3];
 
+/// The turn the parts are scanned at: `RULERCRAFT_SCAN_TURN` (degrees) when set, for trying other poses by hand.
+fn turn_deg() -> f64 {
+    std::env::var("RULERCRAFT_SCAN_TURN")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(47.0)
+}
+
 /// A deterministic noise in [-1, 1] for an index (a hash, not a random generator, so runs are identical).
 fn hash_unit(i: u64) -> f64 {
     let mut x = i.wrapping_mul(0x9E37_79B9_7F4A_7C15) ^ 0xD1B5_4A32_D192_ED03;
@@ -209,7 +217,7 @@ fn scanned_part(part: &dyn Fn(V3) -> f64, size: V3, cell: f64, noise: f64) -> Me
         let l = 14f64.sqrt();
         a.map(|c| c / l)
     };
-    let (s, c) = 23f64.to_radians().sin_cos();
+    let (s, c) = turn_deg().to_radians().sin_cos();
     // Rodrigues: rotate by +23° to place, by -23° to look back into the part's frame.
     let rotate = |p: V3, s: f64| {
         let d = axis[0] * p[0] + axis[1] * p[1] + axis[2] * p[2];
@@ -241,6 +249,13 @@ fn scanned_part(part: &dyn Fn(V3) -> f64, size: V3, cell: f64, noise: f64) -> Me
             hi[k] = hi[k].max(r[k] + shift[k] + 2.0 * cell);
         }
     }
+    // Off the grid by a fraction of a cell, as a scanner's samples are: a face lying exactly on grid nodes makes
+    // degenerate facets no real scan has.
+    let lo = [
+        lo[0] + 0.37 * cell,
+        lo[1] + 0.61 * cell,
+        lo[2] + 0.29 * cell,
+    ];
     let mut m = surface_nets(&placed, lo, hi, cell);
     for (i, p) in m.positions.iter_mut().enumerate() {
         for (k, v) in p.iter_mut().enumerate() {
@@ -349,10 +364,6 @@ fn a_noisy_scan_keeps_its_bevel_round_countersink_and_window() {
         .collect();
     assert!(dropped.is_empty(), "{dropped:?}");
     let det = &report["details"];
-    eprintln!(
-        "DBG chamfers {} fillets {} items {}",
-        det["chamfers"], det["fillets"], report["items"]
-    );
     let chamfers = det["chamfers"].as_array().unwrap();
     assert_eq!(chamfers.len(), 1, "{chamfers:?}");
     assert!(

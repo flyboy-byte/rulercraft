@@ -1,6 +1,6 @@
 # Handoff
 
-Last updated 2026-11-19 (afternoon), Claude. Main is at #124; no open PRs. `python3 tools/plan.py progress`: 63 %
+Last updated 2026-11-19 (afternoon), Claude. Main is at #129; open: Codex #127 (assessment), #128 (point-cloud first row). `python3 tools/plan.py progress`: 63 %
 weighted, 74 features.
 
 ## Where the plugin stands
@@ -24,10 +24,21 @@ windows, countersinks, chamfers and fillets work on scans too now; every synthet
 within 0.25 % of SolidCraft's volume. `tests/ply_memory.rs` failed once under a full parallel run (its child's 96 MB
 virtual-memory cap) and passed on every rerun: a flake to watch, not caused by this work.
 
+## Scan poses (#129, 2026-11-19)
+The Codex assessment (#127 item 3) found the scan rebuild failed at some turns. Fixed: pockets aligned by their walls,
+softened corners and noise spikes dropped from snapped outlines (`snap_poly`), windows on scans rebuilt from their
+walls (`wall_poly`, falls back to snapping), boundary tracing that takes the sharpest turn at junctions, and, on scans
+only, a chamfer must be larger than half of `soft` (1.5 edge lengths): smaller is the scan's own edge softening, which
+at 0° lines up with the grid and runs the whole edge. Swept by hand at 30 turns, all pass:
+`for a in $(seq 0 15 345); do RULERCRAFT_SCAN_TURN=$a cargo test -q --release -p rulercraft-mesh --test scan_like; done`.
+The fuzz fit check now finds every non-finite number by path (only the optional diameters may be null). The wasm
+plugin was not rebuilt locally (the proxy blocked the rustup download); CI builds it. Debug prints left in
+`scan_like.rs` and `invariance.rs` were removed.
+
 2026-11-19 Codex follow-up: #131 (`codex/scan-volume-validity`) keeps the rebuilt SolidCraft volume
 when the scan is open and leaves the scan volume and difference unavailable. The baseline open-window
 reproduction reported 8,180 mm³ for the scan and 1.22% difference from the 8,280 mm³ rebuild.
-Recheck the closed and open window imports first. Pose-dependent recognition remains on #129.
+Recheck the closed and open window imports first.
 
 ## Also new (2026-11-19)
 - Point clouds (#123): `fit` and `measure` read .xyz/.pts/.asc and points-only PLY (`read_cloud`). Not yet: E57/LAS/PCD,
@@ -86,6 +97,10 @@ draft PR (feature id, or an area tag: fix:, improve:, perf:, test:, docs:), work
   "must be zero or a positive number"; a repeated option silently takes the last value.
 - Known paperwork nits, left alone because DECISIONS.md is never rewritten: two decisions are numbered D-009 (3MF reader
   and GUI). ROADMAP.md has sections R1–R7; R8 (verification) lives only in plan/roadmap.json.
+
+2026-11-19 Codex follow-up: #132 (`codex/bound-deviation-sampling`) caps deviation at 200,000
+samples spread across the input sequence. The regression in `solidcraft_design.rs` reported
+399,999 points before the fix. Review the count alongside the existing deviation checks.
 
 ## Habits that held up
 - A branch cut from `origin/main` goes stale once a PR merges: `git fetch` and rebase before building on it (a missed

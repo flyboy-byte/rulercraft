@@ -63,6 +63,9 @@ Two routes: (1) read what existing capture apps export (glTF, OBJ, PLY, USDZ), w
 own capture app later, using the platform's depth APIs *(check licences and terms)*, which sends frames to the engine.
 Route 1 first.
 
+The [measurement-assisted rebuild scope](../assisted-phone-rebuild.md) tests how far a rough exported cloud
+and a few hand measurements can take an editable reconstruction today.
+
 ## Interfaces
 
 Every new source is reachable from the library, CLI, MCP and app with the same options, and agents can drive the whole
