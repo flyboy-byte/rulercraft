@@ -897,3 +897,41 @@ fn assisted_plate_uses_scan_edges_and_explicit_hole_decisions() {
     );
     std::fs::remove_file(path).unwrap();
 }
+
+#[test]
+fn assisted_bore_center_needs_observed_wall_and_diameter_agreement() {
+    let path = std::env::temp_dir().join(format!(
+        "rulercraft-assisted-bore-{}.xyz",
+        std::process::id()
+    ));
+    let mut rows = String::from("0 0 8\n60 0 8\n0 30 8\n");
+    for z in [1, 3, 5, 7] {
+        for i in 0..32 {
+            let a = f64::from(i) * std::f64::consts::TAU / 32.;
+            rows.push_str(&format!(
+                "{} {} {z}\n",
+                15. + 4. * a.cos(),
+                12. + 4. * a.sin()
+            ));
+        }
+    }
+    std::fs::write(&path, rows).unwrap();
+    let mut client = Client::new();
+    client.data("mesh.open", json!({"path":path}));
+    let mut args = json!({"corners":[0,1,2],"thickness_mm":8,"diameter_mm":8,
+        "depth":{"through":true},"bore_selection":{"in_box":[[10,7,0],[20,17,8]]},
+        "max_diameter_difference_mm":0.25});
+    let draft = client.data("assist.plate", args.clone());
+    for (name, expected) in [("hole_x", 15.), ("hole_y", 12.)] {
+        assert_eq!(draft["evidence"][name]["source"], "bore_fit");
+        assert!((draft["evidence"][name]["mm"].as_f64().unwrap() - expected).abs() < 1e-5);
+    }
+    args["diameter_mm"] = json!(10);
+    assert_eq!(client.call("assist.plate", args.clone())["isError"], true);
+    args["diameter_mm"] = json!(8);
+    args["bore_selection"] = json!({"in_box":[[15,12,0],[20,17,8]]});
+    assert_eq!(client.call("assist.plate", args.clone())["isError"], true);
+    args["bore_selection"] = json!({"in_box":[[25,25,0],[30,30,8]]});
+    assert_eq!(client.call("assist.plate", args)["isError"], true);
+    std::fs::remove_file(path).unwrap();
+}

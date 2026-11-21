@@ -15,7 +15,7 @@ Overall roadmap progress: **66%** (details in ROADMAP-PROGRESS.md).
 
 ## In progress
 
-- `cad.assisted` (codex, #140): Picked corners and explicit hole dimensions emit editable CAD over MCP. Still owed: fit-backed center with weak support handling, noisy cloud acceptance and contradictory readings.
+- `cad.assisted` (codex, #140): MCP emits editable CAD from picked corners and an explicit or fit-backed center. Still owed: end-to-end noisy acceptance with held-out width and center at stated tolerances.
 - `engine.library` (claude): Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog.
 - `sc.release` (Claude): Workflow and guide are merged. Needs Logan to push tag plugin-v0.1.0 (pushing tags is refused from the Claude session); the workflow then makes the pre-release with its SHA-256.
 - `scan.phone` (codex, #135): Physical phone capture and scale uncertainty remain unverified. Measured cloud scale currently runs over MCP.

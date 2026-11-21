@@ -72,7 +72,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
-| `cad.assisted` Build an editable plate and hole from scan evidence and hand dimensions | in-progress | math, known-design, wrong-value | codex #140 | Picked corners and explicit hole dimensions emit editable CAD over MCP. Still owed: fit-backed center with weak support handling, noisy cloud acceptance and contradictory readings. |
+| `cad.assisted` Build an editable plate and hole from scan evidence and hand dimensions | in-progress | math, known-design, wrong-value | codex #140 | MCP emits editable CAD from picked corners and an explicit or fit-backed center. Still owed: end-to-end noisy acceptance with held-out width and center at stated tolerances. |
 | `re.features` Reverse-engineering workflows: hole patterns, symmetry, design-intent guesses | verified | math, wrong-value | claude https://github.com/flyboy-byte/rulercraft/pull/58 | Splitting partial patterns out of a larger group, and a CLI command (MCP reverse returns patterns, guesses and symmetry). |
 
 ## R5: Reusable engine (26%)

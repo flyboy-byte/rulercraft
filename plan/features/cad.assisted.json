@@ -15,5 +15,5 @@
     "known-design",
     "wrong-value"
   ],
-  "left": "Picked corners and explicit hole dimensions emit editable CAD over MCP. Still owed: fit-backed center with weak support handling, noisy cloud acceptance and contradictory readings."
+  "left": "MCP emits editable CAD from picked corners and an explicit or fit-backed center. Still owed: end-to-end noisy acceptance with held-out width and center at stated tolerances."
 }

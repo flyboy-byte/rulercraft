@@ -39,3 +39,10 @@ and a 60 mm hand reading set the scale. The draft used a supplied center and thr
 Across 12 clouds, the held-out 30 mm width came back as 29.324–29.856 mm, with a median of 29.559 mm.
 The picks underestimated width on every trial. Use this to compare a future face-fit method with
 individual corner picks. This check did not estimate the hole center.
+
+For a fit-backed center, supply `bore_selection` (standard MCP filters) and
+`max_diameter_difference_mm` instead of `center_mm`. The selected wall must support a cylinder
+covering at least 180° whose axis is within 10° of perpendicular to the top. The freely fitted
+diameter must agree with the hand reading within the caller's stated positive allowance. The
+intersection of the fitted axis with the top sets the center. The response carries the free fit
+and the disagreement. If the fit or a guard fails, select more wall or supply an explicit center.

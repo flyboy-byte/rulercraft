@@ -616,10 +616,10 @@ impl MeshServer {
     }
     #[tool(
         name = "assist.plate",
-        description = "Build an editable SolidCraft plate from three picked top corners, hand dimensions, and an explicitly located hole."
+        description = "Build an editable SolidCraft plate from three picked top corners, hand dimensions, and a hand-located or fitted hole."
     )]
     fn assist_plate(&self, Parameters(args): Parameters<assisted::PlateArgs>) -> CallToolResult {
-        self.with_mesh(|m| assisted::plate(&m.mesh, args))
+        self.with_mesh(|m| assisted::plate(m, args))
     }
     #[tool(
         name = "mesh.info",
