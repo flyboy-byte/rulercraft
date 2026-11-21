@@ -38,7 +38,7 @@ part, reconstruct, measure, compare) and the regression corpus.
 | --- | --- | --- |
 | Meshes | STL, PLY, OBJ, 3MF, glTF/GLB (common phone-app export) | read today |
 | Meshes, more | OFF, AMF, VRML | on demand |
-| Point clouds | PLY points-only, XYZ/PTS/ASC text | read today for `fit` and `measure` (mesh-import.md) |
+| Point clouds | PLY points-only, XYZ/PTS/ASC text | read for CLI and MCP `fit` and `measure` (mesh-import.md and mcp.md) |
 | Point clouds, more | E57 (ASTM standard for scanners), LAS/LAZ, PCD | planned (`io.e57`) |
 | CAD as a nominal | STEP | through SolidCore later (D-002) |
 | Phone formats | USDZ (Apple) | research; may need a dependency |

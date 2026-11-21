@@ -14,6 +14,7 @@ use rulercraft_mesh::{
     deviation::{deviation, patches},
     fit::{Clip, RobustOptions, fit_plane_robust},
     graph::MeshGraph,
+    io::{format_name, is_point_cloud_name, read_cloud},
     measure::{
         Element, relate,
         thickness::{ThicknessOptions, wall_thickness_indexed},
@@ -30,7 +31,7 @@ use std::{
     io::Read,
     sync::{Arc, Mutex},
 };
-const GUIDE: &str = "Open a local STL, PLY, OBJ, 3MF, glTF or GLB with mesh.open (file unit defaults to mm; 3MF model units win; glTF is metres), inspect mesh.info, then select by box, near point or facing. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The datum tool builds a frame from three fitted planes. The reverse tool returns a CAD recipe, hole patterns and symmetry for the open mesh. The thickness tool measures inward normal rays on a consistently wound mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
+const GUIDE: &str = "Open a local STL, PLY, OBJ, 3MF, glTF or GLB with mesh.open (file unit defaults to mm; 3MF model units win; glTF is metres), inspect mesh.info, then select by box, near point or facing. Open XYZ, PTS and ASC clouds directly, or pass as_points: true for PLY vertices. Cloud selections use box or near point. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The datum tool builds a frame from three fitted planes. The reverse tool returns a CAD recipe, hole patterns and symmetry for the open mesh. The thickness tool measures inward normal rays on a consistently wound mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
 #[derive(Debug, Clone, Copy, Hash, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 enum FileUnit {
@@ -42,8 +43,10 @@ enum FileUnit {
 #[derive(Debug, Clone, Hash, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct OpenArgs {
-    /// Local mesh file path (.stl, .ply, .obj, .3mf, .gltf, .glb).
+    /// Local mesh or point-cloud file path.
     path: String,
+    /// Open PLY vertices as a point cloud. XYZ, PTS and ASC are always point clouds.
+    as_points: Option<bool>,
     /// Coordinate unit in file, default mm.
     unit: Option<FileUnit>,
     /// Lower input byte limit, maximum 2 GiB.
@@ -238,13 +241,29 @@ impl Loaded {
         let bounds = self.mesh.bounds();
         json!({"path":self.path,"format":self.format,"vertices":self.mesh.positions.len(),"triangles":self.mesh.triangles.len(),"degenerate_dropped":self.mesh.degenerate_dropped,"bounds":bounds.map(|b|json!({"min":b.min,"max":b.max}))})
     }
+    fn require_surface(&self, tool: &str) -> Result<(), String> {
+        if self.mesh.triangles.is_empty() {
+            return Err(format!(
+                "{tool} requires mesh triangles. Use select, fit or measure on a point cloud."
+            ));
+        }
+        Ok(())
+    }
+    fn select(&self, selection: &Selection) -> Result<Vec<u32>, String> {
+        if selection.facing.is_some() && self.mesh.triangles.is_empty() {
+            return Err(
+                "Facing needs mesh normals. Select point-cloud vertices by box or near point."
+                    .into(),
+            );
+        }
+        commands::select(&self.mesh, &self.graph, selection).map_err(|e| e.to_string())
+    }
     fn fit(&self, args: &FitArgs) -> Result<(Value, Element), String> {
         let request = args.request()?;
         if request.known_diameter.is_some() && request.kind == FitKind::Plane {
             return Err("a known diameter only applies to a sphere or cylinder fit".into());
         }
-        let selected = commands::select(&self.mesh, &self.graph, &request.selection)
-            .map_err(|e| e.to_string())?;
+        let selected = self.select(&request.selection)?;
         if selected.len() > 1_000_000 {
             return Err(
                 "fit selection exceeds the 1 million point limit; select a smaller region".into(),
@@ -439,7 +458,15 @@ impl MeshServer {
             max_vertices: lower(args.max_vertices, defaults.max_vertices)?,
             max_triangles: lower(args.max_triangles, defaults.max_triangles)?,
         };
-        let format = rulercraft_mesh::io::format_name(&args.path).map_err(|e| e.to_string())?;
+        let text_cloud = is_point_cloud_name(&args.path);
+        let format = if text_cloud {
+            "point_cloud"
+        } else {
+            format_name(&args.path).map_err(|e| e.to_string())?
+        };
+        if args.as_points == Some(true) && !text_cloud && format != "ply" {
+            return Err("as_points supports PLY, XYZ, PTS and ASC files.".into());
+        }
         let file = std::fs::File::open(&args.path).map_err(|e| format!("{}: {e}", args.path))?;
         let mut bytes = Vec::new();
         file.take(limits.max_bytes as u64 + 1)
@@ -455,7 +482,12 @@ impl MeshServer {
             FileUnit::M => Unit::M,
             FileUnit::In => Unit::In,
         };
-        let mesh = read_mesh(&args.path, &bytes, unit, limits).map_err(|e| e.to_string())?;
+        let reader = if text_cloud || args.as_points == Some(true) {
+            read_cloud
+        } else {
+            read_mesh
+        };
+        let mesh = reader(&args.path, &bytes, unit, limits).map_err(|e| e.to_string())?;
         if mesh.positions.iter().flatten().any(|v| !v.is_finite()) {
             return Err("converted mesh position is not finite".into());
         }
@@ -553,7 +585,7 @@ fn fingerprint(bytes: &[u8]) -> u64 {
 impl MeshServer {
     #[tool(
         name = "mesh.open",
-        description = "Open a local mesh file in this process. A failed open preserves the previous mesh. Returns counts and mm bounds."
+        description = "Open a local mesh or point-cloud file in this process. A failed open preserves the previous mesh. Returns counts and mm bounds."
     )]
     fn mesh_open(&self, Parameters(args): Parameters<OpenArgs>) -> CallToolResult {
         result(self.open(args))
@@ -590,7 +622,7 @@ impl MeshServer {
         description = "Select vertices by combined box, near-point and normal-facing filters. Returns a bounded page of ids; reuse filters in fit."
     )]
     fn select(&self, Parameters(args): Parameters<SelectArgs>) -> CallToolResult {
-        self.with_mesh(|m|{let request=args.selection.as_ref().map(Filters::selection).unwrap_or_default();let ids=commands::select(&m.mesh,&m.graph,&request).map_err(|e|e.to_string())?;
+        self.with_mesh(|m|{let request=args.selection.as_ref().map(Filters::selection).unwrap_or_default();let ids=m.select(&request)?;
             let limit=args.limit.unwrap_or(256);if limit>1024 {return Err("selection page limit must be at most 1024".into());}let offset=args.offset.unwrap_or(0);let page:Vec<_>=ids.iter().skip(offset).take(limit).copied().collect();
             Ok(json!({"total":ids.len(),"offset":offset,"returned":page.len(),"truncated":offset.saturating_add(page.len())<ids.len(),"indices":page}))})
     }
@@ -599,6 +631,7 @@ impl MeshServer {
     )]
     fn thickness(&self, Parameters(args): Parameters<ThicknessArgs>) -> CallToolResult {
         self.with_mesh(|m| {
+            m.require_surface("thickness")?;
             let limit = args.limit.unwrap_or(256);
             if limit > 1024 {
                 return Err("thickness page limit must be at most 1024".into());
@@ -678,13 +711,19 @@ impl MeshServer {
     )]
     fn segment(&self, Parameters(args): Parameters<SegmentArgs>) -> CallToolResult {
         let kind = args.kind.unwrap_or(SegmentKind::Cylinders);
-        self.with_mesh(|m| Ok(m.segment(kind)))
+        self.with_mesh(|m| {
+            m.require_surface("segment")?;
+            Ok(m.segment(kind))
+        })
     }
     #[tool(
         description = "Reverse-engineer the open mesh: find planes and cylinders, then return a CAD build recipe (base face, holes placed in its frame), hole patterns, round-number guesses for diameters and mirror symmetry. Guesses carry their evidence; check them before building."
     )]
     fn reverse(&self) -> CallToolResult {
-        self.with_mesh(|m| m.reverse())
+        self.with_mesh(|m| {
+            m.require_surface("reverse")?;
+            m.reverse()
+        })
     }
     #[tool(
         description = "Compare the current mesh with a reference mesh file: signed distance statistics in mm (positive is outside the reference) and the largest out-of-tolerance patches. Optionally aligns first with ICP. Does not change the open mesh."
@@ -692,6 +731,7 @@ impl MeshServer {
     fn compare(&self, Parameters(args): Parameters<CompareArgs>) -> CallToolResult {
         let reference = match self.load(&OpenArgs {
             path: args.reference.clone(),
+            as_points: None,
             unit: args.unit,
             max_bytes: None,
             max_vertices: None,
@@ -701,6 +741,8 @@ impl MeshServer {
             Err(e) => return result(Err(e)),
         };
         self.with_mesh(|m| {
+            m.require_surface("compare")?;
+            reference.require_surface("compare reference")?;
             let tolerance = args.tolerance.unwrap_or(0.1);
             let mut scan = m.mesh.clone();
             let mut icp = Value::Null;

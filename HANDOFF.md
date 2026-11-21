@@ -41,7 +41,7 @@ Recheck the closed and open window imports first.
 
 ## Also new (2026-11-19)
 - Point clouds (#123): `fit` and `measure` read .xyz/.pts/.asc and points-only PLY (`read_cloud`). Not yet: E57/LAS/PCD,
-  normals for clouds (so `--facing` works), the MCP server opening clouds.
+  normals for clouds (so `--facing` works).
 - Fuzzing (#124): `tests/fuzz.rs`, every reader and the fit command layer; long runs by hand. Not yet: the MCP server
   over stdio, coverage-guided fuzzing (a library: Logan), a scheduled T2 run.
 - Test tools may use numpy, SciPy and scikit-image (D-016); `tools/dev/synth_scan.py` makes scan-like meshes.
@@ -63,25 +63,11 @@ Recheck the closed and open window imports first.
 - Other roadmap items from `python3 tools/plan.py needs` (point clouds, cone/torus fits, mesh clean-up, sections).
 
 ## Open right now
-- Assessment draft #127 (`codex/assessment-2026-11-19`) records the baseline at `a556825` and the reproducible
-  scan, cloud and fuzz findings. The baseline SolidCraft plugin run passed 14 of 14.
-- First-row point-cloud validation #128 (`codex/point-cloud-first-row`) is ready. Its hosted gate passed with
-  head `fb6a6f9`. Review the reader and format spec together.
-- Small exact-outline notch #130 (`codex/preserve-small-outline-notches`) uses the existing outline tolerance to
-  retain an inset boundary. The regression passes with eight sketch corners and fails with no sketch when
-  the inset check is disabled. See the PR report for the host volume check and gate.
-- Pose-dependent pockets and fillets and the fuzz finiteness assertion are claimed in #129. The 47° scan
-  fixture in the assessment is the first case to recheck there.
-- `--facing` counts a vertex when any touching triangle faces the direction (#110, okayed by Logan).
-- Building SolidCraft here: pin is Rust 1.99.1 (unavailable offline); `RUSTUP_TOOLCHAIN=stable` (1.97, its
-  rust-version is 1.95), `-j 1`, `CARGO_PROFILE_DEV_DEBUG=0`, `CARGO_PROFILE_DEV_PACKAGE_SOLIDCORE_OPT_LEVEL=0`
-  or the 8 GB box runs out of memory; about 70 minutes, `--no-default-features` keeps plugin support.
-- Building the plugin here without the wasm target: fetch `library/` (and the `library/backtrace` submodule) of
-  rust-lang/rust at `rustc -vV`'s commit, link it to `$(rustc --print sysroot)/lib/rustlib/src/rust/`, then
-  `RUSTC_BOOTSTRAP=1 cargo build --release --target wasm32-unknown-unknown -Z build-std=std,panic_abort` and
-  `wasm-tools component new`; `plugin/solidcraft/build.sh` copies the fixtures into the package tests.
-  CI's `solidcraft-plugin` workflow does it the normal way.
-- Build output: `/tmp` can be a small tmpfs. Put build output under `$HOME/.cache`.
+- The assessment, cloud reader, exact notch, open-scan volume, deviation cap and assisted-rebuild
+  verification PRs #127, #128 and #130–#133 are merged. The pose fixes are in #129.
+- MCP point-cloud measurement is in #134 (`codex/mcp-point-clouds`). The stdio regression opens
+  XYZ and PLY vertices, measures a known 6 mm gap and checks history replay. The assisted
+  rebuild still needs explicit calibration and dimension provenance.
 
 ## Read first
 INTENT.md (locked; changes only by a superseding decision), AGENTS.md (outranks the rest), docs/v1.md (what v1 means,

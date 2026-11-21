@@ -15,6 +15,10 @@ built-in guide tells the agent the usual flow: open, inspect, segment or select,
   Caller limits may lower the defaults: 2 GiB bytes, 50 million source vertices/triangles. The file
   read stops at byte limit + 1. Import/graph work and non-finite converted positions are checked
   before committing state. `mesh.info` does not reread the file.
+- `mesh.open` also accepts XYZ, PTS and ASC point clouds. For PLY vertices, set `as_points: true`.
+  Ordinary PLY opens use faces. Cloud opens report zero triangles and support box and near selections,
+  fitting and relations. Facing filters need mesh normals. Segmentation, reverse engineering, wall
+  thickness and mesh-to-mesh comparison require triangles. History replays the opening mode.
 - `select` returns sorted vertex ids for combined box, near-point and facing filters using commands.
   Parameters: selection (in_box: [min,max], near: {center,radius}, facing: {direction,within_deg}).
   Default facing angle is 30 degrees. No filters selects all vertices. Returned ids default to 256,

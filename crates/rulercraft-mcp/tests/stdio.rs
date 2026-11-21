@@ -710,3 +710,51 @@ fn known_plane_deviation_agrees_between_mcp_and_library() {
     }
     std::fs::remove_dir_all(dir).unwrap();
 }
+
+#[test]
+fn point_clouds_can_be_measured_and_keep_their_format_on_redo() {
+    let dir = std::env::temp_dir().join(format!("rulercraft-mcp-cloud-{}", std::process::id()));
+    std::fs::create_dir_all(&dir).unwrap();
+    let xyz = dir.join("planes.XYZ");
+    let ply_path = dir.join("planes.ply");
+    let positions: Vec<_> = [0.0, 6.0]
+        .into_iter()
+        .flat_map(|z| [[0., 0., z], [10., 0., z], [0., 10., z], [10., 10., z]])
+        .collect();
+    let body: String = positions
+        .iter()
+        .map(|[x, y, z]| format!("{x} {y} {z}\n"))
+        .collect();
+    std::fs::write(&xyz, body).unwrap();
+    std::fs::write(&ply_path, ply(&positions, &[])).unwrap();
+
+    let mut client = Client::new();
+    let first = json!({"kind":"plane","selection":{"in_box":[[-1,-1,-1],[11,11,1]]}});
+    let second = json!({"kind":"plane","selection":{"in_box":[[-1,-1,5],[11,11,7]]}});
+    for args in [
+        json!({"path":xyz}),
+        json!({"path":ply_path,"as_points":true}),
+    ] {
+        let cloud = client.data("mesh.open", args);
+        assert_eq!(cloud["triangles"], 0);
+        assert_eq!(cloud["vertices"], 8);
+        let measured = client.data("measure", json!({"first":first,"second":second}));
+        assert_eq!(measured["relation"]["distance"], 6.0);
+        let facing = json!({"selection":{"facing":{"direction":[0,0,1]}}});
+        assert_eq!(client.call("select", facing)["isError"], true);
+        for tool in ["segment", "thickness", "reverse"] {
+            let response = client.call(tool, json!({}));
+            assert_eq!(response["isError"], true);
+            assert!(
+                response["content"][0]["text"]
+                    .as_str()
+                    .unwrap()
+                    .contains("point cloud")
+            );
+        }
+    }
+    client.data("history.undo", json!({}));
+    client.data("history.redo", json!({}));
+    assert_eq!(client.data("mesh.info", json!({}))["path"], json!(ply_path));
+    std::fs::remove_dir_all(dir).unwrap();
+}
