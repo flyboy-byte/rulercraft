@@ -1,76 +1,49 @@
 # RulerCraft
 
-**Measure any mesh, and turn it back into editable CAD, with Claude doing the driving.**
+**Rebuild scanned parts you can edit in SolidCraft.**
 
-> [!NOTE]
-> As of 2026-11-18: **use it inside SolidCraft** — the RulerCraft plugin opens a scan (STL/PLY/OBJ/3MF/glTF/GLB) as an
-> editable part, a plate with its outline, holes, bosses, pockets and named sizes, with a report of what it could not rebuild
-> ([install and use](docs/install-solidcraft-plugin.md)). The engine also fits planes, spheres and cylinders, finds flat
-> and round regions, and measures distances, thickness and deviation, through a CLI and an MCP server. Nothing has
-> yet been checked against a real printed or scanned part (ROADMAP R1).
-> Progress is tracked in
-> [STATUS.md](STATUS.md) and [ROADMAP-PROGRESS.md](ROADMAP-PROGRESS.md).
+RulerCraft turns plate-like meshes into editable CAD with named dimensions, holes, pockets, and
+bosses. Use the SolidCraft plugin for mesh imports, or use RulerCraft MCP to combine point-cloud
+measurements with caliper or tape readings.
 
-Download an STL from a model-sharing site, or take a phone scan, and ask: *what diameter are these holes, how far
-apart are these faces, rebuild this as a part I can edit.* RulerCraft is the Rust mesh engine that
-answers: it reads meshes, finds and fits their planes, holes, cylinders and spheres, and measures
-them, over a CLI and an MCP server. The CAD half (building the solid, STEP export) is
-[SolidCraft](https://github.com/tangency-labs) and its kernel SolidCore.
+[**Install the plugin preview**](docs/install-solidcraft-plugin.md) ·
+[Download from GitHub Actions](https://github.com/flyboy-byte/rulercraft/actions/workflows/solidcraft-plugin.yml?query=branch%3Amain+is%3Asuccess) ·
+[Use a point cloud with MCP](docs/agents-and-solidcraft.md#rebuild-a-plate-from-a-point-cloud)
 
-The project's locked intent is [INTENT.md](INTENT.md); the competitive scope is
-[docs/specs/product-scope.md](docs/specs/product-scope.md).
+| Rebuilt from the bracket STL | After editing `thickness` |
+| --- | --- |
+| ![Teal bracket with two holes, a pocket and a round boss, rebuilt with an 8 mm base](docs/images/bracket-rebuilt.png) | ![The same bracket with a 12 mm base. The top features follow the thickness edit](docs/images/bracket-edited.png) |
 
-## Choose a workflow
+Both views show the [known bracket fixture](fixtures/known/bracket.stl) rebuilt by RulerCraft and
+rendered in SolidCraft. Only the `thickness` parameter was changed, from 8 to 12 mm.
 
-| Job | SolidCraft plugin | RulerCraft CLI | RulerCraft MCP |
-| --- | --- | --- | --- |
-| Rebuild a plate-like triangle mesh | Import and edit in SolidCraft | Export an editable SolidCraft design | Use the plugin through SolidCraft MCP, or inspect with RulerCraft MCP |
-| Fit and measure selected cloud regions | Desktop inspection is planned | Fit and measure XYZ, PTS, ASC and PLY points | Open, select, fit, measure and calibrate a cloud |
-| Rebuild from cloud picks and hand readings | Native integration is planned | Fit and measure for manual assembly | Emit an editable plate with one hole and its measurement evidence |
+## Start with your input
 
-[Install the tested plugin preview](docs/install-solidcraft-plugin.md) or
-[drive an assisted rebuild from MCP](docs/agents-and-solidcraft.md#rebuild-a-plate-from-a-point-cloud).
+**I have a mesh.** Install the plugin and choose **Plugins › RulerCraft › scan-to-part**. Try the
+[bracket fixture](fixtures/known/bracket.stl), then change `thickness` in **Parameters**. The import
+report lists what was simplified or missed and how closely the rebuild follows the input.
+[Supported formats and first import](docs/install-solidcraft-plugin.md#your-first-import)
 
-## Try it
+**I have a point cloud and a hand measurement.** Open the cloud in RulerCraft MCP, calibrate it
+from a measured span, and pick the geometry you want to use. `assist.plate` drafts a rectangular
+plate with one through or blind hole and records where its dimensions came from.
+[Point-cloud walkthrough](docs/agents-and-solidcraft.md#rebuild-a-plate-from-a-point-cloud)
 
-```bash
-cargo run -p rulercraft-cli -- info fixtures/known/hole-block.stl
-cargo run -p rulercraft-cli -- fit sphere fixtures/known/sphere-seat.stl --near 0 0 12 12.01 --sigma 0
-cargo run -p rulercraft-mcp # stdio server; connect using an MCP client
-cargo run -p rulercraft-gui -- fixtures/known/hole-block.stl # browser prototype for development
+**I want to script it.** Build a SolidCraft project from the bracket fixture using the Rust CLI.
+
+```sh
+cargo run -p rulercraft-cli -- solidcraft fixtures/known/bracket.stl --out bracket.sc
 ```
 
-The browser prototype (`rulercraft-gui`) runs locally and opens in your browser. See [the GUI page](docs/specs/gui.md).
+[CLI and project format](docs/specs/project-file.md) · [MCP reference](docs/specs/mcp.md)
 
-Project commands are `rulercraft project create`, `project fit` and `project info`; see
-[project format and CLI](docs/specs/project-file.md). [MCP tools](docs/specs/mcp.md) provide bounded
-selection pages, fits, two-selection measurements, segmentation, thickness, comparison and undo/redo.
-MCP also opens point clouds, calibrates scale from a hand-measured span, and builds an editable
-rectangular plate with one through or blind hole through `assist.plate`. The result carries the source
-of each dimension. Start with the [assisted rebuild walkthrough](docs/agents-and-solidcraft.md#rebuild-a-plate-from-a-point-cloud).
-The assisted route has synthetic and SolidCraft host checks. A physical phone export and the desktop
-workflow are still open.
+## Project status
 
-## How it is built
+The installable preview is tested in SolidCraft CLI on Linux. The assisted workflow has been
+tested on synthetic clouds and edited in SolidCraft. Interactive desktop validation, native
+assisted-rebuild integration, and validation on a physical phone capture are open.
 
-- **Checked, not trusted.** Every measurement is tested against answers known independently of the
-  code: math with exact answers and parts whose design dimensions are known. See [PROCESS.md](PROCESS.md).
-- **Fast to work on.** The whole test suite runs in minutes.
-- **Independent.** Written from our own specs ([docs/specs](docs/specs)) and textbook methods; no code
-  from other applications and no copyleft code. See [DECISIONS.md](DECISIONS.md).
+[Roadmap](ROADMAP.md) · [Progress](ROADMAP-PROGRESS.md) · [Test evidence](docs/specs/assisted-rebuild.md) ·
+[Contributing](CONTRIBUTING.md) · [Project intent](INTENT.md)
 
-## Docs
-
-| | |
-| --- | --- |
-| [CONTEXT.md](CONTEXT.md) | What this is and is not, direction |
-| [ROADMAP.md](ROADMAP.md) | Milestones and what each one lets you do |
-| [docs/implementation-plan.md](docs/implementation-plan.md) | Build order, parallel lanes, what each PR contains |
-| [PROCESS.md](PROCESS.md) | How a feature gets done and proven |
-| [AGENTS.md](AGENTS.md) | Rules for AI agents and contributors |
-| [CONTRIBUTING.md](CONTRIBUTING.md) | For people who want to help, including with their own AI agent |
-| [DECISIONS.md](DECISIONS.md) | Why things are the way they are |
-
-## Licence
-
-Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE), at your option.
+Dual-licensed under [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE).
