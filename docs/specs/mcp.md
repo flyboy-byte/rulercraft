@@ -74,3 +74,16 @@ Pages default to 256 samples and allow at most 1024; the engine's triangle-test 
 It reports total, offset, returned, truncated and samples with vertex ids and nullable distances.
 This is directional thickness and requires consistent outward winding; sharp corners can give oblique
 rays and open surfaces can have no opposite hit. It does not alter the open mesh.
+
+## Measured scale for point clouds (2026-11-21)
+
+On a cloud, `mesh.open` accepts `calibration: {"vertices":[a,b],"distance_mm":60}`. Use the
+zero-based vertex IDs from `select` on the same file. After file unit conversion, scale all coordinates
+uniformly about the file origin by measured length divided by the distance between the vertices.
+Selection boxes, fits and measurements then use calibrated millimetres. Each successful geometry result
+includes the calibration record with file unit, IDs, anchor coordinates before scaling (mm), measured
+length and multiplier. An optional `check` inside calibration takes another vertices/distance_mm pair
+and reports the scaled span minus its hand reading in mm. It does not change the scale.
+Both spans need two distinct locations and a positive finite reading. Reject invalid IDs, unusable
+scales and triangle-mesh calibration. Failed opens preserve the current cloud and history.
+Opening without calibration recovers source geometry. Undo and redo replay the original arguments.

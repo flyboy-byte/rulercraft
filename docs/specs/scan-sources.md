@@ -32,6 +32,9 @@ part, reconstruct, measure, compare) and the regression corpus.
 - **Uncertainty**: results from scans carry the fit residuals already; results from photos also carry the scale
   reference's uncertainty.
 
+MCP point-cloud import supports a hand-measured span and an optional independent check. See
+[the measured scale contract](mcp.md#measured-scale-for-point-clouds-2026-11-21).
+
 ## File types
 
 | Kind | Formats | State |

@@ -54,8 +54,8 @@ out from the supplied values.
   The supplied thickness and diameter are inputs. Their agreement in CAD checks parameter wiring.
 
 This establishes that the component pieces can produce an editable part with explicit assembly.
-The current product lacks a straight-through point-cloud import, calibration, hand-measurement
-binding and editable rebuild over MCP. Physical phone accuracy remains unverified.
+MCP now imports and calibrates the cloud. Binding hand measurements to editable SolidCraft dimensions
+still requires explicit assembly. Physical phone accuracy remains unverified.
 
 ## Whole-part verification
 
@@ -115,11 +115,25 @@ These trials verify the fit and CAD components under controlled conditions. They
 feature discovery, unassisted point selection, nonuniform scale drift, a physical phone export, or a
 complete MCP-only reconstruction.
 
+## Measuring scale over MCP (2026-11-21)
+
+A separate run opened the raw, shuffled XYZ output of `capture` in the MCP server. It used seeds
+7, 11 and 17, rotations of 0° and 31°, noise of 0.05 and 0.30 mm, and 90° of visible bore.
+For each simulated corner pick the probe chose the nearest actual cloud vertex. The caller supplied
+a length and the two vertex IDs. Two local plane fits at opposite walls provided an independent
+width estimate by projection onto the first plane normal. The generator supplied approximate pick
+locations. Identifying the right corner or wall unaided is still untested.
+
+| Hand reading for the 60 mm span | Trials | Recovered width for a 30 mm plate (min / median / max) |
+| --- | ---: | --- |
+| 60 mm | 12 | 30.042 / 30.138 / 30.234 mm |
+| 66 mm | 12 | 32.998 / 33.176 / 33.261 mm |
+
 ## Smallest useful implementation
 
-1. Add cloud-aware open and plane/cylinder fitting over MCP using the reader the CLI uses. A labelled selection should
+1. Implemented in #134: cloud-aware open and plane/cylinder fitting over MCP using the reader the CLI uses. A labelled selection should
    produce the same results from the CLI and MCP. Triangle-only commands should give an actionable refusal.
-2. Add an explicit calibration operation using a pair of points and a measured distance. Record the original unit,
+2. Implemented for MCP point clouds in #135: explicit calibration using a pair of points and a measured distance. Record the original unit,
    reference points, measured value and resulting scale. Keep raw coordinates available. Reject coincident points
    and nonpositive or nonfinite lengths. Report disagreement with additional independent references.
 3. Build one rectangular plate with a single through-hole from selected scan regions and named hand measurements.

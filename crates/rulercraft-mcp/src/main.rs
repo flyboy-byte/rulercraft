@@ -1,5 +1,7 @@
 // SPDX-License-Identifier: MIT OR Apache-2.0
 //! Local mesh commands over MCP stdio; stdout is reserved for the protocol.
+mod calibration;
+use calibration::Calibration;
 use rmcp::{
     ServerHandler, ServiceExt,
     handler::server::wrapper::Parameters,
@@ -31,8 +33,8 @@ use std::{
     io::Read,
     sync::{Arc, Mutex},
 };
-const GUIDE: &str = "Open a local STL, PLY, OBJ, 3MF, glTF or GLB with mesh.open (file unit defaults to mm; 3MF model units win; glTF is metres), inspect mesh.info, then select by box, near point or facing. Open XYZ, PTS and ASC clouds directly, or pass as_points: true for PLY vertices. Cloud selections use box or near point. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The datum tool builds a frame from three fitted planes. The reverse tool returns a CAD recipe, hole patterns and symmetry for the open mesh. The thickness tool measures inward normal rays on a consistently wound mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
-#[derive(Debug, Clone, Copy, Hash, Deserialize, schemars::JsonSchema)]
+const GUIDE: &str = "Open a local STL, PLY, OBJ, 3MF, glTF or GLB with mesh.open (file unit defaults to mm; 3MF model units win; glTF is metres), inspect mesh.info, then select by box, near point or facing. Open XYZ, PTS and ASC clouds directly, or pass as_points: true for PLY vertices. Cloud selections use box or near point. Reopen a cloud with calibration using two selected vertex IDs and the measured distance_mm; its results carry the scale reference. Fit plane, sphere or cylinder using the same filters. measure fits first and second selections and reports their relation and convention. Lengths are mm and facing angles are degrees. select pages ids; reuse selection filters for fits. Undo and redo successful mesh.open operations with history.undo and history.redo; history.info reports the current position. Replaying an open requires the source file to remain unchanged. Failed commands preserve the current mesh. The datum tool builds a frame from three fitted planes. The reverse tool returns a CAD recipe, hole patterns and symmetry for the open mesh. The thickness tool measures inward normal rays on a consistently wound mesh. The compare tool measures the open mesh against a reference file (optionally aligning first). The segment tool defaults to cylinder regions for scans; joined strips are available for tessellated CAD meshes. Project saving is not available in this server yet.";
+#[derive(Debug, Clone, Copy, serde::Serialize, Deserialize, schemars::JsonSchema)]
 #[serde(rename_all = "lowercase")]
 enum FileUnit {
     Mm,
@@ -40,13 +42,15 @@ enum FileUnit {
     M,
     In,
 }
-#[derive(Debug, Clone, Hash, Deserialize, schemars::JsonSchema)]
+#[derive(Debug, Clone, Deserialize, schemars::JsonSchema)]
 #[serde(deny_unknown_fields)]
 struct OpenArgs {
     /// Local mesh or point-cloud file path.
     path: String,
     /// Open PLY vertices as a point cloud. XYZ, PTS and ASC are always point clouds.
     as_points: Option<bool>,
+    /// Scale a point cloud using two source vertices and a measured span.
+    calibration: Option<Calibration>,
     /// Coordinate unit in file, default mm.
     unit: Option<FileUnit>,
     /// Lower input byte limit, maximum 2 GiB.
@@ -219,6 +223,7 @@ struct MeasureArgs {
     second: FitArgs,
 }
 struct Loaded {
+    calibration: Option<Value>,
     path: String,
     format: &'static str,
     mesh: Mesh,
@@ -239,7 +244,14 @@ struct Session {
 impl Loaded {
     fn summary(&self) -> Value {
         let bounds = self.mesh.bounds();
-        json!({"path":self.path,"format":self.format,"vertices":self.mesh.positions.len(),"triangles":self.mesh.triangles.len(),"degenerate_dropped":self.mesh.degenerate_dropped,"bounds":bounds.map(|b|json!({"min":b.min,"max":b.max}))})
+        let mut summary = json!({"path":self.path,"format":self.format,"vertices":self.mesh.positions.len(),"triangles":self.mesh.triangles.len(),"degenerate_dropped":self.mesh.degenerate_dropped,"bounds":bounds.map(|b|json!({"min":b.min,"max":b.max}))});
+        self.add_calibration(&mut summary);
+        summary
+    }
+    fn add_calibration(&self, value: &mut Value) {
+        if let Some(record) = &self.calibration {
+            value["calibration"] = record.clone();
+        }
     }
     fn require_surface(&self, tool: &str) -> Result<(), String> {
         if self.mesh.triangles.is_empty() {
@@ -437,10 +449,13 @@ impl MeshServer {
                 .state
                 .lock()
                 .map_err(|_| "mesh state lock unavailable")?;
-            f(state
+            let mesh = state
                 .current
                 .as_ref()
-                .ok_or("open a mesh with mesh.open first")?)
+                .ok_or("open a mesh with mesh.open first")?;
+            let mut value = f(mesh)?;
+            mesh.add_calibration(&mut value);
+            Ok(value)
         })())
     }
     fn load(&self, args: &OpenArgs) -> Result<(Loaded, u64), String> {
@@ -482,17 +497,23 @@ impl MeshServer {
             FileUnit::M => Unit::M,
             FileUnit::In => Unit::In,
         };
-        let reader = if text_cloud || args.as_points == Some(true) {
-            read_cloud
-        } else {
-            read_mesh
-        };
-        let mesh = reader(&args.path, &bytes, unit, limits).map_err(|e| e.to_string())?;
+        let cloud = text_cloud || args.as_points == Some(true);
+        if args.calibration.is_some() && !cloud {
+            return Err("calibration requires a point-cloud import".into());
+        }
+        let reader = if cloud { read_cloud } else { read_mesh };
+        let mut mesh = reader(&args.path, &bytes, unit, limits).map_err(|e| e.to_string())?;
         if mesh.positions.iter().flatten().any(|v| !v.is_finite()) {
             return Err("converted mesh position is not finite".into());
         }
+        let calibration = args
+            .calibration
+            .as_ref()
+            .map(|c| c.apply(&mut mesh, args.unit.unwrap_or(FileUnit::Mm)))
+            .transpose()?;
         let graph = MeshGraph::build(&mesh);
         let loaded = Loaded {
+            calibration,
             path: args.path.clone(),
             format,
             mesh,
@@ -732,6 +753,7 @@ impl MeshServer {
         let reference = match self.load(&OpenArgs {
             path: args.reference.clone(),
             as_points: None,
+            calibration: None,
             unit: args.unit,
             max_bytes: None,
             max_vertices: None,
