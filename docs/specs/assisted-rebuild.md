@@ -46,3 +46,11 @@ covering at least 180° whose axis is within 10° of perpendicular to the top. T
 diameter must agree with the hand reading within the caller's stated positive allowance. The
 intersection of the fitted axis with the top sets the center. The response carries the free fit
 and the disagreement. If the fit or a guard fails, select more wall or supply an explicit center.
+
+A 36-cloud check used the same seeds, turns and noise as the picked plate run, with 0°, 90° or 360°
+of actual wall. It used a 5.4 mm spherical selection around the generator's approximate bore pick
+and a 0.5 mm diameter allowance. The exact design center was held out. All 12 absent-wall trials
+were refused. All 12 full-wall trials produced a center, with 0.101–0.319 mm error in the picked
+frame. At 90° all six low-noise trials were refused, while all six higher-noise trials passed,
+with 0.103–0.378 mm center error. Selected top or noisy points can inflate the fitted coverage
+statistic. The guard needs more evidence before it can establish how much true bore wall was seen.
