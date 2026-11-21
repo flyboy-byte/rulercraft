@@ -63,3 +63,19 @@ Features `sc.*`; phases in docs/v1.md.
 ## Not planned (say so before starting)
 
 A CAD kernel of our own, cloud services or accounts, and a 2D flatbed-photo measuring workflow.
+
+## Measurement-assisted phone capture to editable CAD
+
+Added 2026-11-21. A phone export and a few physical measurements are enough to attempt a first draft.
+The first acceptance part is a rectangular plate with one circular hole. The caller can identify the
+reference points and visible features. RulerCraft must ask for missing dimensions or decisions when the
+scan cannot support them.
+
+1. **R6 / scan.scale and scan.picks.** Prove that file origin does not silently change a hand reference.
+   Return actual selected coordinates so the caller can inspect anchors and supports.
+2. **R4 / cad.assisted.** Bind the selected supports and hand readings to an editable plate and hole.
+   Hold out width and hole center and verify an edit in SolidCraft. Include a missing-bore case.
+3. **R7 / sc.assisted and verify.phone.** Carry dimension sources into the SolidCraft workflow and run
+   the same acceptance case on an untouched phone export with held-out caliper readings.
+
+See the [acceptance matrix](docs/specs/assisted-rebuild.md) and [controlled trials](docs/assisted-phone-rebuild.md).

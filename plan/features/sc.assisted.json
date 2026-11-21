@@ -1,0 +1,15 @@
+{
+  "id": "sc.assisted",
+  "milestone": "R7",
+  "title": "Use the assisted rebuild inside SolidCraft",
+  "spec": "assisted-rebuild",
+  "status": "specced",
+  "depends_on": [
+    "cad.assisted",
+    "sc.importer"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Carry named parameters and their source report through the app and agent entry points."
+}
