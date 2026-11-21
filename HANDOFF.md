@@ -34,6 +34,11 @@ The fuzz fit check now finds every non-finite number by path (only the optional 
 plugin was not rebuilt locally (the proxy blocked the rustup download); CI builds it. Debug prints left in
 `scan_like.rs` and `invariance.rs` were removed.
 
+2026-11-19 Codex follow-up: #131 (`codex/scan-volume-validity`) keeps the rebuilt SolidCraft volume
+when the scan is open and leaves the scan volume and difference unavailable. The baseline open-window
+reproduction reported 8,180 mm³ for the scan and 1.22% difference from the 8,280 mm³ rebuild.
+Recheck the closed and open window imports first.
+
 ## Also new (2026-11-19)
 - Point clouds (#123): `fit` and `measure` read .xyz/.pts/.asc and points-only PLY (`read_cloud`). Not yet: E57/LAS/PCD,
   normals for clouds (so `--facing` works), the MCP server opening clouds.

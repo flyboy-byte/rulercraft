@@ -542,6 +542,32 @@ fn holes_and_bosses_follow_the_thickness() {
     );
 }
 
+#[test]
+fn scan_volume_requires_a_closed_consistently_wound_mesh() {
+    let window = fixture("window.stl");
+    let scan_volume = |mesh: &Mesh| {
+        design(mesh, "window").unwrap().report["details"]
+            .get("scan_volume_mm3")
+            .unwrap()
+            .clone()
+    };
+    // A 50 x 30 plate with a 12 x 10 through-window, 6 mm thick.
+    let volume = scan_volume(&window).as_f64().unwrap();
+    assert!((volume - 8280.0).abs() < 1e-8, "{volume}");
+
+    let mut open = window.clone();
+    open.triangles.pop();
+    assert!(scan_volume(&open).is_null());
+
+    let mut inconsistent = window.clone();
+    inconsistent.triangles[0].swap(0, 1);
+    assert!(scan_volume(&inconsistent).is_null());
+
+    let mut non_manifold = window;
+    non_manifold.triangles.push(non_manifold.triangles[0]);
+    assert!(scan_volume(&non_manifold).is_null());
+}
+
 /// The import report measures the scan against the rebuilt part. Rebuilt from SolidCraft's own part, the scan
 /// lies on it (to float precision); one vertex pulled 2 mm off the top face is found, and only that one.
 #[test]

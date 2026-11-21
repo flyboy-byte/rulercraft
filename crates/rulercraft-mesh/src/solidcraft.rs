@@ -498,6 +498,33 @@ fn check_report(mut d: Vec<f64>, tol: f64) -> Value {
            "within_tolerance": within, "tolerance_mm": tol})
 }
 
+/// The mesh's enclosed volume, when every edge has two oppositely directed uses.
+fn enclosed_volume(mesh: &Mesh, graph: &MeshGraph) -> Option<f64> {
+    let forward = |triangle: u32, a, b| {
+        let t = mesh.triangles[triangle as usize];
+        (0..3).any(|i| t[i] == a && t[(i + 1) % 3] == b)
+    };
+    for edge in &graph.edges {
+        let other = edge.t1?;
+        if edge.non_manifold || forward(edge.t0, edge.a, edge.b) == forward(other, edge.a, edge.b) {
+            return None;
+        }
+    }
+
+    // Work near the mesh to avoid cancellation when the scan is far from the world origin.
+    let origin = mesh.positions.first()?.map(f64::from);
+    let signed_six_times_volume: f64 = mesh
+        .triangles
+        .iter()
+        .map(|t| {
+            let [a, b, c] = t.map(|i| sub(mesh.positions[i as usize].map(f64::from), origin));
+            dot(a, cross(b, c))
+        })
+        .sum();
+    let volume = signed_six_times_volume.abs() / 6.0;
+    (volume.is_finite() && volume > 0.0).then_some(volume)
+}
+
 /// A cone square to the base: its axis at `(x, y)` in the part frame, radius `r0` at height `z0` and `r1` at `z1`.
 #[derive(Debug, Clone, Copy)]
 struct Cone {
@@ -2771,7 +2798,7 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
                 "edge_direction": c.dir, "edge_length": c.len, "radius": c.across})).collect::<Vec<_>>(),
             "chamfers": chamfers.iter().filter(|(c, _)| !c.round).map(|(c, _)| json!({"edge_from": c.a, "edge_direction": c.dir,
                 "edge_length": c.len, "width": c.across, "height": c.down})).collect::<Vec<_>>(),
-            "check": check, "cutouts": slots, "holes": holes, "bosses": bosses, "pockets": pockets, "pads": pads,
+            "check": check, "scan_volume_mm3": enclosed_volume(mesh, &graph), "cutouts": slots, "holes": holes, "bosses": bosses, "pockets": pockets, "pads": pads,
             "frame": {"origin": o, "u": u, "v": v, "normal": n, "outline_min": lo, "z0": 0.0},
         },
     });
