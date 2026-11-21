@@ -92,3 +92,11 @@ Opening without calibration recovers source geometry. Undo and redo replay the o
 
 Set `include_positions: true` on `select` to return `positions_mm` in the same order as the
 page of `indices`. Coordinates use the current import scale and the existing page limit.
+
+## Assisted rebuild (2026-11-21)
+
+`assist.plate` returns a SolidCraft `design`, the dimension `evidence`, and the corresponding scan
+`frame`. It accepts picked plate corners, optional opposing side fits, and a caller-entered or fitted
+hole center. The caller supplies thickness, diameter, and a through-hole or blind-depth decision. The
+response includes the calibration when the open cloud has one. See the
+[argument contract and acceptance checks](assisted-rebuild.md).

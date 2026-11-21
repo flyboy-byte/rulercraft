@@ -1,6 +1,6 @@
 # Measurement-assisted rebuild from a phone capture
 
-Verification and proposed scope, 2026-11-19.
+Controlled trials started 2026-11-19. Implementation status updated 2026-11-21.
 
 A maker who has a rough phone capture, calipers or a tape measure can use the capture for the visible
 shape and feature locations, supply dimensions where the capture is weak, and get an editable first
@@ -8,7 +8,7 @@ draft in SolidCraft. This is an optional route through the existing phone-scan a
 It shares the CLI and library geometry. MCP can guide the user through choosing reference points,
 identifying features and entering measurements. The same inputs should work without an agent.
 
-## What works today
+## Baseline before the assisted MCP implementation (2026-11-19)
 
 I exercised the binaries from the scan-volume branch at `fa80893` (based on `df26fd6`) and SolidCraft
 CLI 0.45.0-rc.4. The inputs were generated with known dimensions.
@@ -54,8 +54,8 @@ out from the supplied values.
   The supplied thickness and diameter are inputs. Their agreement in CAD checks parameter wiring.
 
 This establishes that the component pieces can produce an editable part with explicit assembly.
-MCP now imports and calibrates the cloud. Binding hand measurements to editable SolidCraft dimensions
-still requires explicit assembly. Physical phone accuracy remains unverified.
+The later MCP implementation binds hand readings and selected fits to editable dimensions.
+Physical phone accuracy remains unverified.
 
 ## Whole-part verification
 
@@ -129,30 +129,27 @@ locations. Identifying the right corner or wall unaided is still untested.
 | 60 mm | 12 | 30.042 / 30.138 / 30.234 mm |
 | 66 mm | 12 | 32.998 / 33.176 / 33.261 mm |
 
-## Smallest useful implementation
+## Current implementation (2026-11-21)
 
-1. Implemented in #134: cloud-aware open and plane/cylinder fitting over MCP using the reader the CLI uses. A labelled selection should
-   produce the same results from the CLI and MCP. Triangle-only commands should give an actionable refusal.
-2. Implemented for MCP point clouds in #135: explicit calibration using a pair of points and a measured distance. Record the original unit,
-   reference points, measured value and resulting scale. Keep raw coordinates available. Reject coincident points
-   and nonpositive or nonfinite lengths. Report disagreement with additional independent references.
-3. Build one rectangular plate with a single through-hole from selected scan regions and named hand measurements.
-   Store each parameter's source and its supporting fit or measurement. Show the free fit beside a user-entered
-   value when they disagree. Ask for a location or dimension when the selected region gives insufficient evidence.
-   Write editable parameters and report the values still uncertain. Use direct fits for this slice. General
-   surface reconstruction remains useful for shapes outside this scope.
+- #134–#139 added MCP cloud import, measured calibration, rejection when stored geometry loses the
+  requested span, and bounded selection pages with coordinates.
+- #140–#142 added `assist.plate`. Use a hand thickness, hand diameter and an explicit depth choice.
+  Width comes from corner picks or opposing side faces. Supply a center or fit it from selected
+  bore samples that meet the coverage, axis and diameter checks. The result carries the
+  editable design, dimension evidence and scan frame.
+- Synthetic trials held out width and center and evaluated a thickness edit in SolidCraft. All
+  12 absent-wall cases refused in the combined sweep. Some noisy quarter-wall selections passed,
+  so fitted coverage is still an imperfect proxy for observed wall. See the
+  [assisted rebuild contract and results](specs/assisted-rebuild.md).
 
-A synthetic acceptance run should start with a cloud in arbitrary scale and a known plate, give only a scale
-reference, thickness and diameter, and hold out width and hole center. Exercise both correct and wrong anchors,
-missing wall coverage, contradictory readings, and an edit in SolidCraft. Set recovery thresholds from the
-fixture and intended first-draft use before running the test. Keep phone capture evaluation as a separate check
-once a physical part and measurements are available.
+The next roadmap items are `sc.assisted` for native SolidCraft integration and `verify.phone` for a physical
+scan with held-out caliper measurements. Automatic identification of reference points and regions
+also remains unverified.
 
 ## Where it belongs
 
 - [INTENT.md](../INTENT.md) already covers phone scans, trustworthy dimensions and editable CAD.
-- [v1](v1.md) can describe the assisted route under scan-to-editable CAD and agent use. A synthetic
-  acceptance run gives engineering evidence for the route. S1 still needs a real part.
+- [v1](v1.md) tracks the assisted route alongside scan-to-editable CAD and agent use. S1 still needs a real part.
 - [Scan sources](specs/scan-sources.md) owns supported phone exports and the calibration contract.
   `io.pointcloud` supplies the reader, and `scan.phone` tracks existing capture exports.
 - [MCP](specs/mcp.md) owns cloud open, region selection and the agent-facing operations.

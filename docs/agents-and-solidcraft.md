@@ -25,3 +25,35 @@ person which features need modelling by hand.
 
 Plugin tools (commands) are listed to agents as `<plugin>.<entry>`; the importer is a file format, so it runs
 through `file.import`, not a tool of its own.
+
+## Rebuild a plate from a point cloud
+
+Use RulerCraft's MCP server for point selection, calibration and the assisted draft. SolidCraft
+opens the resulting design for editing.
+
+1. Open the cloud with `mesh.open`. For PLY vertices, pass `as_points: true`. Use `select` with
+   `include_positions: true` to inspect the coordinates and IDs of candidate reference points.
+2. Reopen with `calibration` using the two reference IDs and the measured `distance_mm`. A second
+   physical span can go in `calibration.check`. Recheck selections in calibrated millimetres.
+3. Call `assist.plate` with three top-corner IDs in origin, length, width order, the plate thickness
+   and hole diameter, a center, and a depth choice. For example, given picked IDs 0, 1 and 2
+   and a measured through-hole:
+
+   ```json
+   {
+     "corners": [0, 1, 2],
+     "thickness_mm": 8,
+     "diameter_mm": 8,
+     "center_mm": [15, 12],
+     "depth": {"through": true}
+   }
+   ```
+
+4. Save the returned `design` object as a SolidCraft project and open it in SolidCraft. Retain the
+   `evidence`, `frame`, and `calibration` separately to trace the inputs. Check the resulting dimensions
+   before editing or using the part.
+
+Provide `width_faces` to refine the width from opposing side patches. A selected `bore_selection` and
+`max_diameter_difference_mm` can replace the explicit center. When bore evidence is weak, provide a
+measured center or pick a better wall region. For a blind hole, provide `depth.blind_depth_mm`.
+The [assisted rebuild spec](specs/assisted-rebuild.md) gives the complete contract and trial results.

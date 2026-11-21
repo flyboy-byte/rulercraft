@@ -67,7 +67,9 @@ own capture app later, using the platform's depth APIs *(check licences and term
 Route 1 first.
 
 The [measurement-assisted rebuild scope](../assisted-phone-rebuild.md) tests how far a rough exported cloud
-and a few hand measurements can take an editable reconstruction today.
+and a few hand measurements can take an editable reconstruction today. The MCP path returns an
+editable plate with one hole and records its measurement sources. Native SolidCraft integration
+and validation on an untouched phone export are tracked as `sc.assisted` and `verify.phone`.
 
 ## Interfaces
 
