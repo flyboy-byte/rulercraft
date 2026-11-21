@@ -54,3 +54,32 @@ were refused. All 12 full-wall trials produced a center, with 0.101–0.319 mm e
 frame. At 90° all six low-noise trials were refused, while all six higher-noise trials passed,
 with 0.103–0.378 mm center error. Selected top or noisy points can inflate the fitted coverage
 statistic. The guard needs more evidence before it can establish how much true bore wall was seen.
+
+### Width from selected side faces
+
+Optionally provide `width_faces` with `origin_side` and `opposite_side` selection filters and a positive
+`max_sigma_mm` per face. Fit a plane to each selected side. Both normals must be within 10° of the
+picked width axis and of one another, ignoring sign. Measure between the plane intersections along
+the width axis through the fitted patches’ midpoint, projected onto the plane through the first
+picked corner perpendicular to the width axis. This limits extrapolation away from the measured
+points. Reject reversed, coincident or unresolved planes.
+The width must exceed twice the sum of the fit residuals (sigma) projected along the measurement axis.
+Each selection is limited to one million points.
+
+The fitted origin-side intersection shifts the design origin and the reported frame along the width
+axis. A caller-entered `center_mm` is still relative to the first picked corner. Its Y offset is
+translated into the fitted frame. A fit-backed center is determined directly in the fitted frame.
+Return both plane fits, their offsets and the width originally estimated from the picks. Omitting
+`width_faces` uses the picked-corner width.
+
+On the same 12 noisy, absent-wall captures, two 3 mm-radius selections around the approximate side
+picks reduced the maximum width error from 0.676 to 0.396 mm. The fitted widths were
+29.604–30.236 mm, with a median of 30.122 mm. The per-face RMS ceiling was twice the injected
+per-coordinate noise. Measuring at the picked corner instead yielded 28.899–31.519 mm.
+
+Adding those two side selections to the 36-cloud bore sweep still refused all 12 absent-wall cases.
+All 12 full-wall cases recovered centers within 0.311 mm in the fitted frame. At 90°, the six
+low-noise selections refused and the six higher-noise selections produced up to 0.376 mm center
+error. One 31° full-wall case with 0.30 mm injected noise produced a 30.006 mm width. SolidCraft
+evaluated its emitted part at 14,000.538 mm³ and at 21,000.807 mm³ after a thickness edit from 8
+to 12 mm. Both volumes agreed with the analytic volume of the emitted dimensions within 1e-6 mm³.
