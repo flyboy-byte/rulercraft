@@ -1310,9 +1310,16 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
     let base_loops = boundary_loops(&base_tris, mesh, &part_xy).unwrap_or_default();
     if let Some(ring) = base_loops.first() {
         let area = signed_area(ring).abs();
-        // Not a rectangle when its traced outline covers less of it than a whole face must (a scan's base is
-        // ragged at its edges).
-        if area < full * base_len * base_wid {
+        // A small notch may leave almost all of the rectangle covered. On a low-roughness
+        // mesh, a point clear of all four sides is evidence that the boundary turns inward.
+        let inset = rough <= 2.0
+            && ring.iter().any(|p| {
+                (0..2).all(|axis| {
+                    let q = p[axis] + lo[axis];
+                    q > blo[axis] + ptol && q < bhi[axis] - ptol
+                })
+            });
+        if area < full * base_len * base_wid || inset {
             if let Some((x, y, r)) = circle_of(ring, ptol) {
                 // The outer wall's own circle, when one was found round it: the base face stops short of it on a
                 // scan.

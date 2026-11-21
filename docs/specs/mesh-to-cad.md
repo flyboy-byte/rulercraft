@@ -61,7 +61,9 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
   its top. A boss's top and a blind hole's floor count as explained. A round wall that runs the full thickness
   facing outward is part of the outline (below), reported as a round outline only when the outline stays a rectangle. Tolerances: heights within 2 % of the thickness (at least 0.05 mm).
 - **Outline.** The base face's outer boundary is traced and the plate is that outline extruded from a sketch, not
-  its enclosing rectangle, when the outline covers less than 98 % of the rectangle. A boundary that fits one circle
+  its enclosing rectangle, when the outline covers less than 98 % of the rectangle. On a mesh with median adjacent
+  face angle at most 2°, also trace the outline if a boundary point is more than the outline tolerance from all
+  four sides of the rectangle. This retains small notches with a clear inset boundary. A boundary that fits one circle
   within the tolerance is a circle; any other is a polygon, its corners the points a straight-edge approximation
   needs within the tolerance (at most 200). A plate that fills its rectangle stays a box. Holes and bosses must lie
   inside the traced outline. Curves in a polygon outline are runs of short straight edges, reported as

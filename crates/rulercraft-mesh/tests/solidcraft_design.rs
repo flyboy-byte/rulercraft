@@ -384,6 +384,48 @@ fn point_in(q: [f64; 2], p: &[[f64; 2]]) -> bool {
     inside
 }
 
+/// A 50 x 30 x 8 plate with a 5 x 2 through-notch open to the long edge.
+#[test]
+fn a_small_notch_stays_in_the_outline() {
+    let mut positions = Vec::new();
+    for z in [0.0, 8.0] {
+        for x in [0.0, 20.0, 25.0, 50.0] {
+            for y in [0.0, 2.0, 30.0] {
+                positions.push([x, y, z]);
+            }
+        }
+    }
+    let mut triangles = Vec::new();
+    // Five rectangular cells cover each face. Cell (1, 0) is the notch.
+    for (x, y) in [(0, 0), (0, 1), (1, 1), (2, 0), (2, 1)] {
+        let a = x * 3 + y;
+        let [b, c, d] = [a + 3, a + 4, a + 1];
+        triangles.extend([
+            [a, c, b],
+            [a, d, c],
+            [a + 12, b + 12, c + 12],
+            [a + 12, c + 12, d + 12],
+        ]);
+    }
+    let boundary = [0, 3, 4, 7, 6, 9, 10, 11, 8, 5, 2, 1, 0];
+    for edge in boundary.windows(2) {
+        let (a, b) = (edge[0], edge[1]);
+        triangles.extend([[a, b, b + 12], [a, b + 12, a + 12]]);
+    }
+    let mesh = Mesh {
+        positions,
+        triangles,
+        degenerate_dropped: 0,
+    };
+    let r = design(&mesh, "notched").unwrap();
+    let (corners, area) = sketch_area(&r.design);
+    assert_eq!(corners, 8);
+    // The exact footprint is 50 x 30 less 5 x 2. The allowance covers frame roundoff.
+    assert!((area - 1490.0).abs() < 1e-6, "outline area {area}");
+    assert_eq!(param(&r.design, "thickness"), "8 mm");
+    assert!(r.report["items"].as_array().unwrap().is_empty());
+}
+
 /// A Ø50 x 6 round plate with a Ø8 hole 10 mm off centre (SolidCraft: 11,479.380 mm³) is a circle sketch.
 #[test]
 fn a_round_plate_is_a_circle() {
