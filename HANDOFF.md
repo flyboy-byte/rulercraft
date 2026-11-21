@@ -1,7 +1,6 @@
 # Handoff
 
-Last updated 2026-11-19 (afternoon), Claude. Main is at #129; open: Codex #127 (assessment), #128 (point-cloud first row). `python3 tools/plan.py progress`: 63 %
-weighted, 74 features.
+Last updated 2026-11-21, Codex. Main includes the pose and point-cloud reader fixes (#129 and #128).
 
 ## Where the plugin stands
 The SolidCraft importer (D-014, D-015) rebuilds a plate-like scan as an editable SolidCraft design: any straight or
@@ -35,6 +34,11 @@ The fuzz fit check now finds every non-finite number by path (only the optional 
 plugin was not rebuilt locally (the proxy blocked the rustup download); CI builds it. Debug prints left in
 `scan_like.rs` and `invariance.rs` were removed.
 
+2026-11-19 Codex follow-up: #131 (`codex/scan-volume-validity`) keeps the rebuilt SolidCraft volume
+when the scan is open and leaves the scan volume and difference unavailable. The baseline open-window
+reproduction reported 8,180 mm³ for the scan and 1.22% difference from the 8,280 mm³ rebuild.
+Recheck the closed and open window imports first.
+
 ## Also new (2026-11-19)
 - Point clouds (#123): `fit` and `measure` read .xyz/.pts/.asc and points-only PLY (`read_cloud`). Not yet: E57/LAS/PCD,
   normals for clouds (so `--facing` works), the MCP server opening clouds.
@@ -59,7 +63,15 @@ plugin was not rebuilt locally (the proxy blocked the rustup download); CI build
 - Other roadmap items from `python3 tools/plan.py needs` (point clouds, cone/torus fits, mesh clean-up, sections).
 
 ## Open right now
-- No open findings.
+- Assessment draft #127 (`codex/assessment-2026-11-19`) records the baseline at `a556825` and the reproducible
+  scan, cloud and fuzz findings. The baseline SolidCraft plugin run passed 14 of 14.
+- First-row point-cloud validation #128 (`codex/point-cloud-first-row`) is ready. Its hosted gate passed with
+  head `fb6a6f9`. Review the reader and format spec together.
+- Small exact-outline notch #130 (`codex/preserve-small-outline-notches`) uses the existing outline tolerance to
+  retain an inset boundary. The regression passes with eight sketch corners and fails with no sketch when
+  the inset check is disabled. See the PR report for the host volume check and gate.
+- Pose-dependent pockets and fillets and the fuzz finiteness assertion are claimed in #129. The 47° scan
+  fixture in the assessment is the first case to recheck there.
 - `--facing` counts a vertex when any touching triangle faces the direction (#110, okayed by Logan).
 - Building SolidCraft here: pin is Rust 1.99.1 (unavailable offline); `RUSTUP_TOOLCHAIN=stable` (1.97, its
   rust-version is 1.95), `-j 1`, `CARGO_PROFILE_DEV_DEBUG=0`, `CARGO_PROFILE_DEV_PACKAGE_SOLIDCORE_OPT_LEVEL=0`

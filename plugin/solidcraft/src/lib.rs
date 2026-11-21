@@ -16,8 +16,8 @@ mod bindings {
 use bindings::craft::plugin::types::{FieldFailure, PluginError};
 use bindings::craft::plugin::{control, design, evaluate, source};
 use bindings::exports::craft::plugin::importer::Guest;
+use rulercraft_mesh::Unit;
 use rulercraft_mesh::io::{ImportLimits, read_mesh};
-use rulercraft_mesh::{Mesh, Unit};
 use serde_json::{Value, json};
 
 /// Largest read or write per host call (SolidCraft's limit).
@@ -64,27 +64,8 @@ fn read_all(size: u64) -> Result<Vec<u8>, PluginError> {
     Ok(bytes)
 }
 
-/// Enclosed volume of the scan (meaningful when the scan is closed), mm³.
-fn enclosed_volume(m: &Mesh) -> f64 {
-    let v: f64 = m
-        .triangles
-        .iter()
-        .map(|t| {
-            let [a, b, c] = t.map(|i| {
-                m.positions
-                    .get(i as usize)
-                    .map_or([0.0; 3], |p| p.map(f64::from))
-            });
-            (a[0] * (b[1] * c[2] - b[2] * c[1]) - a[1] * (b[0] * c[2] - b[2] * c[0])
-                + a[2] * (b[0] * c[1] - b[1] * c[0]))
-                / 6.0
-        })
-        .sum();
-    v.abs()
-}
-
 /// SolidCraft rebuilds the design privately; its volume next to the scan's.
-fn check_in_solidcraft(text: &[u8], scan_volume: f64) -> Value {
+fn check_in_solidcraft(text: &[u8], scan_volume: Option<f64>) -> Value {
     for chunk in text.chunks(CHUNK as usize) {
         if let Err(e) = evaluate::stage(chunk) {
             evaluate::reset();
@@ -101,8 +82,10 @@ fn check_in_solidcraft(text: &[u8], scan_volume: f64) -> Value {
         Some(rebuilt) => json!({
             "rebuilt_volume_mm3": rebuilt,
             "scan_volume_mm3": scan_volume,
-            "difference_percent": if scan_volume > 0.0 { 100.0 * (rebuilt - scan_volume) / scan_volume } else { 0.0 },
-            "note": "the scan's volume means something only when the scan is closed",
+            "difference_percent": scan_volume.map(|scan| 100.0 * (rebuilt - scan) / scan),
+            "note": scan_volume.is_none().then_some(
+                "Scan volume requires a closed mesh with consistent triangle winding and positive volume.",
+            ),
         }),
         None => json!({"error": reply.get("error").cloned().unwrap_or(Value::Null)}),
     }
@@ -148,7 +131,7 @@ impl Guest for Plugin {
         }
         control::progress(0.9, "Checking the part in SolidCraft");
         let mut report = rebuilt.report;
-        let check = check_in_solidcraft(&text, enclosed_volume(&mesh));
+        let check = check_in_solidcraft(&text, report["details"]["scan_volume_mm3"].as_f64());
         if let Some(d) = report.get_mut("details").and_then(Value::as_object_mut) {
             d.insert("volume_check".into(), check);
         }
