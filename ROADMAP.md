@@ -79,7 +79,9 @@ A CAD kernel of our own, cloud services or accounts, and a 2D flatbed-photo meas
 
 ## Measurement-assisted phone capture to editable CAD
 
-Added 2026-11-21. A phone export and a few physical measurements are enough to attempt a first draft.
+Added 2026-11-21. Prioritized 2026-11-22 after comparing native scan measurement and mesh conversion.
+Build the measurement-assisted workflow in the plugin first. A targeted host change is an option
+after we prove a user benefit and identify a specific limitation. A phone export and a few physical measurements are enough to attempt a first draft.
 The first acceptance part is a rectangular plate with one circular hole. The caller can identify the
 reference points and visible features. RulerCraft must ask for missing dimensions or decisions when the
 scan cannot support them.
@@ -93,4 +95,5 @@ scan cannot support them.
 3. **R7 / sc.assisted and verify.phone.** Carry dimension evidence through the native SolidCraft
    workflow, then import and edit an untouched phone export with held-out caliper readings.
 
-See the [acceptance matrix](docs/specs/assisted-rebuild.md) and [controlled trials](docs/assisted-phone-rebuild.md).
+See the [next milestone and phone trial](docs/assisted-rebuild-next.md), the
+[acceptance matrix](docs/specs/assisted-rebuild.md), and [controlled trials](docs/assisted-phone-rebuild.md).

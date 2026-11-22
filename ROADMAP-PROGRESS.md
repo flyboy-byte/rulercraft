@@ -115,7 +115,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `measure.gdt` Form and position checks: flatness, parallelism, perpendicularity, coaxiality and similar | planned | - | unclaimed | Everything beyond flatness (form error exists on every fit). |
 | `mesh.clean` Mesh clean-up: hole fill, bad triangle removal, reduction | planned | - | unclaimed | Everything. Exit: clean-up never moves a surviving vertex more than a stated amount. |
 | `sc.agent` Claude drives RulerCraft in SolidCraft: plugin entries as SolidCraft MCP tools, documented | verified | math, known-design, wrong-value | Claude | Measured on headless SolidCraft over MCP; the desktop app bridge (`--connect`) is not exercised here. |
-| `sc.assisted` Use the assisted rebuild inside SolidCraft | specced | - | unclaimed | Carry named parameters and their source report through the app and agent entry points. |
+| `sc.assisted` Use the assisted rebuild inside SolidCraft | specced | - | unclaimed | First priority. Check the current host selection and persistence interfaces, then carry named dimensions and evidence through a save, reopen and edit in SolidCraft. |
 | `sc.boss` Bosses and pins: outward round regions joined onto the plate | verified | math, known-design, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/112 | Bosses standing on an upward face; a boss under the base or not square to it is reported. |
 | `sc.check` Deviation of the scan from the rebuilt part in the import report, not only volumes | verified | math, known-design, wrong-value | Claude | Measured against the engine's own model of the rebuild, not SolidCraft's surface; points near where two features meet may read slightly low. |
 | `sc.details` Counterbores, countersinks, slots, chamfers and fillets | verified | math, known-design, wrong-value | Claude | Counterbores, through windows, countersinks, top-edge chamfers and fillets. Bevels or fillets under the plate, on round outlines or on vertical edges where they change the outline, and blind or stepped cutouts still go to the loss report. |
@@ -125,7 +125,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `sc.release` Plugin release: the .zip on GitHub releases, an install guide, a release workflow | implemented | known-design | codex #151 | Public plugin 0.1.0 shipped and its release asset was downloaded, installed, and edited on SolidCraft CLI for Linux. Broader host versions and platforms remain open. |
 | `sc.steps` Steps and pockets: parallel faces at heights between the base and the top | verified | math, known-design, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/112 | Pockets, steps and pads with rectangular, aligned outlines; turned ones and undercuts are reported. |
 | `section.cut` Sections across a feature and the part's widest outline, measured in 2D | planned | - | unclaimed | Everything. Exit: sections of known solids give the known outline lengths. |
-| `verify.phone` Verify assisted rebuild on an untouched phone export | specced | - | unclaimed | Physical capture, held-out caliper measurements and a desktop edit. |
+| `verify.phone` Verify assisted rebuild on an untouched phone export | specced | - | unclaimed | Compare native and assisted workflows on the same untouched phone export. Hold out width and an independently measured center if available, then verify desktop edits. |
 
 ## R8: Proof at scale: machines break it so users do not (40%)
 
