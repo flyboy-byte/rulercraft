@@ -7,8 +7,8 @@
   "depends_on": [
     "sc.importer"
   ],
-  "owner": "Claude",
-  "pr": null,
+  "owner": "codex",
+  "pr": "#150",
   "verified_by": [],
-  "left": "Host-tested preview ZIP and checksums are built on main. Tagged prerelease and desktop installation acceptance remain open."
+  "left": "The verified ZIP is promoted to a public GitHub release from the version tag. Host version and platform coverage remain open."
 }

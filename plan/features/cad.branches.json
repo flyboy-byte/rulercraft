@@ -1,0 +1,14 @@
+{
+  "id": "cad.branches",
+  "milestone": "R2",
+  "title": "Reconstruct branch-like meshes with editable profiles",
+  "spec": "mesh-to-cad",
+  "status": "planned",
+  "depends_on": [
+    "cad.facets"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Verify recovered tapered branches and faceted closed clusters. Keep missing or ambiguous geometry explicit."
+}

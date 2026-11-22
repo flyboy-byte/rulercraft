@@ -1,6 +1,6 @@
 # Distribution
 
-Status updated 2026-11-21. The SolidCraft plugin has a checked preview package and a tag-driven prerelease pipeline. Publishing requires Logan’s explicit approval under AGENTS.md.
+Status updated 2026-11-21. The SolidCraft plugin has a checked preview package and a tag-driven public release pipeline. Publishing requires Logan’s explicit approval under AGENTS.md.
 
 ## What ships
 
@@ -10,7 +10,7 @@ Status updated 2026-11-21. The SolidCraft plugin has a checked preview package a
 | `rulercraft` (CLI) | scripts, CI | GitHub Releases binaries; `cargo install` |
 | `rulercraft-mcp` (MCP server) | Claude and other agents | GitHub Releases; install line for Claude Code/Desktop in the README |
 | Web build (later) | people with nothing installed | static hosting (for example GitHub Pages) |
-| SolidCraft plugin | SolidCraft desktop users | Tested GitHub Actions previews and tagged GitHub prereleases |
+| SolidCraft plugin | SolidCraft desktop users | Tested GitHub Actions previews and tagged GitHub releases |
 
 ## Plugin delivery
 
@@ -20,9 +20,9 @@ and after a thickness edit. Changes to the mesh engine also trigger packaging. D
 from a successful run on `main` and follow the [install guide](install-solidcraft-plugin.md).
 Other desktop platforms and newer host versions remain compatibility checks.
 
-Once Logan approves a prerelease, push the version tag matching `plugin.json`, such as
+Once Logan approves a release, push the version tag matching `plugin.json`, such as
 `plugin-v0.1.0`. The release job takes the ZIP from the same run that tested it and verifies the ZIP
-checksum and source commit before attaching it to the prerelease. Rust binary distribution and
+checksum and source commit before attaching it to the public release. Rust binary distribution and
 crates.io publishing are separate work.
 
 ## Versions and changes

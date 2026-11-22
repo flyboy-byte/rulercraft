@@ -27,6 +27,10 @@ STL is under 0.05 mm.
 Claude turns fitted features into SolidCraft operations over SolidCraft's MCP server; then the mesh is
 checked against the rebuilt solid (SolidCore projection, optional feature).
 
+The plate importer rebuilds supported outlines and features today. `cad.facets` tracks editable
+faceted solids from bounded closed meshes. `cad.branches` tracks editable profiles for branch-like
+geometry, with open or ambiguous regions reported. [Current support by interface](docs/capabilities.md)
+
 ## R3 Noisy scans
 
 **Exit:** a real scan (a public sample scan or a phone scan) gives stable fits and a deviation report against
@@ -57,7 +61,7 @@ paged coordinate picks. Phone-export acceptance and photo reconstruction researc
 parts inside SolidCraft with the RulerCraft plugin, without help.
 
 SolidCraft is the user interface (D-015); RulerCraft ships as its plugin (D-014). In order: the importer (done), a
-release people can install (built, waiting on a tag), real parts (with R1, still owed), more shapes rebuilt (outline,
+installable release (see GitHub Releases), real parts (with R1, still owed), more shapes rebuilt (outline,
 bosses, steps and details: done on designed parts), a deviation check in the import report (done), inspecting scans
 inside SolidCraft (blocked on SolidCraft's mesh-size limit), and Claude driving it through SolidCraft's MCP (done,
 docs/agents-and-solidcraft.md).

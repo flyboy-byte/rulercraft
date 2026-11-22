@@ -17,7 +17,7 @@ use bindings::craft::plugin::types::{FieldFailure, PluginError};
 use bindings::craft::plugin::{control, design, evaluate, source};
 use bindings::exports::craft::plugin::importer::Guest;
 use rulercraft_mesh::Unit;
-use rulercraft_mesh::io::{ImportLimits, read_mesh};
+use rulercraft_mesh::io::{ImportLimits, format_name, read_mesh};
 use serde_json::{Value, json};
 
 /// Largest read or write per host call (SolidCraft's limit).
@@ -91,6 +91,88 @@ fn check_in_solidcraft(text: &[u8], scan_volume: Option<f64>) -> Value {
     }
 }
 
+/// A few OBJ exporters write an explicit units comment before the geometry.
+fn obj_header_units(bytes: &[u8]) -> Result<Option<&'static str>, PluginError> {
+    let mut declared = None;
+    for line in bytes
+        .split(|&byte| byte == b'\n')
+        .scan(0usize, |size, line| {
+            *size = size.saturating_add(line.len() + 1);
+            (*size <= 64 * 1024).then_some(line)
+        })
+    {
+        let Ok(line) = std::str::from_utf8(line) else {
+            break;
+        };
+        let line = line.trim().trim_start_matches('\u{feff}');
+        if line.is_empty() {
+            continue;
+        }
+        let Some(comment) = line.strip_prefix('#') else {
+            break;
+        };
+        let mut words = comment.split_whitespace();
+        if !words
+            .next()
+            .is_some_and(|word| word.eq_ignore_ascii_case("units"))
+        {
+            continue;
+        }
+        let (Some(unit), None) = (words.next(), words.next()) else {
+            continue;
+        };
+        let unit = match unit.to_ascii_lowercase().as_str() {
+            "mm" | "millimeter" | "millimeters" | "millimetre" | "millimetres" => "mm",
+            "cm" | "centimeter" | "centimeters" | "centimetre" | "centimetres" => "cm",
+            "m" | "meter" | "meters" | "metre" | "metres" => "m",
+            "in" | "inch" | "inches" => "in",
+            _ => {
+                return Err(invalid(
+                    "units",
+                    "OBJ units comment is unsupported. Choose the source units explicitly.",
+                ));
+            }
+        };
+        if declared.is_some_and(|previous| previous != unit) {
+            return Err(invalid(
+                "units",
+                "OBJ units comments disagree. Choose the source units explicitly.",
+            ));
+        }
+        declared = Some(unit);
+    }
+    Ok(declared)
+}
+
+fn import_units(name: &str, bytes: &[u8], options: &Value) -> Result<(Unit, Value), PluginError> {
+    let format = format_name(name).map_err(|e| invalid("file", e))?;
+    let requested = match options.get("units") {
+        Some(value) => value
+            .as_str()
+            .ok_or_else(|| invalid("units", "choose auto, mm, cm, m or in"))?,
+        None => "auto",
+    };
+    if requested != "auto" && Unit::parse(requested).is_none() {
+        return Err(invalid("units", "choose auto, mm, cm, m or in"));
+    }
+    let (label, source) = match (format, requested) {
+        ("3mf", _) => (None, "3mf_model"),
+        ("glb" | "gltf", _) => (Some("m"), "gltf_standard"),
+        ("obj", "auto") => match obj_header_units(bytes)? {
+            Some(unit) => (Some(unit), "obj_header"),
+            None => (Some("mm"), "default"),
+        },
+        (_, "auto") => (Some("mm"), "default"),
+        (_, unit) => (Some(unit), "override"),
+    };
+    let unit = Unit::parse(label.unwrap_or("mm"))
+        .ok_or_else(|| invalid("units", "choose auto, mm, cm, m or in"))?;
+    Ok((
+        unit,
+        json!({"source":source,"file_unit":label,"internal_unit":"mm"}),
+    ))
+}
+
 impl Guest for Plugin {
     fn import_file(
         _entry: String,
@@ -102,15 +184,10 @@ impl Guest for Plugin {
         } else {
             serde_json::from_str(&options).map_err(|e| invalid("options", e))?
         };
-        let unit = match options.get("units").and_then(Value::as_str) {
-            None => Unit::Mm,
-            Some(u) => Unit::parse(u).ok_or_else(|| {
-                PluginError::Unsupported(format!("scan units `{u}`: choose mm, cm, m or in"))
-            })?,
-        };
         let bytes = read_all(file.size)?;
         check_cancel()?;
         control::progress(0.35, "Reading the mesh");
+        let (unit, units) = import_units(&file.name, &bytes, &options)?;
         let mesh = read_mesh(&file.name, &bytes, unit, ImportLimits::default())
             .map_err(|e| invalid("file", e))?;
         drop(bytes);
@@ -134,6 +211,7 @@ impl Guest for Plugin {
         let check = check_in_solidcraft(&text, report["details"]["scan_volume_mm3"].as_f64());
         if let Some(d) = report.get_mut("details").and_then(Value::as_object_mut) {
             d.insert("volume_check".into(), check);
+            d.insert("import_units".into(), units);
         }
         control::progress(1.0, "Done");
         Ok(report.to_string())

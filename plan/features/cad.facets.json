@@ -1,0 +1,14 @@
+{
+  "id": "cad.facets",
+  "milestone": "R2",
+  "title": "Rebuild bounded faceted solids as editable CAD",
+  "spec": "mesh-to-cad",
+  "status": "planned",
+  "depends_on": [
+    "cad.solidcraft"
+  ],
+  "owner": null,
+  "pr": null,
+  "verified_by": [],
+  "left": "Verify closed faceted parts, preserve faces and refuse open shells without speculative repair."
+}

@@ -6,14 +6,14 @@ machine, with no network access.
 
 ## Get the plugin
 
-Open the [successful preview builds on main](https://github.com/flyboy-byte/rulercraft/actions/workflows/solidcraft-plugin.yml?query=branch%3Amain+is%3Asuccess).
-Open the latest successful run and choose the artifact named **rulercraft-solidcraft-plugin.zip**.
-It downloads the installer itself. GitHub may require sign-in. Keep the ZIP intact. It contains
-`plugin.json` and `rulercraft.wasm` at its root.
+Download `rulercraft-solidcraft-plugin.zip` from
+[GitHub Releases](https://github.com/flyboy-byte/rulercraft/releases/latest).
+The release also provides `SHA256SUMS.txt` and `SOURCE-COMMIT.txt`.
 
-The optional **rulercraft-plugin-preview** bundle includes the same installer, its checksum and
-its source commit. Tagged packages appear under
-[Releases](https://github.com/flyboy-byte/rulercraft/releases) when published.
+To try a development build, open the latest
+[successful preview on main](https://github.com/flyboy-byte/rulercraft/actions/workflows/solidcraft-plugin.yml?query=branch%3Amain+is%3Asuccess)
+and choose the standalone **rulercraft-solidcraft-plugin.zip** artifact. GitHub may require sign-in
+for previews. The install ZIP contains `plugin.json` and `rulercraft.wasm` at its root.
 
 1. In SolidCraft desktop, open **Preferences › Plugins › Install plugin…**.
 2. Choose the inner `rulercraft-solidcraft-plugin.zip`.
@@ -34,9 +34,11 @@ solidcraft-cli --keep-plugin-approvals exec plugin.install \
 1. Open or create a design and select the **Model** tab.
 2. In the **Plugins** group on the ribbon, click **RulerCraft**. You can also click the group label
    **Plugins** and choose **RulerCraft…** from the menu.
-3. Set **Scan units** to **Millimetres**, click **Choose File…**, and pick the
+3. Keep **Scan units** on **Auto**, click **Choose File…**, and pick the
    [bracket fixture](../fixtures/known/bracket.stl). The importer accepts
    `.stl`, `.ply`, `.obj`, `.3mf`, `.gltf` and `.glb`.
+   Auto uses a supported OBJ header declaration when present and millimetres otherwise. 3MF and
+   glTF/GLB have their own unit rules. For STL, PLY and OBJ, you can select the source units directly.
 4. In **Parameters**, change `thickness` from **8 mm to 12 mm** to see the rebuild update.
 
 If RulerCraft is missing from the Model ribbon, open **Preferences › Plugins** and verify that
