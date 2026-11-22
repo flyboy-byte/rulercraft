@@ -1,5 +1,8 @@
 # Measurement-assisted rebuild
 
+The [next milestone and physical trial](../assisted-rebuild-next.md) describes the desktop
+integration and comparison with the host's native workflow.
+
 A rough capture supplies geometry that is visible. Calipers or tape supply scale and dimensions the
 capture cannot establish. The first supported part is a rectangular plate with one perpendicular,
 circular through or blind hole. See the [capture evidence](../assisted-phone-rebuild.md).

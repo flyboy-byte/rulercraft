@@ -9,6 +9,10 @@
 | Keep work for another session | Save the rebuilt design in SolidCraft. | CLI projects save supported fit recipes. | Open history is session-local. Save an assisted design and its evidence separately. |
 | Rebuild an organic or branching mesh | Planned. The current importer rejects grossly mismatched plate candidates. | Same plate rebuild scope as the plugin. | No automatic organic reconstruction. |
 
+SolidCraft 0.46 also opens E57, measures scan points and places datums through its native tools.
+The immediate RulerCraft priority is using those inputs and hand dimensions to produce editable
+features. See the [workflow comparison and next milestone](assisted-rebuild-next.md).
+
 The plate path recognizes straight or circular outlines, holes, bosses, pockets, steps, windows,
 and some chamfers and fillets. The importer reports omitted or simplified features. A matching
 volume alone cannot establish that all features are present or correctly placed.
