@@ -31,16 +31,20 @@ solidcraft-cli --keep-plugin-approvals exec plugin.install \
 
 ## Your first import
 
-Try the [bracket fixture](../fixtures/known/bracket.stl) in millimetres before opening your scan.
-Change `thickness` from **8 mm to 12 mm** in **Parameters** to see the rebuild update.
+1. Open or create a design and select the **Model** tab.
+2. In the **Plugins** group on the ribbon, click **RulerCraft**. You can also click the group label
+   **Plugins** and choose **RulerCraft…** from the menu.
+3. Set **Scan units** to **Millimetres**, click **Choose File…**, and pick the
+   [bracket fixture](../fixtures/known/bracket.stl). The importer accepts
+   `.stl`, `.ply`, `.obj`, `.3mf`, `.gltf` and `.glb`.
+4. In **Parameters**, change `thickness` from **8 mm to 12 mm** to see the rebuild update.
+
+If RulerCraft is missing from the Model ribbon, open **Preferences › Plugins** and verify that
+RulerCraft is enabled. **File › Plugins…** opens those preferences. **File › Open** uses
+SolidCraft's own mesh and point-cloud readers.
 
 ![RulerCraft bracket after a thickness edit, showing its holes, pocket and boss](images/bracket-edited.png)
 
-
-- **Plugins menu › RulerCraft › scan-to-part**: choose the scan's units (millimetres unless your scanner says
-  otherwise), then the file: `.stl`, `.ply`, `.obj`, `.3mf`, `.gltf` or `.glb`.
-- **File › Open** keeps opening scans with SolidCraft's own readers, as a plain mesh or point cloud; use the
-  Plugins menu entry to rebuild a scan as a part.
 - The part opens as a new, unsaved design. Change `length`, `width`, `thickness`, a `hole…_diameter`,
   `boss…_height` or `pocket…_depth` in **Parameters** and the part rebuilds. Save it as any design.
 - The **Import report** lists what was not rebuilt (slanted faces such as bevels or rounds under the part, holes not square
