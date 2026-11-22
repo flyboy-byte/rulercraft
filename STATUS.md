@@ -8,15 +8,14 @@ Overall roadmap progress: **63%** (details in ROADMAP-PROGRESS.md).
 | --- | ---: |
 | planned | 19 |
 | specced | 2 |
-| in-progress | 3 |
-| implemented | 10 |
+| in-progress | 2 |
+| implemented | 11 |
 | verified | 47 |
 | done | 0 |
 
 ## In progress
 
 - `engine.library` (claude): Publishing to crates.io (needs Logan), a Wasm build attempt, frozen module layout and a changelog.
-- `sc.release` (codex, #150): The verified ZIP is promoted to a public GitHub release from the version tag. Host version and platform coverage remain open.
 - `scan.phone` (codex, #135): Physical phone capture and scale uncertainty remain unverified. Measured cloud scale currently runs over MCP.
 
 ## Ready to claim

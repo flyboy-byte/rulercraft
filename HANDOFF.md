@@ -2,6 +2,14 @@
 
 Last updated 2026-11-21, Codex. Main includes the assessment, roadmap and assisted rebuild through #142.
 
+## Public plugin release (2026-11-22)
+
+[Plugin 0.1.0](https://github.com/flyboy-byte/rulercraft/releases/tag/plugin-v0.1.0) is published on
+tagged commit `e6b6fba`. The host gate passed 16 cases. The public ZIP checksum matched, and the
+downloaded ZIP installed and edited the hole block through the Linux host. A user confirmed the
+Model ribbon entry on desktop before this release. Native assisted rebuild, organic reconstruction,
+physical scan accuracy and wider platform and host-version coverage remain open.
+
 ## Where the plugin stands
 The SolidCraft importer (D-014, D-015) rebuilds a plate-like scan as an editable SolidCraft design: any straight or
 circular outline (sketch extrude), through and blind holes, counterbores, bosses, pockets, steps and pads, through
@@ -47,8 +55,6 @@ Recheck the closed and open window imports first.
 - Test tools may use numpy, SciPy and scikit-image (D-016); `tools/dev/synth_scan.py` makes scan-like meshes.
 
 ## Owed and waiting on Logan
-- First public plugin tag approved on 2026-11-22. The package gates and download are documented in
-  [distribution](docs/distribution.md). Broader compatibility and physical scan checks remain open.
 - R1/S1: print fixtures/known/hole-block.stl (or any plate), caliper it, scan it, open the scan with the plugin.
   Nothing here has met a real scan's noise yet; the rebuild's tolerances are guesses until it does.
 - Try the install screen and Plugins menu in the SolidCraft desktop app; only its CLI and headless MCP were used.

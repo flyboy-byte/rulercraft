@@ -14,7 +14,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | R4 Reverse-engineering workflows with AI | `████████░░` | 82% | 15 | Claude proposes a feature tree (holes, patterns, symmetry) for a part and Logan accepts it in SolidCraft. |
 | R5 Reusable engine | `███░░░░░░░` | 26% | 10 | Another project depends on rulercraft-mesh from crates.io or git, and the engine builds for Wasm and runs the app in a browser with nothing to install. |
 | R6 Any scanner in: point clouds, phones, photos (research first) | `█████░░░░░` | 49% | 5 | Point clouds and phone-app exports open and measure correctly on generated scenes, and a written go/no-go with a prototype on photos of one object. |
-| R7 v1 in SolidCraft: the plugin, at parity and beyond | `████░░░░░░` | 45% | 25 | A SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own parts inside SolidCraft with the RulerCraft plugin, without help: rebuild a scanned part as editable CAD, inspect it with stated methods, let Claude measure through SolidCraft, and use the engine from another program. |
+| R7 v1 in SolidCraft: the plugin, at parity and beyond | `█████░░░░░` | 47% | 25 | A SolidCraft user (Logan standing in until others try it) does all four jobs of docs/v1.md on their own parts inside SolidCraft with the RulerCraft plugin, without help: rebuild a scanned part as editable CAD, inspect it with stated methods, let Claude measure through SolidCraft, and use the engine from another program. |
 | R8 Proof at scale: machines break it so users do not | `████░░░░░░` | 40% | 10 | Nightly and weekly verification tiers run on their own, every reader has been fuzzed, the engine's mutation score is reported, and every confirmed break has a regression test (docs/specs/verification.md). |
 
 ## R1: Clean meshes: open, fit, measure, over CLI and MCP (88%)
@@ -99,7 +99,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `scan.picks` Inspect selected point coordinates and IDs over MCP | verified | math, known-design, wrong-value | codex #139 | Physical identification of matching landmarks is covered by verify.phone. |
 | `scan.scale` Check measured cloud scale at large coordinate offsets | verified | math, known-design, wrong-value | codex #138 | Regional and physical calibration uncertainty is covered by verify.phone. |
 
-## R7: v1 in SolidCraft: the plugin, at parity and beyond (45%)
+## R7: v1 in SolidCraft: the plugin, at parity and beyond (47%)
 
 | Feature | Status | Verified by | Owner / PR | Left |
 | --- | --- | --- | --- | --- |
@@ -122,7 +122,7 @@ Feature credit: planned 0, specced 0.15, in-progress 0.3, implemented 0.75, veri
 | `sc.importer` SolidCraft importer: a scan opens as an editable plate with holes, named sizes and an import report | verified | math, known-design, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/109 | Plate-like parts, any straight or circular outline, with bosses, pockets, pads, holes and windows; everything else goes to the report. |
 | `sc.inspect` Inspect inside SolidCraft: command entries that fit and measure picked regions of a scan | planned | - | unclaimed | Everything. SolidCraft's model.mesh stops at 8,192 vertices; find a way within its interface or write the gap down for Logan (D-015). |
 | `sc.outline` Any base outline: the outline traced from the scan and extruded as a sketch, not its bounding box | verified | math, known-design, wrong-value | Claude | Straight and circular outlines. Mixed arcs and lines are straight-edge runs (reported); cutouts that are not round holes are reported, not rebuilt. |
-| `sc.release` Plugin release: the .zip on GitHub releases, an install guide, a release workflow | in-progress | - | codex #150 | The verified ZIP is promoted to a public GitHub release from the version tag. Host version and platform coverage remain open. |
+| `sc.release` Plugin release: the .zip on GitHub releases, an install guide, a release workflow | implemented | known-design | codex #151 | Public plugin 0.1.0 shipped and its release asset was downloaded, installed, and edited on SolidCraft CLI for Linux. Broader host versions and platforms remain open. |
 | `sc.steps` Steps and pockets: parallel faces at heights between the base and the top | verified | math, known-design, wrong-value | Claude https://github.com/flyboy-byte/rulercraft/pull/112 | Pockets, steps and pads with rectangular, aligned outlines; turned ones and undercuts are reported. |
 | `section.cut` Sections across a feature and the part's widest outline, measured in 2D | planned | - | unclaimed | Everything. Exit: sections of known solids give the known outline lengths. |
 | `verify.phone` Verify assisted rebuild on an untouched phone export | specced | - | unclaimed | Physical capture, held-out caliper measurements and a desktop edit. |

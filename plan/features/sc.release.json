@@ -3,12 +3,14 @@
   "milestone": "R7",
   "title": "Plugin release: the .zip on GitHub releases, an install guide, a release workflow",
   "spec": "solidcraft-plugin",
-  "status": "in-progress",
+  "status": "implemented",
   "depends_on": [
     "sc.importer"
   ],
   "owner": "codex",
-  "pr": "#150",
-  "verified_by": [],
-  "left": "The verified ZIP is promoted to a public GitHub release from the version tag. Host version and platform coverage remain open."
+  "pr": "#151",
+  "verified_by": [
+    "known-design"
+  ],
+  "left": "Public plugin 0.1.0 shipped and its release asset was downloaded, installed, and edited on SolidCraft CLI for Linux. Broader host versions and platforms remain open."
 }
