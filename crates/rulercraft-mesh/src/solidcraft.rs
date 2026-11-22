@@ -494,7 +494,7 @@ fn check_report(mut d: Vec<f64>, tol: f64) -> Value {
     let within = d.iter().filter(|&&x| x <= tol).count() as f64 / n;
     json!({"points": d.len(), "mean_mm": d.iter().sum::<f64>() / n,
            "rms_mm": (d.iter().map(|x| x * x).sum::<f64>() / n).sqrt(),
-           "p95_mm": at(0.95), "max_mm": d.last().copied().unwrap_or(0.0),
+           "median_mm": at(0.5), "p95_mm": at(0.95), "max_mm": d.last().copied().unwrap_or(0.0),
            "within_tolerance": within, "tolerance_mm": tol})
 }
 
@@ -2532,6 +2532,15 @@ pub fn design(mesh: &Mesh, name: &str) -> Result<Rebuilt, NotRebuilt> {
         }),
     );
     let check = check_report(distances, tol);
+    let median = check["median_mm"].as_f64().unwrap_or(0.0);
+    // Ordinary missing details belong in the report. A majority of samples far off
+    // even at this coarse scale means the proposed plate does not represent the input.
+    let gross_mismatch = (10.0 * tol).max(0.1 * len.max(wid).max(thick));
+    if median > gross_mismatch {
+        return Err(NotRebuilt(format!(
+            "the plate rebuild misses most sampled vertices (median deviation {median:.3} mm, limit {gross_mismatch:.3} mm). Open the original file as a mesh to keep its shape."
+        )));
+    }
     let p95 = check["p95_mm"].as_f64().unwrap_or(0.0);
     if p95 > 3.0 * tol {
         losses.push(Loss {

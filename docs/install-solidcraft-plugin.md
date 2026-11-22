@@ -58,6 +58,10 @@ From a terminal: `solidcraft-cli exec file.import '{"path":"part.stl","format":"
 
 ## What it rebuilds today
 
+For organic or heavily faceted models that you want to preserve, use **File › Open** to
+keep the original mesh. RulerCraft refuses a plate rebuild when most sampled vertices
+are far from the proposed plate.
+
 Plate-like parts: a flat base and a parallel opposite face, with any straight-edged or circular outline, rectangular
 pockets, steps and pads, round bosses and pins, round holes (through, blind, counterbored or countersunk), windows cut through,
 and chamfers and fillets on the top edges. All of it square to the base. Anything else (bevels or rounds under the part, slanted faces, undercuts,

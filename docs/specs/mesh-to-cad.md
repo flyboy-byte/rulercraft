@@ -136,10 +136,13 @@ It is the core of the SolidCraft importer plugin (SolidCraft's book, "Writing a 
   turned 17°) rebuild within 0.25 % of SolidCraft's own volume for each.
 - **Check.** The rebuilt part is also a signed-distance field (plate outline, pads and bosses joined, holes,
   pockets and cutouts taken away), and the scan's points (all vertices up to 200,000, otherwise 200,000 evenly spaced by vertex index) are measured against
-  it: `details.check` has `points`, `mean_mm`, `rms_mm`, `p95_mm`, `max_mm` and `within_tolerance` (the share of
+  it: `details.check` has `points`, `mean_mm`, `rms_mm`, `median_mm`, `p95_mm`, `max_mm` and `within_tolerance` (the share of
   points within the plate's tolerance). Unions and cuts combine by min and max, which is exact on faces and
   slightly low near edges where features meet. When 5 % of the scan is more than three tolerances off, the
-  report says so (`scan_deviation`), pointing at what was dropped.
+  report says so (`scan_deviation`), pointing at what was dropped. Refuse the proposed plate when
+  the median sampled vertex distance exceeds both ten times the deviation tolerance and one tenth
+  of the largest plate dimension. This is a gross mismatch check over sampled vertices. The user
+  can still open the original file as a mesh.
 - **Parameters.** `length`, `width`, `thickness`, `hole<i>_diameter`, `boss<i>_diameter`, `boss<i>_height`,
   `pocket<i>_depth`, `pad<i>_height` are named parameters (to a micrometre). Pockets hang from `thickness`, so
   changing the thickness keeps their depth.

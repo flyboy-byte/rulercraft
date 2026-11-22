@@ -719,3 +719,34 @@ fn fillets_on_a_traced_outline() {
     );
     assert_eq!(r.report["details"]["fillets"].as_array().unwrap().len(), 3);
 }
+
+#[test]
+fn a_small_plate_does_not_stand_in_for_distant_faceted_geometry() {
+    let mut mesh = fixture("hole-block.stl");
+    // Add faceted solids with small individual faces far from the recognizable plate.
+    // Their vertices dominate the input and cannot be explained by the plate model.
+    for ix in 0..20 {
+        for iy in 0..20 {
+            let x = 120.0 + 6.0 * ix as f32;
+            let y = 6.0 * iy as f32;
+            let i = mesh.positions.len() as u32;
+            mesh.positions.extend([
+                [x, y, 40.0],
+                [x + 2.0, y, 40.0],
+                [x, y + 2.0, 40.0],
+                [x + 0.5, y + 0.5, 42.0],
+            ]);
+            mesh.triangles.extend([
+                [i, i + 2, i + 1],
+                [i, i + 1, i + 3],
+                [i, i + 3, i + 2],
+                [i + 1, i + 2, i + 3],
+            ]);
+        }
+    }
+    let error = design(&mesh, "faceted solids").err().unwrap();
+    assert!(
+        error.to_string().contains("plate rebuild misses"),
+        "{error}"
+    );
+}
