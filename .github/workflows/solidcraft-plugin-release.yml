@@ -23,7 +23,7 @@ jobs:
           test "$want" = "$GITHUB_REF_NAME" || { echo "tag $GITHUB_REF_NAME, plugin.json says $want" >&2; exit 1; }
       - uses: actions/download-artifact@v4
         with:
-          name: rulercraft-solidcraft-plugin
+          name: rulercraft-plugin-preview
           path: dist
       - name: Verify the packaged revision
         working-directory: dist

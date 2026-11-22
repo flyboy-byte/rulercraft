@@ -58,7 +58,7 @@ jobs:
           git rev-parse HEAD > SOURCE-COMMIT.txt
       - uses: actions/upload-artifact@v4
         with:
-          name: rulercraft-solidcraft-plugin
+          name: rulercraft-plugin-preview
           path: |
             plugin/solidcraft/dist/rulercraft-solidcraft-plugin.zip
             plugin/solidcraft/dist/SHA256SUMS.txt
