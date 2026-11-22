@@ -1,8 +1,14 @@
 # Changelog
 
-User-visible changes. Newest first. Versions follow SemVer; nothing is released yet (docs/distribution.md).
+User-visible changes. Newest first. Versions and release channels follow [distribution](docs/distribution.md).
 
-## Unreleased
+## SolidCraft plugin 0.1.0 (2026-11-22)
+
+- First public plugin package. It imports supported plate-like shapes as editable SolidCraft projects.
+- Auto scan units recognize supported OBJ header declarations and report the source of scale.
+- The importer refuses a plate when most sampled vertices are far from the reconstruction.
+
+## Engine and interface changes
 
 - MCP opens XYZ, PTS and ASC clouds and can read PLY vertices explicitly. Calibrate a cloud from
   a measured span, check it with a second reading, and inspect selected positions alongside their IDs.

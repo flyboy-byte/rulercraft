@@ -47,8 +47,8 @@ Recheck the closed and open window imports first.
 - Test tools may use numpy, SciPy and scikit-image (D-016); `tools/dev/synth_scan.py` makes scan-like meshes.
 
 ## Owed and waiting on Logan
-- Approve the first public plugin prerelease and tag the checked commit with the manifest version.
-  Preview packages already go through host tests. See [distribution](docs/distribution.md).
+- First public plugin tag approved on 2026-11-22. The package gates and download are documented in
+  [distribution](docs/distribution.md). Broader compatibility and physical scan checks remain open.
 - R1/S1: print fixtures/known/hole-block.stl (or any plate), caliper it, scan it, open the scan with the plugin.
   Nothing here has met a real scan's noise yet; the rebuild's tolerances are guesses until it does.
 - Try the install screen and Plugins menu in the SolidCraft desktop app; only its CLI and headless MCP were used.

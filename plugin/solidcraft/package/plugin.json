@@ -12,7 +12,8 @@
       "kind": "importer",
       "extensions": ["stl", "ply", "obj", "3mf", "gltf", "glb"],
       "input_schema": {"type": "object", "properties": {
-        "units": {"type": "string", "title": "Scan units", "default": "mm", "oneOf": [
+        "units": {"type": "string", "title": "Scan units", "default": "auto", "oneOf": [
+          {"const": "auto", "title": "Auto (file units or millimetres)"},
           {"const": "mm", "title": "Millimetres"},
           {"const": "cm", "title": "Centimetres"},
           {"const": "m", "title": "Metres"},

@@ -9,13 +9,17 @@ WIT package `craft:plugin@0.2.0`, copied into `plugin/solidcraft/wit/` with its 
 ## What the user sees
 
 In SolidCraft, **Model › Plugins group › RulerCraft** opens the importer. The group's menu lists it
-as **RulerCraft…**. Its dialog asks for the scan's units (mm by default), then **Choose File…** picks
+as **RulerCraft…**. Its dialog asks for the scan's units (Auto by default), then **Choose File…** picks
 the input (`.stl`, `.ply`, `.obj`, `.3mf`, `.gltf`, `.glb`). The scan opens as a new, unsaved
 design holding the part RulerCraft rebuilt (docs/specs/mesh-to-cad.md, "SolidCraft design"): a plate with its
 holes cut, every size a named parameter. The Import report window lists what was not rebuilt. SolidCraft reads every
 one of these formats itself (as a mesh, or PLY as a point cloud), so File › Open keeps doing that; the plugin is
 chosen from its menu entry, or with `file.import` (always an importer; `format: "rulercraft.scan-to-part"` when
 another importer claims the extension too).
+
+Auto honors a supported `# Units meters` style declaration at the top of an OBJ. Other OBJ
+files and STL and PLY assume millimetres. The user can override these assumptions. 3MF model units
+and glTF metres take precedence. The report records the unit source in `details.import_units`.
 
 ## What it does
 

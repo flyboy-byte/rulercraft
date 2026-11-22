@@ -44,4 +44,4 @@ jobs:
           } > notes.md
           gh release create "$GITHUB_REF_NAME" dist/rulercraft-solidcraft-plugin.zip \
             dist/SHA256SUMS.txt dist/SOURCE-COMMIT.txt --verify-tag \
-            --title "RulerCraft for SolidCraft ${GITHUB_REF_NAME#plugin-v}" --notes-file notes.md --prerelease
+            --title "RulerCraft for SolidCraft ${GITHUB_REF_NAME#plugin-v}" --notes-file notes.md --latest
