@@ -8,8 +8,9 @@ WIT package `craft:plugin@0.2.0`, copied into `plugin/solidcraft/wit/` with its 
 
 ## What the user sees
 
-In SolidCraft, the Plugins menu has **RulerCraft › scan-to-part**. Its dialog asks for the scan's units (mm by
-default), then for the file (`.stl`, `.ply`, `.obj`, `.3mf`, `.gltf`, `.glb`). The scan opens as a new, unsaved
+In SolidCraft, **Model › Plugins group › RulerCraft** opens the importer. The group's menu lists it
+as **RulerCraft…**. Its dialog asks for the scan's units (mm by default), then **Choose File…** picks
+the input (`.stl`, `.ply`, `.obj`, `.3mf`, `.gltf`, `.glb`). The scan opens as a new, unsaved
 design holding the part RulerCraft rebuilt (docs/specs/mesh-to-cad.md, "SolidCraft design"): a plate with its
 holes cut, every size a named parameter. The Import report window lists what was not rebuilt. SolidCraft reads every
 one of these formats itself (as a mesh, or PLY as a point cloud), so File › Open keeps doing that; the plugin is

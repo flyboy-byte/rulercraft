@@ -19,7 +19,7 @@ rendered in SolidCraft. Only the `thickness` parameter was changed, from 8 to 12
 
 ## Start with your input
 
-**I have a mesh.** Install the plugin and choose **Plugins › RulerCraft › scan-to-part**. Try the
+**I have a mesh.** Install the plugin and choose **Model › Plugins group › RulerCraft**. Choose **Millimetres**, then **Choose File…** and pick the
 [bracket fixture](fixtures/known/bracket.stl), then change `thickness` in **Parameters**. The import
 report lists what was simplified or missed and how closely the rebuild follows the input.
 [Supported formats and first import](docs/install-solidcraft-plugin.md#your-first-import)
