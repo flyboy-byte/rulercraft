@@ -1,6 +1,8 @@
 # Distribution
 
-Status updated 2026-11-21. The SolidCraft plugin has a checked preview package and a tag-driven public release pipeline. Publishing requires Logan’s explicit approval under AGENTS.md.
+Status updated 2026-11-22. [SolidCraft plugin 0.1.0](https://github.com/flyboy-byte/rulercraft/releases/tag/plugin-v0.1.0)
+is published. The public ZIP was downloaded, checksum-verified, installed and exercised on the known
+hole block. Further publishing requires Logan’s explicit approval under AGENTS.md.
 
 ## What ships
 
