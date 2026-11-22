@@ -39,7 +39,7 @@ cargo run -p rulercraft-cli -- solidcraft fixtures/known/bracket.stl --out brack
 
 ## Project status
 
-The installable preview is tested in SolidCraft CLI on Linux. The assisted workflow has been
+The plugin package is tested in SolidCraft CLI on Linux. The assisted workflow has been
 tested on synthetic clouds and edited in SolidCraft. Interactive desktop validation, native
 assisted-rebuild integration, and validation on a physical phone capture are open.
 
