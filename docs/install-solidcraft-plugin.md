@@ -7,10 +7,12 @@ machine, with no network access.
 ## Get the plugin
 
 Open the [successful preview builds on main](https://github.com/flyboy-byte/rulercraft/actions/workflows/solidcraft-plugin.yml?query=branch%3Amain+is%3Asuccess).
-Open the latest run and download **rulercraft-plugin-preview**. GitHub may require sign-in.
-Extract `rulercraft-plugin-preview.zip` once and keep the inner `rulercraft-solidcraft-plugin.zip`
-intact. Inside the install ZIP, `plugin.json` and `rulercraft.wasm` sit at the root.
-The preview includes `SHA256SUMS.txt` and `SOURCE-COMMIT.txt`. Tagged packages appear under
+Open the latest successful run and choose the artifact named **rulercraft-solidcraft-plugin.zip**.
+It downloads the installer itself. GitHub may require sign-in. Keep the ZIP intact. It contains
+`plugin.json` and `rulercraft.wasm` at its root.
+
+The optional **rulercraft-plugin-preview** bundle includes the same installer, its checksum and
+its source commit. Tagged packages appear under
 [Releases](https://github.com/flyboy-byte/rulercraft/releases) when published.
 
 1. In SolidCraft desktop, open **Preferences › Plugins › Install plugin…**.

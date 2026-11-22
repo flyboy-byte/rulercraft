@@ -64,3 +64,9 @@ jobs:
             plugin/solidcraft/dist/SHA256SUMS.txt
             plugin/solidcraft/dist/SOURCE-COMMIT.txt
           if-no-files-found: error
+      - name: Upload the install ZIP without a wrapper
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          archive: false
+          path: plugin/solidcraft/dist/rulercraft-solidcraft-plugin.zip
+          if-no-files-found: error
