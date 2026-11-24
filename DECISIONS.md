@@ -246,4 +246,4 @@ repository.
 
 **Rules that follow.** Sessions that have read other scan-to-CAD sources do not write RulerCraft's rebuild or fits; if
 work here resumes, it starts from a session that has not, or its changes are reviewed for transliteration (D-001).
-The plugin release (plugin-v0.1.0 tag) can still go out as it is.
+Plugin 0.1.0, already published, stays available as it is.
