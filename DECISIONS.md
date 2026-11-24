@@ -237,3 +237,13 @@ written down for Logan, who decides whether to raise it with SolidCraft's mainta
 Logan approved in-session ("Python for testing is fine"). The plan tool and anything the gate runs stay Python without
 packages; shipped code stays Rust. First use: `tools/dev/synth_scan.py`, which makes scan-like meshes (marching cubes
 over a part, noise, a turn) from SolidCraft-made parts, the evidence behind the scan work of 2026-11-19.
+
+## D-017 Work paused; scan-to-CAD as a SolidCraft feature preferred (2026-11-24)
+
+**Decision.** RulerCraft development pauses, its code unchanged. Logan prefers scan-to-CAD built into SolidCraft as a
+feature over a plugin, and is spending the time helping that happen elsewhere. Nothing from that work comes into this
+repository.
+
+**Rules that follow.** Sessions that have read other scan-to-CAD sources do not write RulerCraft's rebuild or fits; if
+work here resumes, it starts from a session that has not, or its changes are reviewed for transliteration (D-001).
+The plugin release (plugin-v0.1.0 tag) can still go out as it is.
