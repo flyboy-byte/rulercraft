@@ -2,6 +2,11 @@
 
 Last updated 2026-11-22, Codex. This records the next milestone after the public 0.1.0 release and the comparison with SolidCraft 0.46.
 
+## Paused (2026-11-24)
+Development is paused (D-017): Logan prefers scan-to-CAD as a SolidCraft feature and is helping that elsewhere. The
+code is as of #129. Read D-017 before resuming. Still open for Logan: push the plugin-v0.1.0 tag; Codex PRs #127 and
+#128.
+
 ## Read first
 
 Read [INTENT.md](INTENT.md), [AGENTS.md](AGENTS.md), and [PROCESS.md](PROCESS.md). Then read the
